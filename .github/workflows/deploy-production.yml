@@ -1,0 +1,33 @@
+name: Deploy Frontend to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  GCP_REGION: us-central1
+  SERVICE_NAME: rmm-web-production
+  REPOSITORY: rmm-docker
+  IMAGE_NAME: rmm-web
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Production Deployment Notice
+        run: |
+          echo "⚠️ Production deployment is not yet configured"
+          echo "This workflow will be activated once production infrastructure is ready"
+          echo ""
+          echo "Required setup:"
+          echo "1. Create production Cloud Run service"
+          echo "2. Set up production database"
+          echo "3. Configure production secrets in GitHub"
+          echo "4. Update DNS records for production domain"
+          exit 0  # Exit successfully to avoid workflow failure
