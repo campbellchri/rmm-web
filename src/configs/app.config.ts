@@ -9,7 +9,7 @@ export type AppConfig = {
 }
 
 const appConfig: AppConfig = {
-    apiPrefix: 'http://192.168.1.9:3000',
+    apiPrefix: import.meta.env.VITE_API_URL || 'http://localhost:3000',
     authenticatedEntryPath: '/dashboard',
     unAuthenticatedEntryPath: '/sign-in',
     locale: 'en',
