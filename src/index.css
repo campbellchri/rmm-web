@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=MonteCarlo&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Text:ital@0;1&family=MonteCarlo&display=swap');
+@import './assets/styles/app.css';
+
+.monteCarlo {
+  font-family: 'MonteCarlo', cursive;
+}
+
+.DMSerif {
+  font-family: 'DM Serif Text', serif;
+}
+
+@layer components {
+  .btn-zoom {
+    @apply transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg;
+  }
+}
+
+.button-animate::before {
+  position: absolute;
+  content: "";
+  border-radius: inherit;
+  -webkit-transition: all 0.2s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  transition: all 0.2s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  z-index: -1;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background-size: 102% 102%;
+  opacity: 0;
+}
+
+
+.button-wrapper {
+  transition: opacity 0.2s, transform 0.2s;
+  transition-timing-function: cubic-bezier(0.455, 0.03, 0.515, 0.955);
+}
+
+.button-animate:hover .button-wrapper {
+  transform: translateY(-150%);
+  opacity: 0;
+}
+
+.button-animate:hover::before {
+  opacity: 1;
+}
+
+.button-animate::after {
+  content: attr(data-text);
+  display: inline-block;
+  position: absolute;
+  top: 50%;
+  opacity: 0;
+  transform: translate(0%, 100%);
+  transition: opacity 0.2s, transform 0.2s;
+  transition-timing-function: cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  white-space: nowrap;
+}
+
+.button-animate:hover::after {
+  transform: translate(0%, -50%);
+  opacity: 1;
+}
+
+#home {
+  background-image: url('/img/others/homebg.png');
+  /* background-repeat: no-repeat;
+  background-size: 100% 100%;  */
+  background-clip: content-box;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #fff;
+  color: #fff;
+  -webkit-background-clip: text;
+  transition: background-color 5000s ease-in-out 0s;
+  /* Optional: Hides transition flash in older Chrome versions */
+}

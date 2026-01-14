@@ -1,0 +1,16 @@
+     <svg
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                fill="black"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    d="M12 2L3 6V11C3 16.55 7.27 21.74 12 23C16.73 21.74 21 16.55 21 11V6L12 2Z"
+                                                    fill="black"
+                                                />
+                                                <path
+                                                    d="M12 4.5V20.29C8.28 19.14 5 14.93 5 11V7.07L12 4.5Z"
+                                                    fill="white"
+                                                />
+                                            </svg>

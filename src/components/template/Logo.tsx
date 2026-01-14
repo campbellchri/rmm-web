@@ -1,0 +1,42 @@
+import classNames from 'classnames'
+import { APP_NAME } from '@/constants/app.constant'
+import type { CommonProps } from '@/@types/common'
+import MemoriesLogo from '../../assets/svg/side_logo.svg'
+
+interface LogoProps extends CommonProps {
+    type?: 'full' | 'streamline'
+    mode?: 'light' | 'dark'
+    imgClass?: string
+    logoWidth?: number | string
+}
+
+const LOGO_SRC_PATH = '/img/logo/'
+
+const Logo = (props: LogoProps) => {
+    const {
+        type = 'full',
+        mode = 'light',
+        className,
+        imgClass,
+        style,
+        logoWidth = 'auto',
+    } = props
+
+    return (
+        <div
+            className={classNames('logo', className)}
+            style={{
+                ...style,
+                ...{ width: logoWidth },
+            }}
+        >
+            <img
+                className={imgClass}
+                src={MemoriesLogo}
+                alt={`${APP_NAME} logo`}
+            />
+        </div>
+    )
+}
+
+export default Logo
