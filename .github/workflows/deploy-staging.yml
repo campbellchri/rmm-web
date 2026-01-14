@@ -97,7 +97,9 @@ jobs:
           
           if [ $HTTP_CODE -eq 200 ]; then
             echo "✅ Deployment successful! Frontend is responding."
+            echo "Service URL: ${{ env.SERVICE_URL }}"
           else
             echo "⚠️ Deployment may have issues. HTTP response code: $HTTP_CODE"
+            echo "Service URL: ${{ env.SERVICE_URL }}"
             exit 1
           fi
