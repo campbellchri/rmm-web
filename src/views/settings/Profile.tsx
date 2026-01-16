@@ -184,7 +184,7 @@ export default function Profile() {
                                 'https://api.builder.io/api/v1/image/assets/TEMP/c3a907805cc2ed46951553fa92d51390341a3196?width=164',
                             )
                         }
-                        className="w-full md:w-auto border border-[#D4D4D4] bg-white text-[#525252] font-poppins font-bold text-sm px-3 py-2.5 rounded-[1000px] hover:bg-gray-50 transition-colors"
+                        className="w-full md:w-auto border border-[#D4D4D4] bg-[#2f3349] hover:bg-[#2f3349] text-[#ffffff] font-poppins font-bold text-sm px-3 py-2.5 rounded-[1000px] transition-colors"
                     >
                         Remove
                     </button>
@@ -262,7 +262,7 @@ export default function Profile() {
                         onChange={(val) => {
                             updateProfileField('phone', val)
                         }}
-                        className="bg-[#383c56]  border-none"
+                        className="bg-[#383c56] border-none rounded-lg"
                     />
                 </div>
 
@@ -284,17 +284,19 @@ export default function Profile() {
                                     setSelectedCountry(val)
                                     updateProfileField('country', val?.value)
                                 }}
+                                className="bg-[#383c56] border-none rounded-lg"
                             />
                         </div>
 
                         {/* Address Field */}
                         <div className="space-y-2">
                             <label className="block font-poppins font-semibold text-sm text-[#ffffff] leading-[21px]">
-                                Address Line 1
+                                Address
                             </label>
                             <Input
                                 type="text"
                                 className="bg-[#383c56] text-white border-none"
+                                placeholder='Enter your address'
                                 value={profile?.street1 || ''}
                                 onChange={(e) =>
                                     updateProfileField(
@@ -304,7 +306,7 @@ export default function Profile() {
                                 }
                             />
                         </div>
-                        <div className="space-y-2">
+                        {/* <div className="space-y-2">
                             <label className="block font-poppins font-semibold text-sm text-[#ffffff] leading-[21px]">
                                 Address Line 2 (Optional)
                             </label>
@@ -319,7 +321,7 @@ export default function Profile() {
                                     )
                                 }
                             />
-                        </div>
+                        </div> */}
 
                         {/* City and Postal Code */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -7,7 +7,7 @@ export default function Layout() {
 
     return (
         <div className="flex flex-col md:flex-row gap-3 ">
-            <Sidebar active={activePage} onSelect={setActivePage} />
+            {/* <Sidebar active={activePage} onSelect={setActivePage} /> */}
 
             <div className="flex-1 md:ml-8 ">
                 {activePage === 'FAQs' && <FAQContent />}

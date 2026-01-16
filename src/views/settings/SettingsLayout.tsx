@@ -29,7 +29,7 @@ export default function SettingsLayout() {
                                 <button
                                     onClick={() => setActiveTab(item.id)}
                                     className={classNames(
-                                        'flex items-center justify-center sm:justify-start w-full px-4 py-2 text-sm rounded-md transition',
+                                        'flex items-center justify-center hover:text-[#2f3349] sm:justify-start w-full px-4 py-2 text-sm rounded-md transition',
                                         activeTab === item.id
                                             ? 'bg-[#FFB84C] text-[#2f3349] font-medium'
                                             : 'hover:bg-[#FFB84C] text-[#ffffff] font-medium',

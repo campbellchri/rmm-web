@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import CommonInput from '@/components/shared/CommonInput'
 import { apiSetFeaturedMemorial, apiGetMemorialById } from '@/services/axios/MemorialModeService'
 import { useMemorialStore } from '@/store/memorialStore'
 import { toast, Notification } from '@/components/ui'
@@ -20,6 +22,12 @@ export default function Memorial() {
     const { memorials, fetchMemorials, activeMemorialId } = useMemorialStore()
     const memorialId = activeMemorialId
     const navigate = useNavigate()
+
+    const { control } = useForm({
+        defaultValues: {
+            memorialUrl: 'memorial.com/robert-johnson',
+        },
+    })
 
     useEffect(() => {
         fetchMemorials()
@@ -100,16 +108,16 @@ export default function Memorial() {
 
     return (
         <>
-        <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
 
-            <div className="flex items-center  gap-4">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
-                >
-                    <ArrowLeft />
-                </button>
-            </div>
+                <div className="flex items-center  gap-4">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
+                    >
+                        <ArrowLeft />
+                    </button>
+                </div>
                 <button
                     onClick={async () => {
                         try {
@@ -154,14 +162,14 @@ export default function Memorial() {
                 >
                     Set As Featured
                 </button>
-        </div>
+            </div>
             {/* Hero Section with Profile and Testimonial */}
             <div
                 className="relative w-full bg-cover bg-center"
-                // style={{
-                //     backgroundImage:
-                //         "url('https://api.builder.io/api/v1/image/assets/TEMP/2f525d80d45fde76e6bf817c53bf3e2a59dc45ea?width=2880')",
-                // }}
+            // style={{
+            //     backgroundImage:
+            //         "url('https://api.builder.io/api/v1/image/assets/TEMP/2f525d80d45fde76e6bf817c53bf3e2a59dc45ea?width=2880')",
+            // }}
             >
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-transparent"></div>
@@ -173,7 +181,7 @@ export default function Memorial() {
                         <div className="flex flex-col sm:flex-row sm:items-end gap-6 sm:gap-8">
                             <div className="flex justify-center sm:justify-start">
                                 <img
-                                    src={MemberAvatar} 
+                                    src={MemberAvatar}
                                     alt="James William Thompson"
                                     className="w-[140px] h-[170px] sm:w-[164px] sm:h-[201px] rounded-[10px] object-cover shadow-lg"
                                 />
@@ -427,15 +435,16 @@ export default function Memorial() {
 
                                 {/* URL Copy */}
                                 <div className="space-y-1">
-                                    <label className="font-poppins text-sm text-[#4B5563]">
+                                    <label className="font-poppins text-sm text-[#ffffff]">
                                         Memorial URL
                                     </label>
                                     <div className="flex">
-                                        <input
-                                            type="text"
-                                            value="memorial.com/robert-johnson"
+                                        <CommonInput
+                                            name="memorialUrl"
+                                            control={control}
                                             readOnly
-                                            className="flex-1 px-3 py-2 bg-white border border-[#D1D5DB] rounded-l-md font-poppins text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#C7A30D]"
+                                            className="w-full text-[#878787] bg-[#383C56] border-[#383C56] rounded-l-md rounded-r-none font-poppins text-sm focus:!ring-[#C7A30D] focus:!border-[#C7A30D] h-auto py-2"
+                                            containerClassName="flex-1 mb-0"
                                         />
                                         <button
                                             onClick={handleCopyUrl}

@@ -12,12 +12,14 @@ interface CountrySelectProps {
     value: CountryOption | null
     onChange: (value: CountryOption | null) => void
     placeholder?: string
+    className?: string
 }
 
 export default function CountrySelect({
     value,
     onChange,
     placeholder = 'Select a country',
+    className,
 }: CountrySelectProps) {
     const options = useMemo(() => {
         const list = countryList().getData()
@@ -42,7 +44,7 @@ export default function CountrySelect({
             value={value}
             onChange={onChange}
             placeholder={placeholder}
-            className="w-full"
+            className={`w-full ${className || ''}`}
             classNames={{
                 singleValue: () =>
                     'select-single-value font-normal text-sm text-white',

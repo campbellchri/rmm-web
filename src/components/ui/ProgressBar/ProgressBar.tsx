@@ -53,7 +53,7 @@ const ProgressBar = ({
 
             {/* Progress bar */}
             <div
-                className="w-full bg-[#E5E7EB] rounded-full"
+                className="w-full bg-[#454b66] rounded-full"
                 style={{ height }}
             >
                 <motion.div

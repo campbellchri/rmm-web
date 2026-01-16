@@ -118,8 +118,7 @@ function Select<
                             (() => {
                                 const classes: string[] = [
                                     ' dark:bg-gray-700',
-                                    'border border-[#D1D5DB]',
-                                    'rounded-md',
+                                    'rounded-[12px]',
                                     'placeholder:text-sm',
                                     'placeholder:font-poppins',
                                     'placeholder:text-[#A1A1AA]',
@@ -128,12 +127,27 @@ function Select<
                                     'text-sm',
                                 ]
 
+                                // Check if className contains 'border-none'
+                                const hasBorderNone =
+                                    className && className.includes('border-none')
+
+                                if (!hasBorderNone) {
+                                    classes.push('border border-[#D1D5DB]')
+                                } else {
+                                    classes.push('border border-[#383C56]')
+                                }
+
                                 const { isFocused } = state
 
                                 if (isFocused) {
                                     classes.push(
-                                        'select-control-focused ring-1 ring-[#C7A30D] border-[#C7A30D] bg-transparent',
+                                        'select-control-focused ring-1 ring-[#C7A30D] bg-transparent',
                                     )
+                                    if (!hasBorderNone) {
+                                        classes.push('border-[#C7A30D]')
+                                    } else {
+                                        classes.push('border-[#383C56]')
+                                    }
                                 }
 
                                 if (isSelectInvalid) {
