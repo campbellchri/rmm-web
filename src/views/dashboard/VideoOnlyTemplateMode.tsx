@@ -73,7 +73,7 @@ export default function VideoOnlyMemorial() {
             try {
                 const templatesRes: any = await apiGetMemorialTemplateList()
                 const videoTemplate = templatesRes.find((t: any) => t.landingMode?.landingModeType === 'video-only-mode')
-                
+
                 if (videoTemplate) {
                     setTemplateId(videoTemplate.id)
                     // Use the landingModeId directly from the template object
@@ -132,7 +132,7 @@ export default function VideoOnlyMemorial() {
             }
 
             const payload = {
-                landingModeId: landingModeId,
+                landingModeId: (landingModeId).toString(),
                 templateId: templateId,
                 personName: data.personName,
                 personGender: data.personGender,

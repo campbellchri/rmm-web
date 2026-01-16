@@ -52,7 +52,7 @@ export default function EventMode() {
             try {
                 const templatesRes: any = await apiGetMemorialTemplateList()
                 const eventTemplate = templatesRes.find((t: any) => t.landingMode?.landingModeType === 'event-mode')
-                
+
                 if (eventTemplate) {
                     setTemplateId(eventTemplate.id)
                     // Use the landingModeId directly from the template object
@@ -80,7 +80,7 @@ export default function EventMode() {
             }
 
             const payload = {
-                landingModeId: landingModeId,
+                landingModeId: (landingModeId).toString(),
                 templateId: templateId,
                 personName: data.personName,
                 personGender: data.personGender,
