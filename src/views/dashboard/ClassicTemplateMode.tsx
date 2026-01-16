@@ -256,9 +256,23 @@ export default function ClassicTemplateMode() {
 
             if (isEditMode && memorialId && existingMemorialData) {
                 // Update Logic
+                // Exclude properties that should not be in the payload
+                const {
+                    id,
+                    creatorId,
+                    landingMode,
+                    favoriteSayings,
+                    qrCode,
+                    favSayings,
+                    ...restExistingData
+                } = existingMemorialData
+
+                // Also exclude favoriteSayings from the new payload for edit mode
+                const { favoriteSayings: _, ...payloadForUpdate } = payload
+
                 const updatePayload = {
-                    ...existingMemorialData,
-                    ...payload,
+                    ...restExistingData,
+                    ...payloadForUpdate,
                     userMedia: [
                         ...(existingMemorialData.userMedia || []),
                         ...payload.userMedia,

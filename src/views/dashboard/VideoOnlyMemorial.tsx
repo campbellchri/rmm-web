@@ -129,10 +129,10 @@ export default function VideoMemorial() {
                 {/* Hero Section with Profile and Testimonial */}
                 <div
                     className="relative w-full bg-cover bg-center"
-                    // style={{
-                    //     backgroundImage:
-                    //         "url('https://api.builder.io/api/v1/image/assets/TEMP/2f525d80d45fde76e6bf817c53bf3e2a59dc45ea?width=2880')",
-                    // }}
+                // style={{
+                //     backgroundImage:
+                //         "url('https://api.builder.io/api/v1/image/assets/TEMP/2f525d80d45fde76e6bf817c53bf3e2a59dc45ea?width=2880')",
+                // }}
                 >
                     {/* Overlay */}
                     <div className="absolute inset-0"></div>
@@ -237,10 +237,10 @@ export default function VideoMemorial() {
 
                             {/* Section Title */}
                             <div className="text-center mt-8 space-y-2">
-                                <p className="DMSerif md:text-[40px] text-2xl leading-tight text-[#2E2117]">
+                                <p className="DMSerif md:text-[40px] text-2xl text-white leading-tight text-[#2E2117]">
                                     Tribute Gallery
                                 </p>
-                                <p className="monteCarlo text-xl text-[#2E2117]">
+                                <p className="monteCarlo text-xl text-white">
                                     Honoring the cherished memories and
                                     celebrating a remarkable life
                                 </p>
@@ -293,10 +293,10 @@ export default function VideoMemorial() {
 
                                     {/* Title and Subtitle */}
                                     <div className="text-center space-y-1">
-                                        <p className="DMSerif md:text-2xl text-xl text-[#2E2117]">
+                                        <p className="DMSerif md:text-2xl text-xl text-[#fff]">
                                             {item.title}
                                         </p>
-                                        <p className="monteCarlo text-base text-[#2E2117]">
+                                        <p className="monteCarlo text-base text-[#fff]">
                                             {item.subtitle}
                                         </p>
                                     </div>
