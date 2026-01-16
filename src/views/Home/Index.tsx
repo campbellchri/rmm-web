@@ -9,6 +9,7 @@ import HomeNavbar from './HomeNavbar'
 const LogoLink = '/img/others/Link.png'
 import 'aos/dist/aos.css'
 import FAQSection from '../AboutUs/FAQSection'
+import FAQ from './FAQ'
 
 const Index = () => {
 
@@ -64,6 +65,7 @@ const Index = () => {
                 <div id="faq" className='flex-grow container-custom px-4 mx-auto lg:py-0 py-10'>
                     <FAQSection />
                 </div>
+                <FAQ />
                 <Footer />
             </div>
         </div>

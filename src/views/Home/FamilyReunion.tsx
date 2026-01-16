@@ -45,7 +45,7 @@ export default function FamilyReunions() {
     };
 
     return (
-        <section className="pt-14 lg:pt-15 md:my-[200px] relative overflow-hidden" >
+        <section className="md:my-[200px] relative overflow-hidden" >
             <div className="container mx-auto px-4">
                 <div className="text-center mb-12">
                     <p className="font-lato font-normal text-[21.17px] leading-[33.87px] tracking-[1.06px] text-center uppercase text-[#D4AF37]">Client Stories</p>
@@ -59,8 +59,8 @@ export default function FamilyReunions() {
 
                 <div className="max-w-4xl mx-auto">
                     <div className="relative bg-[#1e1e2e] rounded-2xl p-8 md:p-12 lg:p-16">
-                    <img src={leftQuote} alt="left quote" className="absolute top-10 left-7" />
-                    <img src={rightQuote} alt="right quote" className="absolute bottom-20 right-20" />
+                        <img src={leftQuote} alt="left quote" className="absolute top-10 left-7" />
+                        <img src={rightQuote} alt="right quote" className="absolute bottom-20 right-20" />
                         <div className="relative z-10">
                             <p className="text-lg md:text-xl lg:text-2xl text-white leading-relaxed mb-8 italic font-lato">
                                 {testimonials[currentIndex].quote}
@@ -84,39 +84,39 @@ export default function FamilyReunions() {
                         </div>
 
                     </div>
-                        {/* Navigation */}
-                        <div className="flex items-center justify-center gap-4 mt-10 pt-8">
-                            <button
-                                onClick={prevTestimonial}
-                                className="w-10 h-10 rounded-full bg-[#0A2E5C] flex items-center justify-center hover:bg-[#2a2a3e] transition-colors"
-                                aria-label="Previous testimonial"
-                            >
-                                <ChevronLeft className="w-5 h-5 text-white" />
-                            </button>
+                    {/* Navigation */}
+                    <div className="flex items-center justify-center gap-4 mt-10 pt-8">
+                        <button
+                            onClick={prevTestimonial}
+                            className="w-10 h-10 rounded-full bg-[#0A2E5C] flex items-center justify-center hover:bg-[#2a2a3e] transition-colors"
+                            aria-label="Previous testimonial"
+                        >
+                            <ChevronLeft className="w-5 h-5 text-white" />
+                        </button>
 
-                            {/* Dots */}
-                            <div className="flex gap-2">
-                                {testimonials.map((_, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => setCurrentIndex(index)}
-                                        className={`rounded-full transition-all ${index === currentIndex
-                                                ? "bg-[#D4AF37] w-6 h-2"
-                                                : "bg-white w-2 h-2 hover:bg-white/50"
-                                            }`}
-                                        aria-label={`Go to testimonial ${index + 1}`}
-                                    />
-                                ))}
-                            </div>
-
-                            <button
-                                onClick={nextTestimonial}
-                                className="bg-[#0A2E5C] w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#2a2a3e] transition-colors"
-                                aria-label="Next testimonial"
-                            >
-                                <ChevronRight className="w-5 h-5 text-white" />
-                            </button>
+                        {/* Dots */}
+                        <div className="flex gap-2">
+                            {testimonials.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setCurrentIndex(index)}
+                                    className={`rounded-full transition-all ${index === currentIndex
+                                        ? "bg-[#D4AF37] w-6 h-2"
+                                        : "bg-white w-2 h-2 hover:bg-white/50"
+                                        }`}
+                                    aria-label={`Go to testimonial ${index + 1}`}
+                                />
+                            ))}
                         </div>
+
+                        <button
+                            onClick={nextTestimonial}
+                            className="bg-[#0A2E5C] w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#2a2a3e] transition-colors"
+                            aria-label="Next testimonial"
+                        >
+                            <ChevronRight className="w-5 h-5 text-white" />
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>

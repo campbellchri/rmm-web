@@ -3,7 +3,8 @@ import { ChevronDown, Calendar, ArrowLeft } from 'lucide-react'
 import Upload from '@/components/ui/Upload'
 import DatePicker from '@/components/ui/DatePicker/DatePicker'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Input, Select, toast, Notification } from '@/components/ui'
+import { CommonInput, CommonSelect, CommonDatePicker } from '@/components/shared'
+import { toast, Notification } from '@/components/ui'
 import { useForm, Controller } from 'react-hook-form'
 import {
     apiCreateMemorial,
@@ -178,7 +179,7 @@ export default function ClassicTemplateMode() {
         fetchData()
     }, [isEditMode, memorialId, reset])
 
-    const durationOptions = [
+    const genderOptions = [
         { value: Gender.MALE, label: 'Male' },
         { value: Gender.FEMALE, label: 'Female' },
         { value: Gender.PREFER_NOT_TO_SAY, label: 'Prefer not to say' },
@@ -188,7 +189,7 @@ export default function ClassicTemplateMode() {
         try {
             const payload: any = {
                 favSaying: data.favoriteSaying,
-                landingModeId: landingModeId,
+                landingModeId: (landingModeId).toString(),
                 templateId: templateId,
                 personName: data.personName,
                 personGender: data.personGender,
@@ -398,95 +399,49 @@ export default function ClassicTemplateMode() {
                         <div className="w-full bg-[#2f3349] rounded-lg p-6 shadow">
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Controller
+                                    <CommonInput
                                         name="personName"
                                         control={control}
-                                        render={({ field }) => (
-                                            <Input
-                                                {...field}
-                                                placeholder="Full Name"
-                                                className="text-white bg-[#383C56] border-none"
-                                            />
-                                        )}
+                                        value="Full Name"
                                     />
-                                    <Controller
+                                    <CommonSelect
                                         name="personGender"
                                         control={control}
-                                        render={({ field }) => (
-                                            <Select
-                                                options={durationOptions}
-                                                placeholder="Gender"
-                                                className="w-full font-poppins border-none"
-                                                value={durationOptions.find(
-                                                    (opt) =>
-                                                        opt.value ===
-                                                        field.value,
-                                                )}
-                                                onChange={(option: any) =>
-                                                    field.onChange(
-                                                        option.value,
-                                                    )
-                                                }
-                                                styles={{
-                                                    singleValue: (
-                                                        base: any,
-                                                    ) => ({
-                                                        ...base,
-                                                        color: '#ffffff',
-                                                        border: 'none',
-                                                    }),
-                                                }}
-                                            />
-                                        )}
+                                        options={genderOptions}
+                                        placeholder="Gender"
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Controller
+                                    <CommonDatePicker
                                         name="personBirthDate"
                                         control={control}
-                                        render={({ field }) => (
-                                            <DatePicker
-                                                placeholder="Date of Birth"
-                                                type="date"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                className="text-white bg-[#383C56] border-none"
-                                            />
-                                        )}
+                                        value="Date of Birth"
+                                        type="date"
+                                        inputSuffix={
+                                            <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
+                                        }
                                     />
-                                    <Controller
+                                    <CommonDatePicker
                                         name="personDeathDate"
                                         control={control}
-                                        render={({ field }) => (
-                                            <DatePicker
-                                                placeholder="Date of Death"
-                                                type="date"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                className="text-white bg-[#383C56] border-none"
-                                            />
-                                        )}
+                                        value="Date of Death"
+                                        type="date"
+                                        inputSuffix={
+                                            <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
+                                        }
                                     />
                                 </div>
                             </div>
                             <div className="mt-6">
-                                <label className="block text-base font-medium  text-[#ffffff] font-poppins mb-2">
-                                    Write a Quote (Optional)
-                                </label>
-                                <Controller
+                                <CommonInput
                                     name="favQuote"
                                     control={control}
-                                    render={({ field }) => (
-                                        <Input
-                                            {...field}
-                                            placeholder="Type here..."
-                                            maxLength={150}
-                                            rows={3}
-                                            textArea
-                                            className="text-white bg-[#383C56] border-none"
-                                        />
-                                    )}
+                                    label="Write a Quote (Optional)"
+                                    placeholder="Type here..."
+                                    maxLength={150}
+                                    rows={3}
+                                    textArea
                                 />
                             </div>
                         </div>
@@ -523,20 +478,11 @@ export default function ClassicTemplateMode() {
                             onChange={setVideo}
                         />
                         <div className="mt-4">
-                            <label className="block text-sm text-white font-poppins mb-2">
-                                Video Title
-                            </label>
-                            <Controller
+                            <CommonInput
                                 name="videoTitle"
                                 control={control}
-                                render={({ field }) => (
-                                    <Input
-                                        {...field}
-                                        type="text"
-                                        placeholder="Enter Video Title"
-                                        className="w-full text-white font-poppins bg-[#383c56] border-none"
-                                    />
-                                )}
+                                label="Video Title"
+                                placeholder="Enter Video Title"
                             />
                         </div>
                     </FormSection>
@@ -567,37 +513,19 @@ export default function ClassicTemplateMode() {
                         className="mb-8"
                     >
                         <div className="mb-4">
-                            <label className="block text-sm text-white font-poppins mb-2">
-                                Favorite Sayings (Optional)
-                            </label>
-                            <Controller
+                            <CommonInput
                                 name="favoriteSaying"
                                 control={control}
-                                render={({ field }) => (
-                                    <Input
-                                        {...field}
-                                        type="text"
-                                        placeholder="Enter sayings here..."
-                                        className="w-full text-white font-poppins bg-[#383c56] border-none"
-                                    />
-                                )}
+                                label="Favorite Sayings (Optional)"
+                                placeholder="Enter sayings here..."
                             />
                         </div>
                         <div>
-                            <label className="block text-sm text-white font-poppins mb-2">
-                                Quote By (Optional)
-                            </label>
-                            <Controller
+                            <CommonInput
                                 name="quoteBy"
                                 control={control}
-                                render={({ field }) => (
-                                    <Input
-                                        {...field}
-                                        type="text"
-                                        placeholder="Enter Name"
-                                        className="w-full text-white font-poppins bg-[#383c56] border-none"
-                                    />
-                                )}
+                                label="Quote By (Optional)"
+                                placeholder="Enter Name"
                             />
                         </div>
                     </FormSection>
@@ -618,22 +546,14 @@ export default function ClassicTemplateMode() {
                                 onChange={setLifeStory}
                             />
                             <div>
-                                <label className="block md:text-[18px] text-base text-[#ffffff] font-medium  font-poppins mb-2">
-                                    Life Story
-                                </label>
-                                <Controller
+                                <CommonInput
                                     name="lifeStoryText"
                                     control={control}
-                                    render={({ field }) => (
-                                        <Input
-                                            {...field}
-                                            textArea
-                                            placeholder="Type here..."
-                                            maxLength={500}
-                                            rows={8}
-                                            className="text-white bg-[#383c56] border-none"
-                                        />
-                                    )}
+                                    label="Life Story"
+                                    textArea
+                                    placeholder="Type here..."
+                                    maxLength={500}
+                                    rows={8}
                                 />
                             </div>
                         </div>

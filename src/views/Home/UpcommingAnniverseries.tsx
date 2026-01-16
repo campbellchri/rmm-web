@@ -1,8 +1,57 @@
 import { useEffect, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import familyHands from '/img/others/familyHands.png'
+import plantingMemory from '/img/others/plantingMemory.png'
 import { apiGetSubscriptionPackages } from '@/services/SubscriptionService'
 import type { SubscriptionPackage } from '@/@types/subscription'
+
+const dummyPackages: SubscriptionPackage[] = [
+    {
+        id: 'dummy-1',
+        packageName: 'Basic Package',
+        price: 9.99,
+        priceUnit: 'Month',
+        storageAmount: 5,
+        storageUnit: 'GB',
+        iconURL: familyHands,
+        features: ['Ideal for individual tributes and small family memories.'],
+        iconId: 'icon-1',
+        isActive: true,
+        sortOrder: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'dummy-2',
+        packageName: 'Standard Package',
+        price: 19.99,
+        priceUnit: 'Month',
+        storageAmount: 20,
+        storageUnit: 'GB',
+        iconURL: plantingMemory,
+        features: ['Perfect for honoring a lifetime of memories with more storage.'],
+        iconId: 'icon-2',
+        isActive: true,
+        sortOrder: 2,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'dummy-3',
+        packageName: 'Premium Package',
+        price: 29.99,
+        priceUnit: 'Month',
+        storageAmount: 100,
+        storageUnit: 'GB',
+        iconURL: familyHands,
+        features: ['Comprehensive package for large collections and high-quality videos.'],
+        iconId: 'icon-3',
+        isActive: true,
+        sortOrder: 3,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+]
 
 const UpcommingAnniverseries = () => {
     const [packages, setPackages] = useState<SubscriptionPackage[]>([])
@@ -12,12 +61,14 @@ const UpcommingAnniverseries = () => {
         const fetchPackages = async () => {
             try {
                 const data = await apiGetSubscriptionPackages()
-                if (data) {
+                if (data && data.length > 0) {
                     setPackages(data)
-                    console.log(data)
+                } else {
+                    setPackages(dummyPackages)
                 }
             } catch (error) {
                 console.error('Failed to fetch subscription packages:', error)
+                setPackages(dummyPackages)
             } finally {
                 setLoading(false)
             }
