@@ -68,6 +68,10 @@ export default function PhoneInput({
                     value={selectedCountry}
                     onChange={(opt) => setSelectedCountry(opt)}
                     className={className}
+                    classNames={{
+                        singleValue: () =>
+                            'select-single-value font-normal text-sm text-white',
+                    }}
                 />
             </div>
 

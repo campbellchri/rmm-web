@@ -43,12 +43,16 @@ export default function CountrySelect({
             onChange={onChange}
             placeholder={placeholder}
             className="w-full"
-            // classNames={{
-            //     control: () =>
-            //         'h-12 rounded-xl border border-gray-300 shadow-sm hover:border-gray-400',
-            //     placeholder: () => 'text-gray-400 font-poppins text-sm',
-            //     singleValue: () => 'font-poppins text-sm',
-            // }}
+            classNames={{
+                singleValue: () =>
+                    'select-single-value font-normal text-sm text-white',
+            }}
+        // classNames={{
+        //     control: () =>
+        //         'h-12 rounded-xl border border-gray-300 shadow-sm hover:border-gray-400',
+        //     placeholder: () => 'text-gray-400 font-poppins text-sm',
+        //     singleValue: () => 'font-poppins text-sm',
+        // }}
         />
     )
 }
