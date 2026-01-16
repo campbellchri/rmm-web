@@ -117,7 +117,7 @@ const Dashboard = () => {
                                 {/* Dropdown */}
                                 <div className="relative">
                                     <Select<Option>
-                                        className="w-full cursor-pointer"
+                                        className="w-full cursor-pointer border-none"
                                         options={[
                                             {
                                                 value: 'standard',
@@ -160,7 +160,7 @@ const Dashboard = () => {
                                                 value={selectedDate}
                                                 onChange={setSelectedDate}
                                                 placeholder="Select Date"
-                                                className="text-white bg-[#383C56]"
+                                                className="text-white bg-[#383C56] border border-[#383C56]"
                                             />
                                         </div>
 
@@ -172,7 +172,7 @@ const Dashboard = () => {
                                                 onChange={(newValue) =>
                                                     setSelectedTime(newValue)
                                                 }
-                                                className="w-full cursor-pointer"
+                                                className="w-full cursor-pointer border-none"
                                                 placeholder="Select Time"
                                                 styles={
                                                     {
@@ -275,7 +275,7 @@ const Dashboard = () => {
                                             {/* Image */}
                                             <div className="rounded-lg overflow-hidden">
                                                 <img
-                                                    src={AllMemories1} 
+                                                    src={AllMemories1}
                                                     alt={memorial.personName}
                                                     className="w-full h-65 object-cover  transition-transform duration-300 group-hover:scale-105"
                                                 />

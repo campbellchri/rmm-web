@@ -330,7 +330,7 @@ export default function VideoMemorial() {
                 </div>
 
                 {/* Footer */}
-                <section className="bg-[#2F3349] border border-[#F3F4F6] rounded-lg p-6 shadow-sm">
+                <section className="bg-[#2F3349] rounded-lg p-6 shadow-sm">
                     <p className="font-poppins text-lg text-[#ffffff] mb-4">
                         Share Memorial Page
                     </p>
