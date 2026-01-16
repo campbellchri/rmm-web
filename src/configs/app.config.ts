@@ -9,7 +9,7 @@ export type AppConfig = {
 }
 
 const appConfig: AppConfig = {
-    apiPrefix: import.meta.env.VITE_API_URL || 'https://rmm-api-staging-4hfzz6ofuq-uc.a.run.app/api',
+    apiPrefix: import.meta.env.VITE_API_URL && `${import.meta.env.VITE_API_URL.replace(/\/*$/, '')}/api`,
     authenticatedEntryPath: '/dashboard',
     unAuthenticatedEntryPath: '/sign-in',
     locale: 'en',

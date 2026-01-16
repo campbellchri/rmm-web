@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
+import { Link, NavLink } from 'react-router-dom'
 
 const HomeNavbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -10,7 +11,7 @@ const HomeNavbar = () => {
     //     { label: 'FAQ', scrollId: 'faq' },
     // ]
     const leftNavItems = [
-        { label: 'HOME', href: '/', type: 'navigate' as const }, // 👈 Navigate to homepage
+        { label: 'HOME', href: '/', type: 'navigate' as const },
         { label: 'HOW IT WORKS', scrollId: 'how-it-works', type: 'scroll' as const },
         { label: 'FAQ', scrollId: 'faq', type: 'scroll' as const },
     ]
@@ -43,18 +44,31 @@ const HomeNavbar = () => {
                     <nav className="hidden lg:flex">
                         <ul className="flex">
                             {leftNavItems.map((item) => (
-                                <li key={item.label}>
+                                <li key={item.label} className="relative group">
                                     {item.type === 'navigate' ? (
-                                        <a
-                                            href={item.href}
-                                            className="flex items-center px-4 py-9 text-[#ffffff] font-poppins font-[500] text-[15px] uppercase tracking-wide hover:text-[#C7A30D] transition-colors"
+                                        <NavLink
+                                            to={item.href}
+                                            className={({ isActive }) =>
+                                                `flex flex-col items-center px-4 py-9 font-fraunces font-[500] text-[22px] uppercase tracking-wide transition-colors ${isActive
+                                                    ? 'text-[#F9C94F]'
+                                                    : 'text-[#ffffff] hover:text-[#F9C94F]'
+                                                }`
+                                            }
                                         >
-                                            {item.label}
-                                        </a>
+                                            {({ isActive }) => (
+                                                <div className="relative">
+                                                    {item.label}
+                                                    <span
+                                                        className={`absolute -bottom-2 left-0 w-full h-[2px] bg-[#FFB84C] transition-transform duration-300 ${isActive ? 'scale-x-100' : 'scale-x-0'
+                                                            }`}
+                                                    />
+                                                </div>
+                                            )}
+                                        </NavLink>
                                     ) : (
                                         <button
                                             onClick={() => scrollToSection(item.scrollId!)}
-                                            className="flex items-center px-4 py-9 text-[#ffffff] font-poppins font-[500] text-[15px] uppercase tracking-wide hover:text-[#C7A30D] transition-colors cursor-pointer bg-transparent border-none"
+                                            className="flex items-center px-4 py-9 text-[#ffffff] font-fraunces font-[500] text-[22px] uppercase tracking-wide hover:text-[#C7A30D] transition-colors cursor-pointer bg-transparent border-none"
                                             aria-label={`Scroll to ${item.label}`}
                                         >
                                             {item.label}
@@ -84,12 +98,25 @@ const HomeNavbar = () => {
                         <ul className="flex items-center">
                             {rightNavItems.map((item) => (
                                 <li key={item.label}>
-                                    <a
-                                        href={item.href}
-                                        className="flex items-center px-4 py-9 text-[#ffffff] font-poppins font-[500] text-[15px] uppercase tracking-wide hover:text-[#C7A30D] transition-colors"
+                                    <NavLink
+                                        to={item.href}
+                                        className={({ isActive }) =>
+                                            `flex flex-col items-center px-4 py-9 font-fraunces font-[500] text-[22px] uppercase tracking-wide transition-colors ${isActive
+                                                ? 'text-[#F9C94F]'
+                                                : 'text-[#ffffff] hover:text-[#F9C94F]'
+                                            }`
+                                        }
                                     >
-                                        {item.label}
-                                    </a>
+                                        {({ isActive }) => (
+                                            <div className="relative">
+                                                {item.label}
+                                                <span
+                                                    className={`absolute -bottom-2 left-0 w-full h-[2px] bg-[#FFB84C] transition-transform duration-300 ${isActive ? 'scale-x-100' : 'scale-x-0'
+                                                        }`}
+                                                />
+                                            </div>
+                                        )}
+                                    </NavLink>
                                 </li>
                             ))}
                             <li>
@@ -130,13 +157,18 @@ const HomeNavbar = () => {
                                 {leftNavItems.map((item) => (
                                     <div key={item.label}>
                                         {item.type === 'navigate' ? (
-                                            <a
-                                                href={item.href}
-                                                className="block w-full text-left px-4 py-3 text-black font-poppins font-bold text-[15px] uppercase tracking-wide hover:text-[#C7A30D] hover:bg-gray-50 transition-colors"
+                                            <NavLink
+                                                to={item.href}
+                                                className={({ isActive }) =>
+                                                    `block w-full text-left px-4 py-3 font-poppins font-bold text-[15px] uppercase tracking-wide transition-colors ${isActive
+                                                        ? 'text-[#C7A30D] bg-gray-50'
+                                                        : 'text-black hover:text-[#C7A30D] hover:bg-gray-50'
+                                                    }`
+                                                }
                                                 onClick={() => setIsMenuOpen(false)}
                                             >
                                                 {item.label}
-                                            </a>
+                                            </NavLink>
                                         ) : (
                                             <button
                                                 onClick={() => {
@@ -157,14 +189,19 @@ const HomeNavbar = () => {
 
                                 {/* Right nav items */}
                                 {rightNavItems.map((item) => (
-                                    <a
+                                    <NavLink
                                         key={item.label}
-                                        href={item.href}
-                                        className="block px-4 py-3 text-black font-poppins font-bold text-[15px] uppercase tracking-wide hover:text-[#C7A30D] hover:bg-gray-50 transition-colors"
+                                        to={item.href}
+                                        className={({ isActive }) =>
+                                            `block px-4 py-3 font-poppins font-bold text-[15px] uppercase tracking-wide transition-colors ${isActive
+                                                ? 'text-[#C7A30D] bg-gray-50'
+                                                : 'text-black hover:text-[#C7A30D] hover:bg-gray-50'
+                                            }`
+                                        }
                                         onClick={() => setIsMenuOpen(false)}
                                     >
                                         {item.label}
-                                    </a>
+                                    </NavLink>
                                 ))}
 
                                 {/* Login as button in mobile */}

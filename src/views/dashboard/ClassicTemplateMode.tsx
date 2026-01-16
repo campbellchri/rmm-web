@@ -181,7 +181,6 @@ export default function ClassicTemplateMode() {
     const durationOptions = [
         { value: Gender.MALE, label: 'Male' },
         { value: Gender.FEMALE, label: 'Female' },
-        { value: Gender.OTHER, label: 'Other' },
         { value: Gender.PREFER_NOT_TO_SAY, label: 'Prefer not to say' },
     ]
 
@@ -535,7 +534,7 @@ export default function ClassicTemplateMode() {
                                         {...field}
                                         type="text"
                                         placeholder="Enter Video Title"
-                                        className="w-full  font-poppins bg-[#383c56] border-none"
+                                        className="w-full text-white font-poppins bg-[#383c56] border-none"
                                     />
                                 )}
                             />
@@ -579,7 +578,7 @@ export default function ClassicTemplateMode() {
                                         {...field}
                                         type="text"
                                         placeholder="Enter sayings here..."
-                                        className="w-full font-poppins bg-[#383c56] border-none"
+                                        className="w-full text-white font-poppins bg-[#383c56] border-none"
                                     />
                                 )}
                             />
@@ -596,7 +595,7 @@ export default function ClassicTemplateMode() {
                                         {...field}
                                         type="text"
                                         placeholder="Enter Name"
-                                        className="w-full font-poppins bg-[#383c56] border-none"
+                                        className="w-full text-white font-poppins bg-[#383c56] border-none"
                                     />
                                 )}
                             />
