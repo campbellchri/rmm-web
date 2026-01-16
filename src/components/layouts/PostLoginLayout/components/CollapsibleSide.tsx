@@ -3,19 +3,35 @@ import SideNav from '@/components/template/SideNav'
 import Header from '@/components/template/Header'
 import SideNavToggle from '@/components/template/SideNavToggle'
 import MobileNav from '@/components/template/MobileNav'
-import UserProfileDropdown from '@/components/template/UserProfileDropdown'
 import Notification from '@/components/template/Notification'
 import LayoutBase from '@/components/template/LayoutBase'
 import useResponsive from '@/utils/hooks/useResponsive'
+import Avatar from '@/components/ui/Avatar'
+import { useSessionUser } from '@/store/authStore'
+import { PiUserDuotone } from 'react-icons/pi'
 import { LAYOUT_COLLAPSIBLE_SIDE } from '@/constants/theme.constant'
 import type { CommonProps } from '@/@types/common'
 
 const CollapsibleSide = ({ children }: CommonProps) => {
     const { larger, smaller } = useResponsive()
     const location = useLocation()
+    const { avatar, userName } = useSessionUser((state) => state.user)
+
+    const avatarProps = {
+        ...(avatar ? { src: avatar } : {}),
+    }
+
+    const getInitials = (name: string) => {
+        if (!name) return ''
+        const parts = name.split(' ')
+        if (parts.length > 1) {
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        }
+        return parts[0][0].toUpperCase()
+    }
+
     const [searchParams] = useSearchParams()
 
-    // static routes where sidenav should always be hidden
     const hiddenSideNavRoutes = [
         '/dashboard/memorial',
         '/dashboard/event-memorial',
@@ -23,12 +39,8 @@ const CollapsibleSide = ({ children }: CommonProps) => {
         '/dashboard/edit-memorial',
     ]
 
-    // read query param
     const selectedTemplate = searchParams.get('selected-template')
 
-    // hide if:
-    // 1. route is in static hidden list
-    // 2. OR route is /dashboard/select-template with a query param
     const shouldHideSideNav =
         hiddenSideNavRoutes.includes(location.pathname) ||
         (location.pathname === '/dashboard/select-template' &&
@@ -54,7 +66,16 @@ const CollapsibleSide = ({ children }: CommonProps) => {
                         headerEnd={
                             <div className="flex items-center gap-2">
                                 <Notification />
-                                <UserProfileDropdown hoverable={false} />
+                                <div className="flex items-center gap-2 mr-2">
+                                    <Avatar size={32} {...avatarProps}>
+                                        {userName ? getInitials(userName) : ''}
+                                    </Avatar>
+                                    <div className="hidden md:block">
+                                        <div className="font-semibold text-white">
+                                            <span>{userName}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         }
                     />

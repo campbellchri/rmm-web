@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import Input from '@/components/ui/Input'
+import { CommonInput } from '@/components/shared'
 import Button from '@/components/ui/Button'
-import { FormItem, Form } from '@/components/ui/Form'
-import PasswordInput from '@/components/shared/PasswordInput'
+import { Form } from '@/components/ui/Form'
 import classNames from '@/utils/classNames'
 import { useAuth } from '@/auth'
 import { useForm, Controller } from 'react-hook-form'
@@ -71,49 +70,27 @@ const SignInForm = (props: SignInFormProps) => {
     return (
         <div className={className}>
             <Form onSubmit={handleSubmit(onSignIn)}>
-                <FormItem
+                <CommonInput
+                    name="email"
+                    control={control}
                     label="Email"
+                    placeholder="Example@gmail.com"
                     invalid={Boolean(errors.email)}
                     errorMessage={errors.email?.message}
-                >
-                    <Controller
-                        name="email"
-                        control={control}
-                        render={({ field }) => (
-                            <Input
-                                type="email"
-                                placeholder="Example@gmail.com"
-                                autoComplete="off"
-                                className="!bg-[#383C56] !text-white"
-                                {...field}
-                            />
-                        )}
-                    />
-                </FormItem>
-                <FormItem
+                />
+                <CommonInput
+                    name="password"
+                    control={control}
                     label="Password"
+                    type="password"
+                    placeholder="At least 8 characters"
                     invalid={Boolean(errors.password)}
                     errorMessage={errors.password?.message}
-                    className={classNames(
+                    containerClassName={classNames(
                         passwordHint ? 'mb-0' : '',
                         errors.password?.message ? 'mb-8' : '',
                     )}
-                >
-                    <Controller
-                        name="password"
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field }) => (
-                            <PasswordInput
-                                type="text"
-                                placeholder="At least 8 characters"
-                                autoComplete="off"
-                                className="!bg-[#383C56] !text-white"
-                                {...field}
-                            />
-                        )}
-                    />
-                </FormItem>
+                />
                 {passwordHint}
                 <Button
                     block

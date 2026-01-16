@@ -90,7 +90,7 @@ const FAQ = () => {
     ]
 
     return (
-        <div className="md:my-[200px]">
+        <div id="faq" className="md:my-[200px]">
             <div className="container mx-auto px-4">
                 <div className="text-center mb-12 flex flex-col items-center gap-4">
                     <p className="font-lato font-normal text-[18px] leading-[33.87px] tracking-[1.06px] text-center uppercase text-[#D4AF37]">

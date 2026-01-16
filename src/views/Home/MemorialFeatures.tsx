@@ -1,6 +1,8 @@
 import { ChevronRight, ImagePlus, Share2, Sparkles } from 'lucide-react'
-import JohnMichalImage from '../../../public/img/others/FRAME (17).png'
-import johnMichalImageDesktop from '../../../public/img//others/FRAME (18).png'
+// import JohnMichalImage from '../../../public/img/others/FRAME (17).png'
+// import johnMichalImageDesktop from '../../../public/img//others/FRAME (18).png'
+const JohnMichalImage = '/img/others/FRAME (17).png'
+const johnMichalImageDesktop = '/img/others/FRAME (18).png'
 import AddMemoriesImage from '../../assets/svg/Add Memories.svg'
 import ShareImage from '../../assets/svg/share.svg'
 import CelebrateImage from '../../assets/svg/Celebrate.svg'
@@ -27,7 +29,7 @@ const MemorialFeatures = () => {
     ];
 
     return (
-        <div className="md:mt-32 py-10">
+        <div id="how-it-works" className="md:mt-32 py-10">
             <div className="max-w-7xl mx-auto mt-8 mb-8">
                 <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
                     <div className="container mx-auto px-4 relative z-10">
