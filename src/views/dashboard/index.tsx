@@ -148,7 +148,7 @@ const Dashboard = () => {
                                 </div>
 
                                 {/* Event Date & Time Section */}
-                                <div className="pt-4 border-t border-[#F3F4F6] space-y-4">
+                                <div className="pt-4 border-t border-[#44475b] space-y-4">
                                     <p className="text-sm font-poppins text-[#ffffff]">
                                         Event Date & Time
                                     </p>
