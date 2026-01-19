@@ -8,11 +8,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import type { ZodType } from 'zod'
 import type { CommonProps } from '@/@types/common'
+import { CommonInput } from '@/components/shared'
 
 interface ForgotPasswordFormProps extends CommonProps {
     emailSent: boolean
     setEmailSent?: (compplete: boolean) => void
     setMessage?: (message: string) => void
+    onEmailSent?: (email: string) => void
 }
 
 type ForgotPasswordFormSchema = {
@@ -44,6 +46,7 @@ const ForgotPasswordForm = (props: ForgotPasswordFormProps) => {
             if (resp) {
                 setSubmitting(false)
                 setEmailSent?.(true)
+                props.onEmailSent?.(email)
             }
         } catch (errors) {
             setMessage?.(
@@ -59,7 +62,7 @@ const ForgotPasswordForm = (props: ForgotPasswordFormProps) => {
         <div className={className}>
             {!emailSent ? (
                 <Form onSubmit={handleSubmit(onForgotPassword)}>
-                    <FormItem
+                    {/* <FormItem
                         label="Email"
                         invalid={Boolean(errors.email)}
                         errorMessage={errors.email?.message}
@@ -76,14 +79,40 @@ const ForgotPasswordForm = (props: ForgotPasswordFormProps) => {
                                 />
                             )}
                         />
+                    </FormItem> */}
+                    <FormItem
+                        label="Email"
+                        invalid={Boolean(errors.email)}
+                        errorMessage={errors.email?.message}
+                    >
+                        <CommonInput
+                            name="email"
+                            control={control}
+                            type="email"
+                            placeholder="Example@email.com"
+                            autoComplete="off"
+                        />
                     </FormItem>
+
                     <Button
                         block
                         loading={isSubmitting}
                         variant="solid"
                         type="submit"
+                        className="
+                            bg-[linear-gradient(96.23deg,#ECA024_5.01%,#F9C94F_50.03%,#EAA32A_95.05%)]
+                            rounded-full
+                            font-poppins
+                            font-medium
+                            text-[20px]
+                            leading-none
+                            tracking-normal       
+                            text-center
+                            align-middle
+                            "
+
                     >
-                        {isSubmitting ? 'Submiting...' : 'Submit'}
+                        {isSubmitting ? 'Submiting...' : 'Send Reset Link'}
                     </Button>
                 </Form>
             ) : (

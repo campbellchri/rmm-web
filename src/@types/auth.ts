@@ -33,7 +33,9 @@ export type ForgotPassword = {
 }
 
 export type ResetPassword = {
-    password: string
+    token: string
+    newPassword: string
+    confirmPassword: string
 }
 
 export type AuthRequestStatus = 'success' | 'failed' | ''

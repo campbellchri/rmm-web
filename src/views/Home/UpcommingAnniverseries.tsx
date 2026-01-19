@@ -60,8 +60,8 @@ const UpcommingAnniverseries = () => {
     useEffect(() => {
         const fetchPackages = async () => {
             try {
-                const data = await apiGetSubscriptionPackages()
-                if (data && data.length > 0) {
+                const data: any = await apiGetSubscriptionPackages()
+                if (data && Array.isArray(data) && data.length > 0) {
                     setPackages(data)
                 } else {
                     setPackages(dummyPackages)

@@ -1,18 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Button from '@/components/ui/Button'
 import { FormItem, Form } from '@/components/ui/Form'
-import PasswordInput from '@/components/shared/PasswordInput'
 import { apiResetPassword } from '@/services/AuthService'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import type { ZodType } from 'zod'
 import type { CommonProps } from '@/@types/common'
+import { CommonInput } from '@/components/shared'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import Alert from '@/components/ui/Alert'
 
 interface ResetPasswordFormProps extends CommonProps {
-    resetComplete: boolean
-    setResetComplete?: (compplete: boolean) => void
-    setMessage?: (message: string) => void
+    signInUrl?: string
 }
 
 type ResetPasswordFormSchema = {
@@ -22,21 +22,21 @@ type ResetPasswordFormSchema = {
 
 const validationSchema: ZodType<ResetPasswordFormSchema> = z
     .object({
-        newPassword: z.string({ required_error: 'Please enter your password' }),
-        confirmPassword: z.string({
-            required_error: 'Confirm Password Required',
-        }),
+        newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+        confirmPassword: z.string().min(8, 'Password must be at least 8 characters'),
     })
     .refine((data) => data.newPassword === data.confirmPassword, {
-        message: 'Your passwords do not match',
+        message: "Passwords don't match",
         path: ['confirmPassword'],
     })
 
 const ResetPasswordForm = (props: ResetPasswordFormProps) => {
     const [isSubmitting, setSubmitting] = useState<boolean>(false)
+    const [message, setMessage] = useState<string | null>(null)
+    const [searchParams] = useSearchParams()
 
-    const { className, setMessage, setResetComplete, resetComplete, children } =
-        props
+    const { className, signInUrl = '/sign-in' } = props
+    const navigate = useNavigate()
 
     const {
         handleSubmit,
@@ -47,78 +47,102 @@ const ResetPasswordForm = (props: ResetPasswordFormProps) => {
     })
 
     const onResetPassword = async (values: ResetPasswordFormSchema) => {
-        const { newPassword } = values
+        const { newPassword, confirmPassword } = values
+
+        const token = searchParams.get('token')
+
+        if (!token) {
+            setMessage('Invalid reset link. Token is missing.')
+            return
+        }
+
+        setSubmitting(true)
+        setMessage(null)
 
         try {
-            const resp = await apiResetPassword<boolean>({
-                password: newPassword,
+            const resp = await apiResetPassword({
+                token,
+                newPassword,
+                confirmPassword
             })
             if (resp) {
                 setSubmitting(false)
-                setResetComplete?.(true)
+                navigate(signInUrl)
             }
         } catch (errors) {
-            setMessage?.(
-                typeof errors === 'string'
-                    ? errors
-                    : 'Failed to reset password',
+            setMessage(
+                typeof errors === 'string' ? errors : 'Some error occured!',
             )
             setSubmitting(false)
         }
-
-        setSubmitting(false)
     }
+
+    useEffect(() => {
+        const token = searchParams.get('token')
+        if (!token) {
+            setMessage('Invalid or missing token in the URL.')
+        }
+    }, [searchParams])
 
     return (
         <div className={className}>
-            {!resetComplete ? (
-                <Form onSubmit={handleSubmit(onResetPassword)}>
-                    <FormItem
-                        label="Password"
-                        invalid={Boolean(errors.newPassword)}
-                        errorMessage={errors.newPassword?.message}
-                    >
-                        <Controller
-                            name="newPassword"
-                            control={control}
-                            render={({ field }) => (
-                                <PasswordInput
-                                    autoComplete="off"
-                                    placeholder="••••••••••••"
-                                    {...field}
-                                />
-                            )}
-                        />
-                    </FormItem>
-                    <FormItem
-                        label="Confirm Password"
-                        invalid={Boolean(errors.confirmPassword)}
-                        errorMessage={errors.confirmPassword?.message}
-                    >
-                        <Controller
-                            name="confirmPassword"
-                            control={control}
-                            render={({ field }) => (
-                                <PasswordInput
-                                    autoComplete="off"
-                                    placeholder="Confirm Password"
-                                    {...field}
-                                />
-                            )}
-                        />
-                    </FormItem>
-                    <Button
-                        block
-                        loading={isSubmitting}
-                        variant="solid"
-                        type="submit"
-                    >
-                        {isSubmitting ? 'Submiting...' : 'Submit'}
-                    </Button>
-                </Form>
-            ) : (
-                <>{children}</>
+            {message && (
+                <Alert showIcon className="mb-4" type="danger">
+                    <span className="break-all">{message}</span>
+                </Alert>
             )}
+            <Form onSubmit={handleSubmit(onResetPassword)}>
+                <FormItem
+                    label="Password"
+                    invalid={Boolean(errors.newPassword)}
+                    errorMessage={errors.newPassword?.message}
+                    labelClass="text-white"
+                >
+                    <CommonInput
+                        name="newPassword"
+                        control={control}
+                        type="password"
+                        placeholder="********"
+                        autoComplete="new-password"
+                    />
+                </FormItem>
+                <FormItem
+                    label="Confirm Password"
+                    invalid={Boolean(errors.confirmPassword)}
+                    errorMessage={errors.confirmPassword?.message}
+                    labelClass="text-white"
+                >
+                    <CommonInput
+                        name="confirmPassword"
+                        control={control}
+                        type="password"
+                        placeholder="********"
+                        autoComplete="new-password"
+                    />
+                </FormItem>
+
+                <Button
+                    block
+                    loading={isSubmitting}
+                    variant="solid"
+                    type="submit"
+                    className="
+                            mt-6
+                            bg-[linear-gradient(96.23deg,#ECA024_5.01%,#F9C94F_50.03%,#EAA32A_95.05%)]
+                            rounded-full
+                            font-poppins
+                            font-medium
+                            text-[20px]
+                            leading-none
+                            tracking-normal       
+                            text-center
+                            align-middle
+                            text-black
+                            "
+                >
+                    {isSubmitting ? 'Saving...' : 'Save'}
+                </Button>
+            </Form>
         </div>
     )
 }

@@ -37,9 +37,11 @@ export const useMemorialStore = create<MemorialState & MemorialAction>()(
                 set({ loading: true })
                 try {
                     const response: any = await apiGetMemorialList()
-                    if (response) {
-                        set({ memorials: response, fetched: true })
-                    }
+                    // Normalize response to an array of memorials
+                    const memorialsArray = Array.isArray(response)
+                        ? response
+                        : response?.memorials ?? response?.data?.memorials ?? []
+                    set({ memorials: memorialsArray, fetched: true })
                 } catch (error) {
                     console.error('Error fetching memorials:', error)
                 } finally {

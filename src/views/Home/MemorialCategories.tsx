@@ -5,9 +5,19 @@ import { Button } from '@/components/ui/Button'
 import Month5 from "../../assets/svg/Month5.svg"
 import Month15 from "../../assets/svg/Month15.svg"
 import Month25 from "../../assets/svg/Month25.svg"
+import { useNavigate } from 'react-router-dom'
+import useAuth from '@/auth/useAuth'
 
 
 const MemorialCategories = () => {
+    const navigate = useNavigate()
+    const { authenticated } = useAuth()
+
+    const handlePlanClick = () => {
+        if (!authenticated) {
+            navigate('/sign-in')
+        }
+    }
 
     const plans = [
         {
@@ -72,7 +82,11 @@ const MemorialCategories = () => {
 
                 <div className="flex flex-wrap justify-center md:justify-between gap-4 md:gap-8 max-w-7xl mx-auto">
                     {plans.map((plan, index) => (
-                        <div key={index} className="relative rounded-2xl p-4 md:p-8 transition-all duration-300 w-full sm:w-[calc(50%-0.5rem)] md:w-[375px] md:h-[375px] bg-[#1E2532] border-2 border-transparent hover:border-[#D4AF37]">
+                        <div
+                            key={index}
+                            className="relative rounded-2xl p-4 md:p-8 transition-all duration-300 w-full sm:w-[calc(50%-0.5rem)] md:w-[375px] md:h-[375px] bg-[#1E2532] border-2 border-transparent hover:border-[#D4AF37] cursor-pointer"
+                            onClick={handlePlanClick}
+                        >
 
 
                             <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">

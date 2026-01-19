@@ -68,7 +68,7 @@ export const SignUpBase = ({
 
             {/* Sign In Link */}
             <div className="mt-6 text-center font-poppins font-[400] text-[16px]">
-                <span className="text-gray-700 dark:text-gray-300">
+                <span className="text-[#ffffff] dark:text-gray-300">
                     Already have an account?{' '}
                 </span>
                 <ActionLink
