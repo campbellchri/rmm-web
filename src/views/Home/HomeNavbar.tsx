@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 
 const HomeNavbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const location = useLocation()
+    const navigate = useNavigate()
 
     //  const leftNavItems = [
     //     { label: 'HOME', scrollId: 'home' },
@@ -24,6 +26,11 @@ const HomeNavbar = () => {
 
     // Scroll helper function
     const scrollToSection = (id: string) => {
+        if (location.pathname !== '/') {
+            navigate(`/?scroll=${id}`)
+            return
+        }
+
         const element = document.getElementById(id)
         if (element) {
             const navbarHeight = 100 // Adjust if your navbar height changes

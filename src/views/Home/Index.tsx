@@ -7,11 +7,32 @@ import UpcommingAnniverseries from './UpcommingAnniverseries'
 // import headerImage from '../../../public//img/others/herosectionimg.png'
 import HomeNavbar from './HomeNavbar'
 const LogoLink = '/img/others/Link.png'
+import { useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import 'aos/dist/aos.css'
 import FAQSection from '../AboutUs/FAQSection'
 import FAQ from './FAQ'
 
 const Index = () => {
+    const [searchParams] = useSearchParams()
+
+    useEffect(() => {
+        const scrollId = searchParams.get('scroll')
+        if (scrollId) {
+            // Small delay to ensure the page has rendered
+            setTimeout(() => {
+                const element = document.getElementById(scrollId)
+                if (element) {
+                    const navbarHeight = 100
+                    const top = element.offsetTop - navbarHeight
+                    window.scrollTo({
+                        top,
+                        behavior: 'smooth',
+                    })
+                }
+            }, 100)
+        }
+    }, [searchParams])
 
     return (
         <div className="overflow-hidden" id="home">

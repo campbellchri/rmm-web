@@ -9,6 +9,8 @@ import { useNavigate } from 'react-router-dom'
 import useAuth from '@/auth/useAuth'
 
 
+import PackageCard from '@/components/shared/PackageCard'
+
 const MemorialCategories = () => {
     const navigate = useNavigate()
     const { authenticated } = useAuth()
@@ -82,42 +84,17 @@ const MemorialCategories = () => {
 
                 <div className="flex flex-wrap justify-center md:justify-between gap-4 md:gap-8 max-w-7xl mx-auto">
                     {plans.map((plan, index) => (
-                        <div
+                        <PackageCard
                             key={index}
-                            className="relative rounded-2xl p-4 md:p-8 transition-all duration-300 w-full sm:w-[calc(50%-0.5rem)] md:w-[375px] md:h-[375px] bg-[#1E2532] border-2 border-transparent hover:border-[#D4AF37] cursor-pointer"
-                            onClick={handlePlanClick}
-                        >
-
-
-                            <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
-                                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center bg-secondary shrink-0">
-                                    {plan.icon && (
-                                        <img src={plan.icon} alt={plan.name} className="h-[40px] md:h-[50px]" />
-                                    )}
-                                </div>
-
-                                <h3 className="font-playfair font-semibold text-[22px] md:text-[28.22px] leading-[28px] md:leading-[36.69px] text-[#D4AF37]">{plan.name}</h3>
-                            </div>
-
-                            <div className="mb-1">
-                                {plan.priceIcon && (
-                                    <img src={plan.priceIcon} alt={`${plan.price} ${plan.period}`} className="h-[30px] md:h-[35px] my-2" />
-                                )}
-                            </div>
-                            <p className="font-lato font-normal text-[14px] md:text-[16px] leading-[24px] md:leading-[33.87px] text-white">{plan.setupFee}</p>
-
-                            <ul className="space-y-2 md:space-y-3 mb-6 md:mb-8">
-                                {plan.features.map((feature, featureIndex) => (
-                                    <li
-                                        key={featureIndex}
-                                        className="font-lato font-normal text-[13px] md:text-[14px] leading-[22px] md:leading-[28px] text-white flex items-start gap-2"
-                                    >
-                                        <div className="w-2 h-2 rounded-full bg-[#D4AF37] shrink-0 mt-2"></div>
-                                        <span className="text-foreground/80">{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                            className="w-full sm:w-[calc(50%-0.5rem)] md:w-[375px] md:h-[400px]"
+                            name={plan.name}
+                            icon={plan.icon}
+                            priceIcon={plan.priceIcon}
+                            storage={plan.setupFee}
+                            features={plan.features}
+                            onButtonClick={handlePlanClick}
+                            hideButton={true}
+                        />
                     ))}
                 </div>
 

@@ -57,6 +57,7 @@ module.exports = {
             playfair: ['Playfair Display', 'serif'],
             jakarta: ['Jakarta', 'sans-serif'],
             PlusJakartaSans: ['Plus Jakarta Sans', 'sans-serif'],
+            Arial: ['Arial', 'sans-serif'],
         },
 
         screens: {
