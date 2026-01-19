@@ -14,6 +14,7 @@ import {
     apiUpdateMemorial,
 } from '@/services/axios/MemorialModeService'
 import dayjs from 'dayjs'
+import { apiUploadMedia } from '@/services/MediaService'
 import {
     MediaCategory,
     MediaType,
@@ -21,6 +22,7 @@ import {
     Gender,
 } from '@/constants/memorial.constant'
 import { useMemorialStore } from '@/store/memorialStore'
+import { useMediaStore } from '@/store/mediaStore'
 
 // Form Section Component
 const FormSection = ({
@@ -97,11 +99,21 @@ const FormTextarea = ({
 
 export default function ClassicTemplateMode() {
     const [profileImage, setProfileImage] = useState<string | null>(null)
-    const [featured, setFeatured] = useState<File[]>([])
-    const [video, setVideo] = useState<File[]>([])
-    const [photos, setPhotos] = useState<File[]>([])
-    const [lifeStory, setLifeStory] = useState<File[]>([])
+    const [profileFile, setProfileFile] = useState<File | null>(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [uploadingProfile, setUploadingProfile] = useState(false)
+    const [uploadingFeatured, setUploadingFeatured] = useState(false)
+    const [uploadingPhotos, setUploadingPhotos] = useState(false)
+    const [uploadingVideos, setUploadingVideos] = useState(false)
+    const [uploadingLifeStory, setUploadingLifeStory] = useState(false)
+    const [profileData, setProfileData] = useState<any>(null)
+    const [featuredData, setFeaturedData] = useState<any>(null)
+    // Structured state to track which file belongs to which response
+    const [videoData, setVideoData] = useState<{ file: File, res: any }[]>([])
+    const [photosData, setPhotosData] = useState<{ file: File, res: any }[]>([])
+    const [lifeStoryData, setLifeStoryData] = useState<any>(null)
     const [landingModeId, setLandingModeId] = useState<string>('')
+    const { addMedia, getMedia, clearMedia } = useMediaStore()
     const [templateId, setTemplateId] = useState<string>('')
     const navigate = useNavigate()
     const location = useLocation()
@@ -185,56 +197,177 @@ export default function ClassicTemplateMode() {
         { value: Gender.PREFER_NOT_TO_SAY, label: 'Prefer not to say' },
     ]
 
+    const uploadFiles = async (files: File[]) => {
+        if (files.length === 0) return []
+
+        const results: any[] = []
+        const filesToUpload: File[] = []
+        const indicesToUpload: number[] = []
+
+        files.forEach((file, index) => {
+            const key = `${file.name}-${file.size}`
+            const stored = getMedia(key)
+            if (stored) {
+                results[index] = stored
+            } else {
+                filesToUpload.push(file)
+                indicesToUpload.push(index)
+            }
+        })
+
+        if (filesToUpload.length > 0) {
+            const formData = new FormData()
+            filesToUpload.forEach((file) => {
+                formData.append('files', file)
+            })
+            try {
+                const response: any = await apiUploadMedia(formData)
+                // response is an array of upload data
+                response.forEach((res: any, i: number) => {
+                    const originalIndex = indicesToUpload[i]
+                    const file = filesToUpload[i]
+                    const key = `${file.name}-${file.size}`
+                    addMedia(key, res)
+                    results[originalIndex] = res
+                })
+            } catch (error) {
+                console.error('Upload failed:', error)
+                toast.push(
+                    <Notification type="danger" title="Upload Failed" duration={2000}>
+                        Failed to upload one or more files.
+                    </Notification>,
+                    { placement: 'top-center' }
+                )
+                // results at those indices will remain undefined
+            }
+        }
+
+        return results
+    }
+
+    const handleProfileUpload = async (file: File) => {
+        setUploadingProfile(true)
+        const res = await uploadFiles([file])
+        if (res && res.length > 0) {
+            setProfileData(res[0])
+            setProfileImage(res[0].fileURL)
+        }
+        setUploadingProfile(false)
+    }
+
+    const handleFeaturedPhotoUpload = async (files: File[]) => {
+        if (files.length === 0) {
+            setFeaturedData(null)
+            return
+        }
+        setUploadingFeatured(true)
+        const res = await uploadFiles(files)
+        if (res && res.length > 0) {
+            setFeaturedData(res[0])
+        }
+        setUploadingFeatured(false)
+    }
+
+    const handleLifeStoryImageUpload = async (files: File[]) => {
+        if (files.length === 0) {
+            setLifeStoryData(null)
+            return
+        }
+        setUploadingLifeStory(true)
+        const res = await uploadFiles(files)
+        if (res && res.length > 0) {
+            setLifeStoryData(res[0])
+        }
+        setUploadingLifeStory(false)
+    }
+
+    const handleGalleryPhotosUpload = async (files: File[]) => {
+        // Find newly added files
+        const existingFiles = photosData.map(p => p.file)
+        const newFiles = files.filter(f => !existingFiles.includes(f))
+
+        if (newFiles.length > 0) {
+            setUploadingPhotos(true)
+            const res = await uploadFiles(newFiles)
+            const newData = newFiles.map((file, i) => ({ file, res: res[i] }))
+            setPhotosData(prev => [...prev.filter(p => files.includes(p.file)), ...newData])
+            setUploadingPhotos(false)
+        } else {
+            // Only removals happened
+            setPhotosData(prev => prev.filter(p => files.includes(p.file)))
+        }
+    }
+
+    const handleGalleryVideosUpload = async (files: File[]) => {
+        const existingFiles = videoData.map(v => v.file)
+        const newFiles = files.filter(f => !existingFiles.includes(f))
+
+        if (newFiles.length > 0) {
+            setUploadingVideos(true)
+            const res = await uploadFiles(newFiles)
+            const newData = newFiles.map((file, i) => ({ file, res: res[i] }))
+            setVideoData(prev => [...prev.filter(v => files.includes(v.file)), ...newData])
+            setUploadingVideos(false)
+        } else {
+            setVideoData(prev => prev.filter(v => files.includes(v.file)))
+        }
+    }
+
     const onSubmit = async (data: any) => {
+        setIsSubmitting(true)
         try {
             const payload: any = {
-                favSaying: data.favoriteSaying,
-                landingModeId: (landingModeId).toString(),
+                landingModeId: landingModeId.toString(),
                 templateId: templateId,
                 personName: data.personName,
                 personGender: data.personGender,
                 personBirthDate: data.personBirthDate
-                    ? dayjs(data.personBirthDate).format('YYYY-MM-DD')
+                    ? dayjs(data.personBirthDate).toISOString()
                     : null,
                 personDeathDate: data.personDeathDate
-                    ? dayjs(data.personDeathDate).format('YYYY-MM-DD')
+                    ? dayjs(data.personDeathDate).toISOString()
                     : null,
-                profilePictureId: 'profile-photo-id',
-                personProfilePicture: 'https://cdn.example.com/photos/john.jpg', // profileImage || 'https://cdn.example.com/photos/john.jpg',
+                profilePictureId: profileData?.fileId || (isEditMode ? existingMemorialData?.profilePictureId : null),
+                personProfilePicture: profileData?.fileURL || profileImage || null,
                 favQuote: data.favQuote,
                 pageURL: `https://rememberme.com/memorial/${data.personName.toLowerCase().replace(/\s+/g, '-')}`,
-                featuredPhotoId: 'featured-photo-id',
-                featuredPhotoURL:
-                    'https://cdn.example.com/photos/featured-john.jpg',
+                featuredPhotoId: featuredData?.fileId || (isEditMode ? existingMemorialData?.featuredPhotoId : null),
+                featuredPhotoURL: featuredData?.fileURL || (isEditMode ? existingMemorialData?.featuredPhotoURL : null),
                 lifeStoryText: data.lifeStoryText,
-                lifeStoryImageId: 'life-story-image-id',
-                lifeStoryImageURL:
-                    'https://cdn.example.com/photos/life-story.jpg',
+                lifeStoryImageId: lifeStoryData?.fileId || (isEditMode ? existingMemorialData?.lifeStoryImageId : null),
+                lifeStoryImageURL: lifeStoryData?.fileURL || (isEditMode ? existingMemorialData?.lifeStoryImageURL : null),
+                eventStart: isEditMode ? existingMemorialData?.eventStart : dayjs().toISOString(),
+                eventDuration: isEditMode ? existingMemorialData?.eventDuration : "48h",
+                autoRevertToFullMode: isEditMode ? existingMemorialData?.autoRevertToFullMode : true,
                 publishStatus: PublishStatus.DRAFT,
                 userMedia: [
-                    ...photos.map((file: File, index: number) => ({
-                        mimeType: file.type,
-                        fileURL: 'https://cdn.example.com/uploads/photo1.jpg',
-                        fileId: `photo-${index}`,
-                        type: MediaType.PHOTO,
-                        category: MediaCategory.GALLERY,
-                        photoCaption: '',
-                        photoDescription: '',
-                        isActive: true,
-                        sortOrder: index,
-                    })),
-                    ...video.map((file: File, index: number) => ({
-                        mimeType: file.type,
-                        fileURL: 'https://cdn.example.com/uploads/video1.mp4',
-                        fileId: `video-${index}`,
-                        type: MediaType.VIDEO,
-                        category: MediaCategory.GALLERY,
-                        videoTitle: data.videoTitle || 'Memorial Video',
-                        videoDescription: '',
-                        isMainVideo: false,
-                        isActive: true,
-                        sortOrder: photos.length + index,
-                    })),
+                    ...photosData
+                        .filter(item => !!item.res?.fileURL)
+                        .map((item, index: number) => ({
+                            mimeType: item.res?.mimeType || item.file?.type || 'image/jpeg',
+                            fileURL: item.res?.fileURL,
+                            fileId: item.res?.fileId,
+                            type: MediaType.PHOTO,
+                            category: MediaCategory.GALLERY,
+                            photoCaption: '',
+                            photoDescription: '',
+                            isActive: true,
+                            sortOrder: index,
+                        })),
+                    ...videoData
+                        .filter(item => !!item.res?.fileURL)
+                        .map((item, index: number) => ({
+                            mimeType: item.res?.mimeType || item.file?.type || 'video/mp4',
+                            fileURL: item.res?.fileURL,
+                            fileId: item.res?.fileId,
+                            type: MediaType.VIDEO,
+                            category: MediaCategory.GALLERY,
+                            videoTitle: data.videoTitle || 'Memorial Video',
+                            videoDescription: '',
+                            isMainVideo: index === 0,
+                            isActive: true,
+                            sortOrder: photosData.length + index,
+                        })),
                 ],
                 userTributes: [],
                 favoriteSayings: [
@@ -244,6 +377,8 @@ export default function ClassicTemplateMode() {
                     },
                 ],
             }
+
+            console.log('Final Memorial Payload:', JSON.stringify(payload, null, 2))
 
             if (payload.userMedia) {
                 const vidIndex = payload.userMedia.findIndex(
@@ -308,15 +443,19 @@ export default function ClassicTemplateMode() {
             }
 
             await fetchMemorials(true)
+            clearMedia() // Clear persisted media responses after successful save
             navigate('/dashboard/memorial')
-        } catch (error) {
-            console.error('Error creating memorial:', error)
+        } catch (error: any) {
+            console.error('Error saving memorial:', error)
+            const errorMsg = error.response?.data?.message || error.message || 'Failed to save memorial.'
             toast.push(
-                <Notification type="danger" title="Error" duration={2000}>
-                    Failed to save memorial. Please try again.
+                <Notification type="danger" title="Error" duration={5000}>
+                    {errorMsg}
                 </Notification>,
                 { placement: 'top-center' },
             )
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -372,14 +511,15 @@ export default function ClassicTemplateMode() {
                             {/* Upload Button */}
                             <button
                                 type="button"
+                                disabled={uploadingProfile}
                                 onClick={() =>
                                     document
                                         .getElementById('profileUpload')
                                         ?.click()
                                 }
-                                className="md:px-6 px-3 font-medium text-[21.26px] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-poppins border-[#FFB84C]"
+                                className="md:px-6 px-3 font-medium text-[21.26px] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-poppins border-[#FFB84C] disabled:opacity-50"
                             >
-                                Upload Profile
+                                {uploadingProfile ? 'Uploading...' : 'Upload Profile'}
                             </button>
 
                             {/* Hidden File Input */}
@@ -391,15 +531,8 @@ export default function ClassicTemplateMode() {
                                 onChange={(e) => {
                                     const file = e.target.files?.[0]
                                     if (file) {
-                                        // For now, we are not using base64. Later we will use it.
-                                        /*
-                                         const reader = new FileReader()
-                                         reader.onload = () =>
-                                             setProfileImage(
-                                                 reader.result as string,
-                                             )
-                                         reader.readAsDataURL(file)
-                                         */
+                                        setProfileFile(file)
+                                        handleProfileUpload(file)
                                         console.log(
                                             'File selected:',
                                             file.name,
@@ -431,6 +564,7 @@ export default function ClassicTemplateMode() {
                                         name="personBirthDate"
                                         control={control}
                                         value="Date of Birth"
+                                        label="Date of Birth"
                                         type="date"
                                         inputSuffix={
                                             <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
@@ -440,6 +574,7 @@ export default function ClassicTemplateMode() {
                                         name="personDeathDate"
                                         control={control}
                                         value="Date of Death"
+                                        label="Date of Death"
                                         type="date"
                                         inputSuffix={
                                             <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
@@ -473,7 +608,9 @@ export default function ClassicTemplateMode() {
                         <Upload
                             accept="image/*"
                             uploadLimit={1}
-                            onChange={setFeatured}
+                            onChange={handleFeaturedPhotoUpload}
+                            onFileRemove={() => handleFeaturedPhotoUpload([])}
+                            uploading={uploadingFeatured}
                         />
                     </FormSection>
 
@@ -489,7 +626,9 @@ export default function ClassicTemplateMode() {
                         <Upload
                             accept="video/*"
                             uploadLimit={1}
-                            onChange={setVideo}
+                            onChange={handleGalleryVideosUpload}
+                            onFileRemove={handleGalleryVideosUpload}
+                            uploading={uploadingVideos}
                         />
                         <div className="mt-4">
                             <CommonInput
@@ -513,7 +652,9 @@ export default function ClassicTemplateMode() {
                         <Upload
                             accept="image/*"
                             multiple
-                            onChange={setPhotos}
+                            onChange={handleGalleryPhotosUpload}
+                            onFileRemove={handleGalleryPhotosUpload}
+                            uploading={uploadingPhotos}
                         />
                     </FormSection>
 
@@ -557,7 +698,9 @@ export default function ClassicTemplateMode() {
                             <Upload
                                 accept="image/*"
                                 uploadLimit={1}
-                                onChange={setLifeStory}
+                                onChange={handleLifeStoryImageUpload}
+                                onFileRemove={() => handleLifeStoryImageUpload([])}
+                                uploading={uploadingLifeStory}
                             />
                             <div>
                                 <CommonInput
@@ -582,14 +725,15 @@ export default function ClassicTemplateMode() {
                             Preview
                         </button>
                         <button
+                            disabled={isSubmitting}
                             onClick={handleSaveFinish}
-                            className="bg-[#C7A30D] text-[#000000] font-[500] font-poppins text-base px-6 py-2.5 hover:bg-[#B8940C] transition-colors rounded-[1000px]"
+                            className="bg-[#C7A30D] text-[#000000] font-[500] font-poppins text-base px-6 py-2.5 hover:bg-[#B8940C] transition-colors rounded-[1000px] disabled:opacity-50"
                             style={{
-                                background:
+                                background: isSubmitting ? 'gray' :
                                     'linear-gradient(96.23deg, #ECA024 5.01%, #F9C94F 50.03%, #EAA32A 95.05%)',
                             }}
                         >
-                            {isEditMode ? 'Update & Finish' : 'Save & Finish'}
+                            {isSubmitting ? 'Saving...' : (isEditMode ? 'Update & Finish' : 'Save & Finish')}
                         </button>
                     </div>
                 </div>

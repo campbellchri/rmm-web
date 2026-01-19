@@ -23,6 +23,7 @@ interface UploadProps {
     onFileRemove?: (file: File[]) => void
     uploadLimit?: number
     defaultFiles?: any[]
+    uploading?: boolean
 }
 
 const filesToArray = (files: File[]) =>
@@ -37,6 +38,7 @@ const Upload = ({
     onFileRemove,
     uploadLimit,
     defaultFiles = [],
+    uploading = false,
 }: UploadProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [files, setFiles] = useState<File[]>([])
@@ -135,7 +137,12 @@ const Upload = ({
                 onChange={onNewFileUpload}
             />
 
-            {files.length === 0 ? (
+            {uploading ? (
+                <div className="flex flex-col items-center text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mb-3"></div>
+                    <p className="text-white text-sm">Uploading...</p>
+                </div>
+            ) : files.length === 0 ? (
                 <div className="flex flex-col items-center text-center">
                     <div className="bg-[#383c56] p-3 rounded-full mb-3">
                         <ImageIcon className="w-8 h-8 text-yellow-500" />

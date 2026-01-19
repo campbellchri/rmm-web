@@ -43,33 +43,24 @@ export default function VideoMemorial() {
 
     const handlePlayVideo = (videoId: string) => {
         setActiveVideo(videoId)
-        // Video play logic would go here
     }
 
-    const galleryItems = [
-        {
-            id: 'personal-journey',
-            title: 'Personal Journey',
-            subtitle: 'A life of adventure and exploration',
-            thumbnail: videoFrame12,
-            hasPlayButton: true,
-        },
-        {
-            id: 'celebrations',
-            title: 'Celebrations',
-            subtitle: 'Special moments of joy and accomplishment',
-            thumbnail: videoFrame13,
+    const featuredVideo = memorialDetails?.userMedia?.find(
+        (m: any) => m.category === 'featured' && m.type === 'video'
+    )
 
-            hasPlayButton: true,
-        },
-        {
-            id: 'historical-photos',
-            title: 'Historical Photographs',
-            subtitle: 'Memories preserved through the years',
-            thumbnail: videoFrame14,
-            hasPlayButton: true,
-        },
-    ]
+    const galleryVideos = memorialDetails?.userMedia?.filter(
+        (m: any) => m.category === 'gallery' && m.type === 'video'
+    ) || []
+
+    const galleryItems = galleryVideos.map((item: any, index: number) => ({
+        id: item.id || `gallery-${index}`,
+        title: item.videoTitle || 'Gallery Video',
+        subtitle: item.videoDescription || '',
+        thumbnail: item.fileURL, // Using video URL as thumbnail for now, or could use a placeholder
+        videoURL: item.fileURL,
+        hasPlayButton: true,
+    }))
 
     return (
         <>
@@ -144,7 +135,7 @@ export default function VideoMemorial() {
                             <div className="flex flex-col sm:flex-row sm:items-end gap-6 sm:gap-8">
                                 <div className="flex justify-center sm:justify-start">
                                     <img
-                                        src={MemberAvatar}
+                                        src={memorialDetails?.personProfilePicture}
                                         alt="James William Thompson"
                                         className="w-[140px] h-[170px] sm:w-[164px] sm:h-[201px] rounded-[10px] object-cover shadow-lg"
                                     />
@@ -161,7 +152,23 @@ export default function VideoMemorial() {
                                             )}
                                         </p>
                                         <div className="font-poppins text-lg sm:text-2xl text-[#ffffff]">
-                                            1945–2023
+                                            {memorialDetails?.personBirthDate &&
+                                                new Date(
+                                                    memorialDetails.personBirthDate
+                                                ).toLocaleDateString("en-US", {
+                                                    month: "long",
+                                                    day: "numeric",
+                                                    year: "numeric",
+                                                })}
+                                            -
+                                            {memorialDetails?.personDeathDate &&
+                                                new Date(
+                                                    memorialDetails.personDeathDate
+                                                ).toLocaleDateString("en-US", {
+                                                    month: "long",
+                                                    day: "numeric",
+                                                    year: "numeric",
+                                                })}
                                         </div>
                                     </div>
                                     <div className="monteCarlo text-lg sm:text-[22px] text-[#ffffff]">
@@ -174,16 +181,14 @@ export default function VideoMemorial() {
                             <div className="md:max-w-[500px] w-full">
                                 <div className="bg-white/80 md:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow-sm md:shadow-none">
                                     <p className="font-poppins text-base sm:text-[19px] text-[#ffffff] leading-relaxed mb-4 sm:mb-6 text-center md:text-left">
-                                        James was always the first to offer help
-                                        when anyone needed it. I remember when
-                                        our family was going through a difficult
-                                        time...
+                                        {memorialDetails?.favQuote}
                                     </p>
                                     <div className="flex justify-center lg:justify-end">
                                         <button
                                             onClick={() =>
                                                 navigate(
                                                     '/dashboard/edit-memorial',
+                                                    { state: { mode: 'edit', memorialId } }
                                                 )
                                             }
                                             className="text-black font-poppins text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-2.5 rounded-[1000px] transition-colors"
@@ -208,28 +213,36 @@ export default function VideoMemorial() {
                             <div className="relative">
                                 {/* Golden Border Frame */}
                                 <div className="border-2 border-[#C7A30D] bg-white/30 p-3.5 rounded-lg">
-                                    <div className="relative md:w-full md:h-[452px] rounded-lg overflow-hidden">
-                                        <img
-                                            src={VideoFrame}
-                                            alt="Tribute Gallery Main Video"
-                                            className="md:w-full md:h-full object-cover"
-                                        />
-
-                                        {/* Play Button Overlay */}
-                                        {activeVideo !== 'main' && (
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <button
-                                                    onClick={() =>
-                                                        handlePlayVideo('main')
-                                                    }
-                                                    className="w-15 h-15 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
-                                                >
-                                                    <Play
-                                                        className="w-8 h-8 text-white ml-1"
-                                                        fill="currentColor"
-                                                    />
-                                                </button>
-                                            </div>
+                                    <div className="relative md:w-full md:h-[452px] rounded-lg overflow-hidden bg-black">
+                                        {activeVideo === 'main' && (featuredVideo?.fileURL) ? (
+                                            <video
+                                                src={featuredVideo.fileURL}
+                                                controls
+                                                autoPlay
+                                                className="w-full h-full object-contain"
+                                            />
+                                        ) : (
+                                            <>
+                                                <img
+                                                    src={VideoFrame}
+                                                    alt="Tribute Gallery Main Video Placeholder"
+                                                    className="md:w-full md:h-full object-cover opacity-60"
+                                                />
+                                                {/* Play Button Overlay */}
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <button
+                                                        onClick={() =>
+                                                            handlePlayVideo('main')
+                                                        }
+                                                        className="w-15 h-15 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
+                                                    >
+                                                        <Play
+                                                            className="w-8 h-8 text-white ml-1"
+                                                            fill="currentColor"
+                                                        />
+                                                    </button>
+                                                </div>
+                                            </>
                                         )}
                                     </div>
                                 </div>
@@ -237,12 +250,11 @@ export default function VideoMemorial() {
 
                             {/* Section Title */}
                             <div className="text-center mt-8 space-y-2">
-                                <p className="DMSerif md:text-[40px] text-2xl text-white leading-tight text-[#2E2117]">
-                                    Tribute Gallery
+                                <p className="DMSerif md:text-[40px] text-2xl text-white leading-tight">
+                                    {featuredVideo?.videoTitle || 'Tribute Gallery'}
                                 </p>
                                 <p className="monteCarlo text-xl text-white">
-                                    Honoring the cherished memories and
-                                    celebrating a remarkable life
+                                    {featuredVideo?.videoDescription || 'Honoring the cherished memories and celebrating a remarkable life'}
                                 </p>
                             </div>
                         </div>
@@ -253,7 +265,7 @@ export default function VideoMemorial() {
                 <div className="py-8">
                     <div className="max-w-7xl mx-auto px-6">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {galleryItems.map((item) => (
+                            {galleryItems.map((item: any) => (
                                 <div
                                     key={item.id}
                                     className="flex flex-col items-center space-y-4"
@@ -261,16 +273,22 @@ export default function VideoMemorial() {
                                     {/* Video/Image Frame */}
                                     <div className="relative">
                                         <div className="border-2 border-[#C7A30D] bg-white/30 p-3.5 rounded-lg">
-                                            <div className="relative w-80 h-60 rounded-lg overflow-hidden">
-                                                <img
-                                                    src={item.thumbnail}
-                                                    alt={item.title}
-                                                    className="w-full h-full object-cover"
-                                                />
-
-                                                {/* Play Button Overlay */}
-                                                {item.hasPlayButton &&
-                                                    activeVideo !== item.id && (
+                                            <div className="relative w-80 h-60 rounded-lg overflow-hidden bg-black">
+                                                {activeVideo === item.id ? (
+                                                    <video
+                                                        src={item.videoURL}
+                                                        controls
+                                                        autoPlay
+                                                        className="w-full h-full object-contain"
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <img
+                                                            src={LogoFrame} // Using LogoFrame as a fallback or could use a thumbnail if available
+                                                            alt={item.title}
+                                                            className="w-full h-full object-cover opacity-60"
+                                                        />
+                                                        {/* Play Button Overlay */}
                                                         <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                                                             <button
                                                                 onClick={() =>
@@ -286,7 +304,8 @@ export default function VideoMemorial() {
                                                                 />
                                                             </button>
                                                         </div>
-                                                    )}
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

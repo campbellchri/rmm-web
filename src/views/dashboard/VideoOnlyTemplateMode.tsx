@@ -7,6 +7,7 @@ import { Input, Select, toast, Notification } from '@/components/ui'
 import { useForm, Controller } from 'react-hook-form'
 import { apiCreateMemorial, apiGetMemorialModeList, apiGetMemorialTemplateList } from '@/services/axios/MemorialModeService'
 import dayjs from 'dayjs'
+import { apiUploadMedia } from '@/services/MediaService'
 import {
     MediaCategory,
     MediaType,
@@ -14,6 +15,7 @@ import {
     Gender,
 } from '@/constants/memorial.constant'
 import { useMemorialStore } from '@/store/memorialStore'
+import { useMediaStore } from '@/store/mediaStore'
 
 // Form Section Component
 const FormSection = ({
@@ -41,6 +43,14 @@ const FormSection = ({
 
 export default function VideoOnlyMemorial() {
     const [profileImage, setProfileImage] = useState<string | null>(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [uploadingProfile, setUploadingProfile] = useState(false)
+    const [uploadingFeatured, setUploadingFeatured] = useState(false)
+    const [uploadingVideos, setUploadingVideos] = useState(false)
+    const [profileData, setProfileData] = useState<any>(null)
+    const [featuredData, setFeaturedData] = useState<any>(null)
+    const [videoData, setVideoData] = useState<{ file: File; res: any }[]>([])
+    const { addMedia, getMedia, clearMedia } = useMediaStore()
     const [featured, setFeatured] = useState<File[]>([])
     const [video, setVideo] = useState<File[]>([])
     const [landingModeId, setLandingModeId] = useState<string>('')
@@ -86,33 +96,133 @@ export default function VideoOnlyMemorial() {
         fetchData()
     }, [])
 
+    const uploadFiles = async (files: File[]) => {
+        if (files.length === 0) return []
+
+        const results: any[] = []
+        const filesToUpload: File[] = []
+        const indicesToUpload: number[] = []
+
+        files.forEach((file, index) => {
+            const key = `${file.name}-${file.size}`
+            const stored = getMedia(key)
+            if (stored) {
+                results[index] = stored
+            } else {
+                filesToUpload.push(file)
+                indicesToUpload.push(index)
+            }
+        })
+
+        if (filesToUpload.length > 0) {
+            const formData = new FormData()
+            filesToUpload.forEach((file) => {
+                formData.append('files', file)
+            })
+            try {
+                const response: any = await apiUploadMedia(formData)
+                response.forEach((res: any, i: number) => {
+                    const originalIndex = indicesToUpload[i]
+                    const file = filesToUpload[i]
+                    const key = `${file.name}-${file.size}`
+                    addMedia(key, res)
+                    results[originalIndex] = res
+                })
+            } catch (error) {
+                console.error('Upload failed:', error)
+                toast.push(
+                    <Notification
+                        type="danger"
+                        title="Upload Failed"
+                        duration={2000}
+                    >
+                        Failed to upload one or more files.
+                    </Notification>,
+                    { placement: 'top-center' },
+                )
+            }
+        }
+
+        return results
+    }
+
+    const handleProfileUpload = async (file: File) => {
+        setUploadingProfile(true)
+        const res = await uploadFiles([file])
+        if (res && res.length > 0) {
+            setProfileData(res[0])
+            setProfileImage(res[0].fileURL)
+        }
+        setUploadingProfile(false)
+    }
+
+    const handleFeaturedVideoUpload = async (files: File[]) => {
+        if (files.length === 0) {
+            setFeaturedData(null)
+            return
+        }
+        setUploadingFeatured(true)
+        const res = await uploadFiles(files)
+        if (res && res.length > 0) {
+            setFeaturedData(res[0])
+        }
+        setUploadingFeatured(false)
+    }
+
+    const handleGalleryVideosUpload = async (files: File[]) => {
+        const existingFiles = videoData.map((v) => v.file)
+        const newFiles = files.filter((f) => !existingFiles.includes(f))
+
+        if (newFiles.length > 0) {
+            setUploadingVideos(true)
+            const res = await uploadFiles(newFiles)
+            const newData = newFiles.map((file, i) => ({ file, res: res[i] }))
+            setVideoData((prev) => [
+                ...prev.filter((v) => files.includes(v.file)),
+                ...newData,
+            ])
+            setUploadingVideos(false)
+        } else {
+            setVideoData((prev) => prev.filter((v) => files.includes(v.file)))
+        }
+    }
+
     const onSubmit = async (data: any) => {
+        setIsSubmitting(true)
         try {
             const mediaList = [
-                ...featured.map((file: File, index: number) => ({
-                    mimeType: file.type,
-                    fileURL: 'https://www.pexels.com/video/medical-training-855480/', // Placeholder for now
-                    fileId: `featured-video-${index}`,
-                    type: MediaType.VIDEO,
-                    category: MediaCategory.FEATURED,
-                    videoTitle: data.featuredVideoTitle || 'Featured Video',
-                    videoDescription: data.favSaying || '',
-                    isMainVideo: true,
-                    isActive: true,
-                    sortOrder: index,
-                })),
-                ...video.map((file: File, index: number) => ({
-                    mimeType: file.type,
-                    fileURL: 'https://www.pexels.com/video/medical-training-855480/', // Placeholder for now
-                    fileId: `gallery-video-${index}`,
-                    type: MediaType.VIDEO,
-                    category: MediaCategory.GALLERY,
-                    videoTitle: data.galleryVideoTitle || 'Gallery Video',
-                    videoDescription: '',
-                    isMainVideo: false,
-                    isActive: true,
-                    sortOrder: featured.length + index,
-                })),
+                ...(featuredData
+                    ? [
+                        {
+                            mimeType: featuredData.mimeType || 'video/mp4',
+                            fileURL: featuredData.fileURL,
+                            fileId: featuredData.fileId,
+                            type: MediaType.VIDEO,
+                            category: MediaCategory.FEATURED,
+                            videoTitle:
+                                data.featuredVideoTitle || 'Featured Video',
+                            videoDescription: data.favSaying || '',
+                            isMainVideo: true,
+                            isActive: true,
+                            sortOrder: 0,
+                        },
+                    ]
+                    : []),
+                ...videoData
+                    .filter((item) => !!item.res?.fileURL)
+                    .map((item, index: number) => ({
+                        mimeType:
+                            item.res?.mimeType || item.file?.type || 'video/mp4',
+                        fileURL: item.res?.fileURL,
+                        fileId: item.res?.fileId,
+                        type: MediaType.VIDEO,
+                        category: MediaCategory.GALLERY,
+                        videoTitle: data.galleryVideoTitle || 'Gallery Video',
+                        videoDescription: '',
+                        isMainVideo: false,
+                        isActive: true,
+                        sortOrder: (featuredData ? 1 : 0) + index,
+                    })),
             ]
 
             // If no videos are uploaded, add a dummy one to satisfy backend requirement
@@ -132,7 +242,7 @@ export default function VideoOnlyMemorial() {
             }
 
             const payload = {
-                landingModeId: (landingModeId).toString(),
+                landingModeId: landingModeId.toString(),
                 templateId: templateId,
                 personName: data.personName,
                 personGender: data.personGender,
@@ -142,9 +252,9 @@ export default function VideoOnlyMemorial() {
                 personDeathDate: data.personDeathDate
                     ? dayjs(data.personDeathDate).format('YYYY-MM-DD')
                     : null,
-                profilePictureId: 'profile-photo-id',
+                profilePictureId: profileData?.fileId || null,
                 pageURL: `https://rememberme.com/memorial/${data.personName.toLowerCase().replace(/\s+/g, '-')}`,
-                personProfilePicture: profileImage || '', // Placeholder for now
+                personProfilePicture: profileData?.fileURL || profileImage || '',
                 favQuote: data.favQuote,
                 publishStatus: PublishStatus.DRAFT,
                 userMedia: mediaList,
@@ -157,13 +267,14 @@ export default function VideoOnlyMemorial() {
                 <Notification type="success" title="Success" duration={2000}>
                     Video memorial created successfully!
                 </Notification>,
-                { placement: 'top-center' }
+                { placement: 'top-center' },
             )
 
             await fetchMemorials(true)
             if (response && (response as any).id) {
                 setActiveMemorialId((response as any).id)
             }
+            clearMedia()
             navigate('/dashboard/video-memorial')
         } catch (error) {
             console.error('Error creating memorial:', error)
@@ -171,8 +282,10 @@ export default function VideoOnlyMemorial() {
                 <Notification type="danger" title="Error" duration={2000}>
                     Failed to create memorial. Please try again.
                 </Notification>,
-                { placement: 'top-center' }
+                { placement: 'top-center' },
             )
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -226,14 +339,17 @@ export default function VideoOnlyMemorial() {
                             {/* Upload Button */}
                             <button
                                 type="button"
+                                disabled={uploadingProfile}
                                 onClick={() =>
                                     document
                                         .getElementById('profileUpload')
                                         ?.click()
                                 }
-                                className="md:px-6 px-3 font-[500] md:text-[21.26px] text-base py-2.5 border text-[#4EB1C9]  rounded-md font-poppins  hover:bg-blue-50 transition-colors"
+                                className="md:px-6 px-3 font-medium text-[21.26px] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-poppins border-[#FFB84C] disabled:opacity-50"
                             >
-                                Upload Profile
+                                {uploadingProfile
+                                    ? 'Uploading...'
+                                    : 'Upload Profile'}
                             </button>
 
                             {/* Hidden File Input */}
@@ -245,12 +361,7 @@ export default function VideoOnlyMemorial() {
                                 onChange={(e) => {
                                     const file = e.target.files?.[0]
                                     if (file) {
-                                        const reader = new FileReader()
-                                        reader.onload = () =>
-                                            setProfileImage(
-                                                reader.result as string,
-                                            )
-                                        reader.readAsDataURL(file)
+                                        handleProfileUpload(file)
                                     }
                                 }}
                             />
@@ -364,7 +475,9 @@ export default function VideoOnlyMemorial() {
                         <Upload
                             accept="video/*"
                             uploadLimit={1}
-                            onChange={setFeatured}
+                            onChange={handleFeaturedVideoUpload}
+                            onFileRemove={() => handleFeaturedVideoUpload([])}
+                            uploading={uploadingFeatured}
                         />
                         <div className="mt-4">
                             <label className="block text-sm text-white font-poppins mb-2">
@@ -378,7 +491,7 @@ export default function VideoOnlyMemorial() {
                                         {...field}
                                         type="text"
                                         placeholder="Enter title here..."
-                                        className="w-full  font-poppins bg-[#383c56] border-none"
+                                        className="w-full  font-poppins bg-[#383c56] border-none text-white"
                                     />
                                 )}
                             />
@@ -395,7 +508,7 @@ export default function VideoOnlyMemorial() {
                                         {...field}
                                         type="text"
                                         placeholder="Enter sayings here..."
-                                        className="w-full font-poppins bg-[#383c56] border-none"
+                                        className="w-full font-poppins bg-[#383c56] border-none text-white"
                                     />
                                 )}
                             />
@@ -414,7 +527,9 @@ export default function VideoOnlyMemorial() {
                         <Upload
                             accept="video/*"
                             uploadLimit={3}
-                            onChange={setVideo}
+                            onChange={handleGalleryVideosUpload}
+                            onFileRemove={handleGalleryVideosUpload}
+                            uploading={uploadingVideos}
                         />
                         <div className="mt-4">
                             <label className="block text-sm text-white font-poppins mb-2">
@@ -428,7 +543,7 @@ export default function VideoOnlyMemorial() {
                                         {...field}
                                         type="text"
                                         placeholder="Enter Video Title here ..."
-                                        className="w-full font-poppins bg-[#383c56] border-none"
+                                        className="w-full font-poppins bg-[#383c56] border-none text-white"
                                     />
                                 )}
                             />
@@ -444,13 +559,16 @@ export default function VideoOnlyMemorial() {
                             Preview
                         </button>
                         <button
+                            disabled={isSubmitting}
                             onClick={handleSaveFinish}
-                            className="bg-[#C7A30D] text-[#000000] font-poppins font-[500] text-base px-6 py-2.5 rounded-[1000px] transition-colors font-medium"
+                            className="bg-[#C7A30D] text-[#000000] font-poppins font-[500] text-base px-6 py-2.5 rounded-[1000px] transition-colors font-medium border-none"
                             style={{
-                                background: 'linear-gradient(96.23deg, #ECA024 5.01%, #F9C94F 50.03%, #EAA32A 95.05%)',
+                                background: isSubmitting
+                                    ? 'gray'
+                                    : 'linear-gradient(96.23deg, #ECA024 5.01%, #F9C94F 50.03%, #EAA32A 95.05%)',
                             }}
                         >
-                            Save & Finish
+                            {isSubmitting ? 'Saving...' : 'Save & Finish'}
                         </button>
                     </div>
                 </div>

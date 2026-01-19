@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Key, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import CommonInput from '@/components/shared/CommonInput'
 import { apiSetFeaturedMemorial, apiGetMemorialById } from '@/services/axios/MemorialModeService'
@@ -23,11 +23,13 @@ export default function Memorial() {
     const memorialId = activeMemorialId
     const navigate = useNavigate()
 
-    const { control } = useForm({
+    const { control, setValue } = useForm({
         defaultValues: {
             memorialUrl: 'memorial.com/robert-johnson',
         },
     })
+
+    console.log(memorialDetails, 'memorialDetails sata')
 
     useEffect(() => {
         fetchMemorials()
@@ -38,73 +40,20 @@ export default function Memorial() {
 
     const fetchMemorialDetails = async () => {
         try {
-            const data = await apiGetMemorialById(memorialId!)
+            const data = await apiGetMemorialById<any>(memorialId!)
+            console.log(data, 'memorial data per id ')
             setMemorialDetails(data)
+            setValue('memorialUrl', data.pageURL)
         } catch (error) {
             console.error('Error fetching memorial details:', error)
         }
     }
 
     const handleCopyUrl = () => {
-        navigator.clipboard.writeText('memorial.com/robert-johnson')
+        navigator.clipboard.writeText(memorialDetails?.pageURL)
         setCopiedUrl(true)
         setTimeout(() => setCopiedUrl(false), 2000)
     }
-
-    const videos = [
-        {
-            id: 1,
-            title: '70th Birthday Celebration',
-            thumbnail: videoFrame1,
-        },
-        {
-            id: 2,
-            title: 'Family Vacation - Italy 2018',
-            thumbnail: videoFrame2,
-        },
-        {
-            id: 3,
-            title: 'Retirement Speech',
-            thumbnail: videoFrame3,
-        },
-    ]
-
-    const photoAlbums = [
-        {
-            id: 1,
-            image: photoFrame4,
-        },
-        {
-            id: 2,
-            image: photoFrame5,
-        },
-        {
-            id: 3,
-            image: photoFrame6,
-        },
-        {
-            id: 4,
-            image: photoFrame7,
-        },
-    ]
-
-    const favoriteSayings = [
-        {
-            id: 1,
-            quote: 'The best way to find yourself is to lose yourself in the service of others.',
-            attribution: 'Often quoted by James',
-        },
-        {
-            id: 2,
-            quote: 'Life is 10% what happens to you and 90% how you react to it.',
-            attribution: "James' personal motto",
-        },
-        {
-            id: 3,
-            quote: "In the end, we'll all become stories. Make yours a good one.",
-            attribution: 'James to his grandchildren',
-        },
-    ]
 
     return (
         <>
@@ -171,17 +120,14 @@ export default function Memorial() {
             //         "url('https://api.builder.io/api/v1/image/assets/TEMP/2f525d80d45fde76e6bf817c53bf3e2a59dc45ea?width=2880')",
             // }}
             >
-                {/* Overlay */}
                 <div className="absolute inset-0 bg-transparent"></div>
 
                 <div className="relative max-w-7xl mx-auto px-6 py-12">
-                    {/* Profile Info + Quote wrapper */}
                     <div className="flex flex-col md:items-center md:justify-center lg:flex-row lg:items-end lg:justify-between gap-8">
-                        {/* Profile Info */}
                         <div className="flex flex-col sm:flex-row sm:items-end gap-6 sm:gap-8">
                             <div className="flex justify-center sm:justify-start">
                                 <img
-                                    src={MemberAvatar}
+                                    src={memorialDetails?.personProfilePicture}
                                     alt="James William Thompson"
                                     className="w-[140px] h-[170px] sm:w-[164px] sm:h-[201px] rounded-[10px] object-cover shadow-lg"
                                 />
@@ -198,7 +144,17 @@ export default function Memorial() {
                                         )}
                                     </p>
                                     <div className="font-poppins text-lg md:text-2xl text-[#ffffff]">
-                                        1945–2023
+                                        {memorialDetails && (
+                                            `${new Date(memorialDetails.personBirthDate).toLocaleDateString('en-US', {
+                                                month: 'long',
+                                                day: 'numeric',
+                                                year: 'numeric',
+                                            })} - ${new Date(memorialDetails.personDeathDate).toLocaleDateString('en-US', {
+                                                month: 'long',
+                                                day: 'numeric',
+                                                year: 'numeric',
+                                            })}`
+                                        )}
                                     </div>
                                 </div>
                                 <div className="monteCarlo text-lg sm:text-[22px] text-[#ffffff]">
@@ -211,9 +167,7 @@ export default function Memorial() {
                         <div className="lg:max-w-[500px] w-full">
                             <div className="bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow-sm md:shadow-none">
                                 <p className="font-poppins text-base md:text-[19px] text-[#ffffff] leading-relaxed mb-4 sm:mb-6 text-center md:text-left">
-                                    James was always the first to offer help
-                                    when anyone needed it. I remember when our
-                                    family was going through a difficult time...
+                                    {memorialDetails?.favQuote}
                                 </p>
                                 <div className="flex justify-center  lg:justify-end">
                                     <button
@@ -253,7 +207,7 @@ export default function Memorial() {
                         </p>
                         <div className="rounded-lg shadow-md overflow-hidden">
                             <img
-                                src={FeaturedExperice}
+                                src={memorialDetails?.featuredPhotoURL}
                                 alt="Featured Experience"
                                 className="md:w-full md:h-[420px] object-cover"
                             />
@@ -272,11 +226,11 @@ export default function Memorial() {
 
                     {/* Videos Section */}
                     <section className="space-y-6">
-                        <p className="DMSerif md:text-2xl text-lg text-[#263859]">
+                        <p className="DMSerif md:text-2xl text-lg text-[#ffffff]">
                             Videos
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-                            {videos.map((video) => (
+                            {memorialDetails?.videos?.map((video: { id: Key | null | undefined; thumbnail: string | undefined; title: string | undefined; }) => (
                                 <div key={video.id} className="space-y-2">
                                     <div className="relative group cursor-pointer rounded-lg overflow-hidden shadow-sm">
                                         <img
@@ -305,54 +259,24 @@ export default function Memorial() {
                     <section className="space-y-6">
                         <div className="flex items-center justify-between">
                             <p className="DMSerif md:text-2xl text-lg text-[#ffffff]">
-                                Photo Albums
+                                Photos
                             </p>
-                            {/* <button className="font-lora text-sm text-[#263859] hover:underline">
-                                View All Albums (8)
-                            </button> */}
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                            {photoAlbums.map((album) => (
+                            {memorialDetails?.photos?.map((album: { fileId: Key | null | undefined; image: string | undefined }) => (
                                 <div
-                                    key={album.id}
+                                    key={album?.fileId}
                                     className="cursor-pointer group"
                                 >
                                     <img
-                                        src={album.image}
-                                        alt={`Photo Album ${album.id}`}
+                                        src={album?.fileURL}
+                                        alt={`Photo Album ${album?.photoCaption}`}
                                         className="w-full h-[180px] object-cover rounded-lg shadow-sm group-hover:shadow-md transition-shadow"
                                     />
                                 </div>
                             ))}
                         </div>
                     </section>
-
-                    {/* Favorite Sayings */}
-                    {/* <section className="space-y-6">
-                        <p className="DMSerif md:text-2xl text-lg text-[#263859]">
-                            Favorite Sayings
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {favoriteSayings.map((saying) => (
-                                <div
-                                    key={saying.id}
-                                    className="bg-[#F5F5F5] rounded-lg p-6 shadow-sm relative"
-                                >
-                                    <div className="font-lora text-4xl text-[#C7A30D] absolute top-2 left-4">
-                                        ❝
-                                    </div>
-                                    <div className="pt-8 space-y-4">
-                                        <p className="font-poppins italic md:text-lg text-base text-[#333333] leading-relaxed">
-                                            {saying.quote}
-                                        </p>
-                                        <p className="font-poppins text-sm text-[#6B7280] text-right">
-                                            ― {saying.attribution}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </section> */}
 
                     {/* Life Story */}
                     <section className="space-y-6">
@@ -363,44 +287,17 @@ export default function Memorial() {
                             <div className="flex flex-col md:flex-row gap-8">
                                 <div className="flex-shrink-0 flex justify-center md:justify-start">
                                     <img
-                                        src={MemberAvatar}
+                                        src={memorialDetails?.lifeStoryImageURL}
                                         alt="James William Thompson"
                                         className="w-[220px] h-[280px] object-cover rounded-md"
                                     />
                                 </div>
                                 <div className="flex-1 space-y-6">
                                     <p className="font-poppins text-base text-[#ffffff] leading-relaxed">
-                                        James William Thompson was born on March
-                                        15, 1945, in Portland, Oregon, to
-                                        William and Eleanor Thompson. The eldest
-                                        of three siblings, James showed an early
-                                        interest in science and nature, often
-                                        exploring the woods behind their family
-                                        home and collecting specimens for his
-                                        makeshift laboratory.
+                                        {memorialDetails?.lifeStoryText}
                                     </p>
-                                    <p className="font-poppins text-base text-[#ffffff] leading-relaxed">
-                                        After graduating with honors from
-                                        Lincoln High School in 1963, James
-                                        attended Stanford University, where he
-                                        earned his bachelor's degree in Biology.
-                                        It was during his university years that
-                                        he met his future wife, Catherine
-                                        Miller, at a campus debate society
-                                        meeting. They married in 1968, shortly
-                                        after graduation.
-                                    </p>
-                                    <p className="font-poppins text-base text-[#ffffff] leading-relaxed">
-                                        James began his professional career at
-                                        Pacific Northwest Research Institute,
-                                        where his groundbreaking work on
-                                        cellular regeneration earned him
-                                        recognition in the scientific
-                                        community...
-                                    </p>
-                                    <button className="font-poppins text-base text-[#ffffff] hover:underline">
-                                        Read Full Biography
-                                    </button>
+
+
                                 </div>
                             </div>
                         </div>
@@ -442,6 +339,7 @@ export default function Memorial() {
                                         <CommonInput
                                             name="memorialUrl"
                                             control={control}
+                                            value={memorialDetails?.pageURL}
                                             readOnly
                                             className="w-full text-[#878787] bg-[#383C56] border-[#383C56] rounded-l-md rounded-r-none font-poppins text-sm focus:!ring-[#C7A30D] focus:!border-[#C7A30D] h-auto py-2"
                                             containerClassName="flex-1 mb-0"
