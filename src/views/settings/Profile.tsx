@@ -9,6 +9,7 @@ import {
     apiProfileUpdate,
 } from '@/services/axios/ProfileService'
 import { useProfileStore, UserProfile } from '@/store/profileStore'
+import { apiUploadMedia } from '@/services/MediaService'
 
 export default function Profile() {
     const {
@@ -23,12 +24,33 @@ export default function Profile() {
         updateProfileField,
     } = useProfileStore()
 
+    const [isUploading, setIsUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            const fileURL = URL.createObjectURL(e.target.files[0])
-            updateProfileField('photoURL', fileURL)
+            const file = e.target.files[0]
+            const formData = new FormData()
+            formData.append('files', file)
+
+            try {
+                setIsUploading(true)
+                const response: any = await apiUploadMedia(formData)
+                if (response && response.length > 0) {
+                    const uploadedImage = response[0]
+                    updateProfileField('photoURL', uploadedImage.fileURL)
+                    updateProfileField('photoId', uploadedImage.fileId)
+                }
+            } catch (error) {
+                console.error('Failed to upload image', error)
+                toast.push(
+                    <Notification title="Upload Failed" type="danger">
+                        Failed to upload image. Please try again.
+                    </Notification>,
+                )
+            } finally {
+                setIsUploading(false)
+            }
         }
     }
     const [selectedCountry, setSelectedCountry] = useState<any>(null)
@@ -65,7 +87,7 @@ export default function Profile() {
                 state: profile.state,
                 postal: profile.postal,
                 gender: profile.gender,
-                country: selectedCountry?.value || profile.country, // Using selectedCountry value
+                country: selectedCountry?.value || profile.country,
                 photoId: profile.photoId,
             }
 
@@ -80,7 +102,7 @@ export default function Profile() {
                     Your profile has been updated successfully.
                 </Notification>,
             )
-            setPassword('') // Clear password after successful update
+            setPassword('')
         } catch (error: any) {
             toast.push(
                 <Notification title="Update Failed" type="danger">
@@ -103,7 +125,6 @@ export default function Profile() {
         profile?.photoURL ||
         'https://api.builder.io/api/v1/image/assets/TEMP/c3a907805cc2ed46951553fa92d51390341a3196?width=164'
 
-    // set default country as US
     useEffect(() => {
         const countryValue = profile?.country || profile?.callingCode || 'US'
         const country = options.find((c) => c.value === countryValue)
@@ -147,12 +168,10 @@ export default function Profile() {
 
     return (
         <>
-            {/* Profile Image Section */}
             <p className="text-xl DMSerif text-[#ffffff]  mb-6">
                 Personal information
             </p>
             <div className="flex items-center gap-4">
-                {/* Profile Preview */}
                 <div className="relative">
                     <div className="w-[90px] h-[90px] rounded-full border-4 border-white bg-[#F5F5F5] shadow-[0_10px_15px_-3px_rgba(0,0,0,0.10),0_4px_6px_-4px_rgba(0,0,0,0.10)] p-1">
                         <img
@@ -163,34 +182,40 @@ export default function Profile() {
                     </div>
                 </div>
 
-                {/* Buttons */}
                 <div className="flex flex-col md:flex-row items-center gap-2 w-full">
                     <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full md:w-auto flex items-center justify-center gap-1 text-[#000000] font-inter font-bold text-sm px-3 py-2.5 rounded-[1000px] hover:opacity-90 transition-all"
+                        disabled={isUploading}
+                        className="w-full md:w-auto flex items-center justify-center gap-1 text-[#000000] font-inter font-bold text-sm px-3 py-2.5 rounded-[1000px] hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
                             background:
                                 'linear-gradient(96.23deg, #ECA024 5.01%, #F9C94F 50.03%, #EAA32A 95.05%)',
                         }}
                     >
-                        <Plus className="w-4 h-4" strokeWidth={1.5} />
-                        Upload Image
+                        {isUploading ? (
+                            'Uploading...'
+                        ) : (
+                            <>
+                                <Plus className="w-4 h-4" strokeWidth={1.5} />
+                                Upload Image
+                            </>
+                        )}
                     </button>
 
                     <button
-                        onClick={() =>
+                        onClick={() => {
                             updateProfileField(
                                 'photoURL',
                                 'https://api.builder.io/api/v1/image/assets/TEMP/c3a907805cc2ed46951553fa92d51390341a3196?width=164',
                             )
-                        }
+                            updateProfileField('photoId', null)
+                        }}
                         className="w-full md:w-auto border border-[#D4D4D4] bg-[#2f3349] hover:bg-[#2f3349] text-[#ffffff] font-poppins font-bold text-sm px-3 py-2.5 rounded-[1000px] transition-colors"
                     >
                         Remove
                     </button>
                 </div>
 
-                {/* Hidden Input */}
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -200,9 +225,7 @@ export default function Profile() {
                 />
             </div>
 
-            {/* Personal Information Form */}
             <div className="space-y-6 mt-6">
-                {/* Name Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <label className="block font-poppins font-semibold text-sm text-[#ffffff] leading-[21px]">
@@ -232,7 +255,6 @@ export default function Profile() {
                     </div>
                 </div>
 
-                {/* Email Field */}
                 <div className="space-y-2">
                     <label className="block font-poppins font-semibold text-sm text-[#ffffff] leading-[21px]">
                         Email
@@ -252,7 +274,6 @@ export default function Profile() {
                     </div>
                 </div>
 
-                {/* Phone Number Field */}
                 <div className="space-y-2">
                     <label className="block font-poppins font-semibold text-sm text-[#ffffff]">
                         Phone number
@@ -266,14 +287,12 @@ export default function Profile() {
                     />
                 </div>
 
-                {/* Address Information Section */}
                 <div className="pt-8">
                     <p className="DMSerif text-xl text-[#ffffff] leading-7 mb-6">
                         Address information
                     </p>
 
                     <div className="space-y-6">
-                        {/* Country Field */}
                         <div className="space-y-2">
                             <label className="block font-poppins font-semibold text-sm text-[#ffffff] leading-[21px]">
                                 Country
@@ -288,7 +307,6 @@ export default function Profile() {
                             />
                         </div>
 
-                        {/* Address Field */}
                         <div className="space-y-2">
                             <label className="block font-poppins font-semibold text-sm text-[#ffffff] leading-[21px]">
                                 Address
@@ -306,24 +324,7 @@ export default function Profile() {
                                 }
                             />
                         </div>
-                        {/* <div className="space-y-2">
-                            <label className="block font-poppins font-semibold text-sm text-[#ffffff] leading-[21px]">
-                                Address Line 2 (Optional)
-                            </label>
-                            <Input
-                                type="text"
-                                className="bg-[#383c56] text-white border-none"
-                                value={profile?.street2 || ''}
-                                onChange={(e) =>
-                                    updateProfileField(
-                                        'street2',
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </div> */}
 
-                        {/* City and Postal Code */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="block font-poppins font-semibold text-sm text-[#ffffff] leading-[21px]">
@@ -361,7 +362,6 @@ export default function Profile() {
                     </div>
                 </div>
 
-                {/* Save Button */}
                 <div className="flex justify-end pt-4">
                     <button
                         onClick={handleSave}

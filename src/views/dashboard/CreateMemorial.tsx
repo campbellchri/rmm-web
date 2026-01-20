@@ -91,9 +91,9 @@ const CreateMemorial = () => {
                                         Storage
                                     </span>
                                 </div>
-                                <button className="md:text-base text-sm font-poppins text-[#C7A30D] hover:text-[#B8940C] transition-colors">
+                                {/* <button className="md:text-base text-sm font-poppins text-[#C7A30D] hover:text-[#B8940C] transition-colors">
                                     Manage Storage
-                                </button>
+                                </button> */}
                             </div>
 
                             <ProgressBar
@@ -170,8 +170,8 @@ const CreateMemorial = () => {
                                         <div
                                             key={mode.id}
                                             className={`relative bg-[#2F3349] rounded-lg shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] p-6 cursor-pointer transition-all duration-200 ${isSelected
-                                                    ? 'border-2 border-[#C7A30D]'
-                                                    : 'border-2 border-transparent hover:border-gray-200'
+                                                ? 'border-2 border-[#C7A30D]'
+                                                : 'border-2 border-transparent hover:border-gray-200'
                                                 }`}
                                             onClick={() =>
                                                 setSelectedMode(
