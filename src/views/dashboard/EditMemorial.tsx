@@ -127,22 +127,22 @@ export default function EditMemorial() {
                 lifeStoryText: data.lifeStory,
             }
 
-             // Handle specific fields based on structure requirements
-             if (data.favoriteSaying || data.quoteBy) {
+            // Handle specific fields based on structure requirements
+            if (data.favoriteSaying || data.quoteBy) {
                 // If the backend expects userTributes or favoriteSayings array
-                 payload.favoriteSayings = [{ // or update existing if possible
-                     content: data.favoriteSaying,
-                     authorName: data.quoteBy
-                 }]
-             }
-             
-             // Update video title in the payload if a video exists
-             if (payload.userMedia) {
-                 const vidIndex = payload.userMedia.findIndex((m: any) => m.type === 'video')
-                 if (vidIndex > -1) {
-                     payload.userMedia[vidIndex].videoTitle = data.videoTitle
-                 }
-             }
+                payload.favoriteSayings = [{ // or update existing if possible
+                    content: data.favoriteSaying,
+                    authorName: data.quoteBy
+                }]
+            }
+
+            // Update video title in the payload if a video exists
+            if (payload.userMedia) {
+                const vidIndex = payload.userMedia.findIndex((m: any) => m.type === 'video')
+                if (vidIndex > -1) {
+                    payload.userMedia[vidIndex].videoTitle = data.videoTitle
+                }
+            }
 
             await apiUpdateMemorial(activeMemorialId, payload)
 
@@ -235,7 +235,7 @@ export default function EditMemorial() {
                             <button className="md:px-6 px-3 md:py-2.5 py-1 border border-[#4EB1C9] text-[#4EB1C9] rounded-md font-poppins md:text-[21.26px] text-base hover:bg-[#4EB1C9]/10 transition-colors">
                                 Upload New
                             </button>
-                             {/* Note: File upload logic for profile pic can be added here similar to CreateMemorial */}
+                            {/* Note: File upload logic for profile pic can be added here similar to CreateMemorial */}
                         </div>
 
                         {/* Form Fields */}
@@ -332,13 +332,13 @@ export default function EditMemorial() {
 
                     <div className="bg-[#2F3349] rounded-lg shadow-sm p-6">
                         <p className="font-poppins font-[500] text-lg text-[#ffffff] mb-4">
-                             Upload featured photo
+                            Upload featured photo
                         </p>
-                         <Upload
+                        <Upload
                             accept="image/*"
                             uploadLimit={1}
                             onChange={setFeaturedFiles}
-                         />
+                        />
                     </div>
 
                     <div className="bg-[#2F3349] rounded-lg shadow-sm p-6">
@@ -370,7 +370,7 @@ export default function EditMemorial() {
                     </div>
 
                     <div className="bg-[#2F3349] rounded-lg shadow-sm p-6">
-                         <p className="font-poppins font-[500] text-lg text-[#ffffff] mb-4">
+                        <p className="font-poppins font-[500] text-lg text-[#ffffff] mb-4">
                             Upload Photo
                         </p>
                         <Upload

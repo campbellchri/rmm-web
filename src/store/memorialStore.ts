@@ -37,7 +37,6 @@ export const useMemorialStore = create<MemorialState & MemorialAction>()(
                 set({ loading: true })
                 try {
                     const response: any = await apiGetMemorialList()
-                    // Normalize response to an array of memorials
                     const memorialsArray = Array.isArray(response)
                         ? response
                         : response?.memorials ?? response?.data?.memorials ?? []

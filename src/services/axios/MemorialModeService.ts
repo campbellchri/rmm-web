@@ -60,3 +60,10 @@ export async function apiUpdateMemorial<T, U extends Record<string, unknown>>(
         data,
     })
 }
+
+export async function apiGetDashboardDetail<T>() {
+    return ApiService.fetchDataWithAxios<T>({
+        url: '/dashboard',
+        method: 'get',
+    })
+}

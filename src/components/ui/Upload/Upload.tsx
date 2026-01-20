@@ -16,11 +16,11 @@ import toast from '../toast/toast'
 
 interface UploadProps {
     accept?: string
-    beforeUpload?: (file: FileList | null, fileList: File[]) => boolean | string
+    beforeUpload?: (file: FileList | null, fileList: (File | any)[]) => boolean | string
     disabled?: boolean
     multiple?: boolean
-    onChange?: (file: File[], fileList: File[]) => void
-    onFileRemove?: (file: File[]) => void
+    onChange?: (files: (File | any)[], fileList: (File | any)[]) => void
+    onFileRemove?: (files: (File | any)[]) => void
     uploadLimit?: number
     defaultFiles?: any[]
     uploading?: boolean
@@ -41,12 +41,14 @@ const Upload = ({
     uploading = false,
 }: UploadProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const [files, setFiles] = useState<File[]>([])
+    const [files, setFiles] = useState<(File | any)[]>([])
 
     // initialize default files
     useEffect(() => {
-        if (defaultFiles.length) {
+        if (defaultFiles && defaultFiles.length > 0) {
             setFiles(defaultFiles)
+        } else {
+            setFiles([])
         }
     }, [defaultFiles])
 
@@ -160,9 +162,11 @@ const Upload = ({
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
                     {files.map((file, index) => {
-                        const fileURL = URL.createObjectURL(file)
-                        const isImage = file.type.startsWith('image/')
-                        const isVideo = file.type.startsWith('video/')
+                        const isExisting = !(file instanceof File)
+                        const fileURL = isExisting ? file.fileURL : URL.createObjectURL(file)
+                        const mimeType = isExisting ? file.mimeType : file.type
+                        const isImage = mimeType?.startsWith('image/')
+                        const isVideo = mimeType?.startsWith('video/')
 
                         return (
                             <div
@@ -172,7 +176,7 @@ const Upload = ({
                                 {isImage && (
                                     <img
                                         src={fileURL}
-                                        alt={file.name}
+                                        alt={isExisting ? 'Existing media' : file.name}
                                         className="max-w-full max-h-40 object-cover mx-auto"
                                     />
                                 )}

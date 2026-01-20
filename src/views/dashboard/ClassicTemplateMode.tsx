@@ -109,8 +109,8 @@ export default function ClassicTemplateMode() {
     const [profileData, setProfileData] = useState<any>(null)
     const [featuredData, setFeaturedData] = useState<any>(null)
     // Structured state to track which file belongs to which response
-    const [videoData, setVideoData] = useState<{ file: File, res: any }[]>([])
-    const [photosData, setPhotosData] = useState<{ file: File, res: any }[]>([])
+    const [videoData, setVideoData] = useState<{ file: File | any, res: any }[]>([])
+    const [photosData, setPhotosData] = useState<{ file: File | any, res: any }[]>([])
     const [lifeStoryData, setLifeStoryData] = useState<any>(null)
     const [landingModeId, setLandingModeId] = useState<string>('')
     const { addMedia, getMedia, clearMedia } = useMediaStore()
@@ -181,6 +181,41 @@ export default function ClassicTemplateMode() {
 
                         if (memorialRes.personProfilePicture) {
                             setProfileImage(memorialRes.personProfilePicture)
+                        }
+
+                        // Populate existing media
+                        if (memorialRes.featuredPhotoURL) {
+                            setFeaturedData({
+                                fileURL: memorialRes.featuredPhotoURL,
+                                fileId: memorialRes.featuredPhotoId,
+                                mimeType: 'image/jpeg', // Default or from API if available
+                            })
+                        }
+
+                        if (memorialRes.lifeStoryImageURL) {
+                            setLifeStoryData({
+                                fileURL: memorialRes.lifeStoryImageURL,
+                                fileId: memorialRes.lifeStoryImageId,
+                                mimeType: 'image/jpeg',
+                            })
+                        }
+
+                        if (memorialRes.userMedia) {
+                            const photos = memorialRes.userMedia
+                                .filter((m: any) => m.type === MediaType.PHOTO && m.category === MediaCategory.GALLERY)
+                                .map((m: any) => ({
+                                    file: { fileURL: m.fileURL, mimeType: m.mimeType, fileId: m.fileId },
+                                    res: m
+                                }))
+                            setPhotosData(photos)
+
+                            const videos = memorialRes.userMedia
+                                .filter((m: any) => m.type === MediaType.VIDEO && m.category === MediaCategory.GALLERY)
+                                .map((m: any) => ({
+                                    file: { fileURL: m.fileURL, mimeType: m.mimeType, fileId: m.fileId },
+                                    res: m
+                                }))
+                            setVideoData(videos)
                         }
                     }
                 }
@@ -255,61 +290,76 @@ export default function ClassicTemplateMode() {
         setUploadingProfile(false)
     }
 
-    const handleFeaturedPhotoUpload = async (files: File[]) => {
+    const handleFeaturedPhotoUpload = async (files: (File | any)[]) => {
         if (files.length === 0) {
             setFeaturedData(null)
             return
         }
+
+        const file = files[0]
+        if (!(file instanceof File)) {
+            // It's existing media
+            setFeaturedData(file)
+            return
+        }
+
         setUploadingFeatured(true)
-        const res = await uploadFiles(files)
+        const res = await uploadFiles([file])
         if (res && res.length > 0) {
             setFeaturedData(res[0])
         }
         setUploadingFeatured(false)
     }
 
-    const handleLifeStoryImageUpload = async (files: File[]) => {
+    const handleLifeStoryImageUpload = async (files: (File | any)[]) => {
         if (files.length === 0) {
             setLifeStoryData(null)
             return
         }
+
+        const file = files[0]
+        if (!(file instanceof File)) {
+            // It's existing media
+            setLifeStoryData(file)
+            return
+        }
+
         setUploadingLifeStory(true)
-        const res = await uploadFiles(files)
+        const res = await uploadFiles([file])
         if (res && res.length > 0) {
             setLifeStoryData(res[0])
         }
         setUploadingLifeStory(false)
     }
 
-    const handleGalleryPhotosUpload = async (files: File[]) => {
-        // Find newly added files
-        const existingFiles = photosData.map(p => p.file)
-        const newFiles = files.filter(f => !existingFiles.includes(f))
+    const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
+        // Separate existing media and newly added files
+        const existingEntries = photosData.filter(p => files.includes(p.file))
+        const newFiles = files.filter(f => f instanceof File) as File[]
 
         if (newFiles.length > 0) {
             setUploadingPhotos(true)
             const res = await uploadFiles(newFiles)
             const newData = newFiles.map((file, i) => ({ file, res: res[i] }))
-            setPhotosData(prev => [...prev.filter(p => files.includes(p.file)), ...newData])
+            setPhotosData([...existingEntries, ...newData])
             setUploadingPhotos(false)
         } else {
-            // Only removals happened
-            setPhotosData(prev => prev.filter(p => files.includes(p.file)))
+            setPhotosData(existingEntries)
         }
     }
 
-    const handleGalleryVideosUpload = async (files: File[]) => {
-        const existingFiles = videoData.map(v => v.file)
-        const newFiles = files.filter(f => !existingFiles.includes(f))
+    const handleGalleryVideosUpload = async (files: (File | any)[]) => {
+        const existingEntries = videoData.filter(v => files.includes(v.file))
+        const newFiles = files.filter(f => f instanceof File) as File[]
 
         if (newFiles.length > 0) {
             setUploadingVideos(true)
             const res = await uploadFiles(newFiles)
             const newData = newFiles.map((file, i) => ({ file, res: res[i] }))
-            setVideoData(prev => [...prev.filter(v => files.includes(v.file)), ...newData])
+            setVideoData([...existingEntries, ...newData])
             setUploadingVideos(false)
         } else {
-            setVideoData(prev => prev.filter(v => files.includes(v.file)))
+            setVideoData(existingEntries)
         }
     }
 
@@ -331,11 +381,11 @@ export default function ClassicTemplateMode() {
                 personProfilePicture: profileData?.fileURL || profileImage || null,
                 favQuote: data.favQuote,
                 pageURL: `https://rememberme.com/memorial/${data.personName.toLowerCase().replace(/\s+/g, '-')}`,
-                featuredPhotoId: featuredData?.fileId || (isEditMode ? existingMemorialData?.featuredPhotoId : null),
-                featuredPhotoURL: featuredData?.fileURL || (isEditMode ? existingMemorialData?.featuredPhotoURL : null),
+                featuredPhotoId: featuredData?.fileId || null,
+                featuredPhotoURL: featuredData?.fileURL || null,
                 lifeStoryText: data.lifeStoryText,
-                lifeStoryImageId: lifeStoryData?.fileId || (isEditMode ? existingMemorialData?.lifeStoryImageId : null),
-                lifeStoryImageURL: lifeStoryData?.fileURL || (isEditMode ? existingMemorialData?.lifeStoryImageURL : null),
+                lifeStoryImageId: lifeStoryData?.fileId || null,
+                lifeStoryImageURL: lifeStoryData?.fileURL || null,
                 eventStart: isEditMode ? existingMemorialData?.eventStart : dayjs().toISOString(),
                 eventDuration: isEditMode ? existingMemorialData?.eventDuration : "48h",
                 autoRevertToFullMode: isEditMode ? existingMemorialData?.autoRevertToFullMode : true,
@@ -344,26 +394,26 @@ export default function ClassicTemplateMode() {
                     ...photosData
                         .filter(item => !!item.res?.fileURL)
                         .map((item, index: number) => ({
-                            mimeType: item.res?.mimeType || item.file?.type || 'image/jpeg',
+                            mimeType: item.res?.mimeType || (item.file instanceof File ? item.file.type : item.file.mimeType) || 'image/jpeg',
                             fileURL: item.res?.fileURL,
                             fileId: item.res?.fileId,
                             type: MediaType.PHOTO,
                             category: MediaCategory.GALLERY,
-                            photoCaption: '',
-                            photoDescription: '',
+                            photoCaption: item.res?.photoCaption || '',
+                            photoDescription: item.res?.photoDescription || '',
                             isActive: true,
                             sortOrder: index,
                         })),
                     ...videoData
                         .filter(item => !!item.res?.fileURL)
                         .map((item, index: number) => ({
-                            mimeType: item.res?.mimeType || item.file?.type || 'video/mp4',
+                            mimeType: item.res?.mimeType || (item.file instanceof File ? item.file.type : item.file.mimeType) || 'video/mp4',
                             fileURL: item.res?.fileURL,
                             fileId: item.res?.fileId,
                             type: MediaType.VIDEO,
                             category: MediaCategory.GALLERY,
-                            videoTitle: data.videoTitle || 'Memorial Video',
-                            videoDescription: '',
+                            videoTitle: item.res?.videoTitle || data.videoTitle || 'Memorial Video',
+                            videoDescription: item.res?.videoDescription || '',
                             isMainVideo: index === 0,
                             isActive: true,
                             sortOrder: photosData.length + index,
@@ -399,6 +449,8 @@ export default function ClassicTemplateMode() {
                     favoriteSayings,
                     qrCode,
                     favSayings,
+                    photos,
+                    videos,
                     ...restExistingData
                 } = existingMemorialData
 
@@ -408,10 +460,6 @@ export default function ClassicTemplateMode() {
                 const updatePayload = {
                     ...restExistingData,
                     ...payloadForUpdate,
-                    userMedia: [
-                        ...(existingMemorialData.userMedia || []),
-                        ...payload.userMedia,
-                    ],
                 }
                 await apiUpdateMemorial(memorialId, updatePayload)
                 toast.push(
@@ -606,6 +654,7 @@ export default function ClassicTemplateMode() {
                             onChange={handleFeaturedPhotoUpload}
                             onFileRemove={() => handleFeaturedPhotoUpload([])}
                             uploading={uploadingFeatured}
+                            defaultFiles={featuredData ? [featuredData] : []}
                         />
                     </FormSection>
 
@@ -624,6 +673,7 @@ export default function ClassicTemplateMode() {
                             onChange={handleGalleryVideosUpload}
                             onFileRemove={handleGalleryVideosUpload}
                             uploading={uploadingVideos}
+                            defaultFiles={videoData.map(v => v.file)}
                         />
                         <div className="mt-4">
                             <CommonInput
@@ -650,6 +700,7 @@ export default function ClassicTemplateMode() {
                             onChange={handleGalleryPhotosUpload}
                             onFileRemove={handleGalleryPhotosUpload}
                             uploading={uploadingPhotos}
+                            defaultFiles={photosData.map(p => p.file)}
                         />
                     </FormSection>
 
@@ -696,6 +747,7 @@ export default function ClassicTemplateMode() {
                                 onChange={handleLifeStoryImageUpload}
                                 onFileRemove={() => handleLifeStoryImageUpload([])}
                                 uploading={uploadingLifeStory}
+                                defaultFiles={lifeStoryData ? [lifeStoryData] : []}
                             />
                             <div>
                                 <CommonInput

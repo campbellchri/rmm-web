@@ -6,14 +6,26 @@ import AllMemories1 from '../../../public/img/others/All-memories1.png'
 import { DatePicker, Select } from '@/components/ui'
 import { SingleValue, StylesConfig } from 'react-select'
 import ProgressBar from '@/components/ui/ProgressBar/ProgressBar'
+import { apiGetDashboardDetail } from '@/services/axios/MemorialModeService'
+import dayjs from 'dayjs'
 
 const Dashboard = () => {
     const navigate = useNavigate()
-    const { memorials, fetchMemorials, setActiveMemorialId } = useMemorialStore()
+    const { memorials, setActiveMemorialId } = useMemorialStore()
+    const [dashboardStats, setDashboardStats] = useState<any>(null)
 
     useEffect(() => {
-        fetchMemorials()
-    }, [fetchMemorials])
+        fetchDashboardStats()
+    }, [])
+
+    const fetchDashboardStats = async () => {
+        try {
+            const res = await apiGetDashboardDetail()
+            setDashboardStats(res)
+        } catch (error) {
+            console.error('Error fetching dashboard stats:', error)
+        }
+    }
     type Option = { value: string; label: string }
 
     const [memorialType, setMemorialType] = useState<SingleValue<Option>>(null)
@@ -26,11 +38,15 @@ const Dashboard = () => {
         { value: '12:00', label: '12:00' },
     ]
 
+    const parseGB = (val: string | undefined) => {
+        if (!val) return 0
+        return parseFloat(val.replace(' GB', ''))
+    }
+
     return (
         <>
             <div className="min-h-screen ">
                 <div className=" mx-auto space-y-6">
-                    {/* Dashboard Header */}
                     <div className=" rounded-lg shadow-[0_4px_18px_0_rgba(75,70,92,0.10)] p-6 bg-[#2f3349]">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div className="space-y-0.5 ">
@@ -62,25 +78,29 @@ const Dashboard = () => {
                                     Upcoming Anniversary
                                 </p>
                                 <p className="md:text-[24px] text-lg font-[400] font-poppins  text-[#ffffff]">
-                                    Jhon Winick
+                                    {dashboardStats?.upcomingAnniversary?.personName || 'No upcoming anniversaries'}
                                 </p>
-                                <p className="text-xs font-poppins text-[#ffffff]">
-                                    16 Sep, 2025
-                                </p>
+                                {dashboardStats?.upcomingAnniversary?.personDeathDate && (
+                                    <p className="text-xs font-poppins text-[#ffffff]">
+                                        {dayjs(dashboardStats.upcomingAnniversary.personDeathDate).format('DD MMM, YYYY')}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
                         <div className="bg-[#2f3349] rounded-lg shadow-[0_4px_18px_0_rgba(75,70,92,0.10)] p-5">
                             <div className="space-y-1">
                                 <p className="text-sm font-poppins text-[#ffffff]">
-                                    upcoming Events
+                                    Upcoming Events
                                 </p>
                                 <p className="text-2xl font-poppins font-bold text-[#ffffff]">
-                                    1
+                                    {dashboardStats?.upcomingEvents || 0}
                                 </p>
-                                <p className="text-xs font-poppins text-[#ffffff]">
-                                    16 Sep, 2025
-                                </p>
+                                {dashboardStats?.nextEvent?.eventStart && (
+                                    <p className="text-xs font-poppins text-[#ffffff]">
+                                        {dayjs(dashboardStats.nextEvent.eventStart).format('DD MMM, YYYY')}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
@@ -90,7 +110,7 @@ const Dashboard = () => {
                                     Total Memories
                                 </p>
                                 <p className="text-2xl font-poppins font-bold text-[#ffffff]">
-                                    12
+                                    {dashboardStats?.memorialCount || 0}
                                 </p>
                             </div>
                         </div>
@@ -136,14 +156,21 @@ const Dashboard = () => {
                                 </div>
 
                                 <div className="pt-4 border-t border-[#44475b] space-y-4">
-                                    <p className="text-sm font-poppins text-[#ffffff]">
-                                        Event Date & Time
-                                    </p>
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-sm font-poppins text-[#ffffff]">
+                                            Event Date & Time
+                                        </p>
+                                        {dashboardStats?.nextEvent?.eventDuration && (
+                                            <span className="text-xs text-gray-400">
+                                                Duration: {dashboardStats.nextEvent.eventDuration}
+                                            </span>
+                                        )}
+                                    </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                         <div className="sm:col-span-2 relative">
                                             <DatePicker
-                                                value={selectedDate}
+                                                value={selectedDate || (dashboardStats?.nextEvent?.eventStart ? dayjs(dashboardStats.nextEvent.eventStart).toDate() : null)}
                                                 onChange={setSelectedDate}
                                                 placeholder="Select Date"
                                                 className="text-white bg-[#383C56] border border-[#383C56]"
@@ -153,7 +180,10 @@ const Dashboard = () => {
                                         <div className="relative">
                                             <Select<Option>
                                                 options={timeOptions}
-                                                value={selectedTime}
+                                                value={selectedTime || (dashboardStats?.nextEvent?.eventStart ? {
+                                                    value: dayjs(dashboardStats.nextEvent.eventStart).format('HH:mm'),
+                                                    label: dayjs(dashboardStats.nextEvent.eventStart).format('HH:mm')
+                                                } : null)}
                                                 onChange={(newValue) =>
                                                     setSelectedTime(newValue)
                                                 }
@@ -191,8 +221,8 @@ const Dashboard = () => {
                                 </p>
 
                                 <ProgressBar
-                                    used={3.2}
-                                    total={5}
+                                    used={parseGB(dashboardStats?.storageDetail?.usedGB)}
+                                    total={parseGB(dashboardStats?.storageDetail?.limitGB)}
                                     height={16}
                                     showValues={true}
                                     showTotal={true}
@@ -206,8 +236,8 @@ const Dashboard = () => {
                                     <div className="space-y-3">
                                         <ProgressBar
                                             label="Photos"
-                                            used={1.8}
-                                            total={3.2}
+                                            used={parseGB(dashboardStats?.storageDetail?.photosGB)}
+                                            total={parseGB(dashboardStats?.storageDetail?.limitGB)}
                                             height={8}
                                             showValues={true}
                                             showTotal={false}
@@ -215,8 +245,8 @@ const Dashboard = () => {
 
                                         <ProgressBar
                                             label="Videos"
-                                            used={1.2}
-                                            total={3.2}
+                                            used={parseGB(dashboardStats?.storageDetail?.videosGB)}
+                                            total={parseGB(dashboardStats?.storageDetail?.limitGB)}
                                             height={8}
                                             showValues={true}
                                             showTotal={false}
@@ -234,22 +264,41 @@ const Dashboard = () => {
                                     All Memories
                                 </p>
                                 <span className="text-sm font-medium text-[#1F2937]">
-                                    3.2 GB / 5 GB
+                                    {dashboardStats?.storageDetail?.usedGB || '0GB'} / {dashboardStats?.storageDetail?.limitGB || '5GB'}
                                 </span>
                             </div>
 
-                            {/* Memorial Cards Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
-                                {memorials?.map((memorial, index) => (
+                                {(dashboardStats?.memorials || memorials)?.map((memorial: any, index: number) => (
                                     <div
                                         key={index}
                                         className="group cursor-pointer"
                                         onClick={() => {
                                             setActiveMemorialId(memorial.id)
-                                            const landingMode = (memorial as any).template?.landingMode?.landingModeType
-                                            if (landingMode === 'video-only-mode') {
+                                            const landingMode =
+                                                (memorial as any).template
+                                                    ?.landingMode
+                                                    ?.landingModeType ||
+                                                (memorial as any).landingMode
+                                                    ?.landingModeType ||
+                                                (memorial as any).landingModeType
+
+                                            console.log(
+                                                'Memorial Navigation Check:',
+                                                {
+                                                    id: memorial.id,
+                                                    landingMode,
+                                                    memorialObj: memorial,
+                                                },
+                                            )
+
+                                            if (
+                                                landingMode === 'video-only-mode'
+                                            ) {
                                                 navigate('/dashboard/video-memorial')
-                                            } else if (landingMode === 'event-mode') {
+                                            } else if (
+                                                landingMode === 'event-mode'
+                                            ) {
                                                 navigate('/dashboard/event-memorial')
                                             } else {
                                                 navigate('/dashboard/memorial')
@@ -259,7 +308,7 @@ const Dashboard = () => {
                                         <div className="space-y-3">
                                             <div className="rounded-lg overflow-hidden">
                                                 <img
-                                                    src={AllMemories1}
+                                                    src={memorial.personProfilePicture || AllMemories1}
                                                     alt={memorial.personName}
                                                     className="w-full h-65 object-cover  transition-transform duration-300 group-hover:scale-105"
                                                 />
@@ -268,13 +317,13 @@ const Dashboard = () => {
                                             <div className="space-y-2">
                                                 <div className="flex items-center justify-center gap-1">
                                                     <span className="text-xs font-manrope font-medium text-[#ffffff]">
-                                                        {memorial.personName ? '2023' : ''}
+                                                        {memorial.personBirthDate ? dayjs(memorial.personBirthDate).format('YYYY') : ''}
                                                     </span>
                                                     <span className="text-xs font-manrope font-medium text-[#ffffff]">
                                                         -
                                                     </span>
                                                     <span className="text-xs font-manrope font-medium text-[#ffffff]">
-                                                        {memorial.personName ? '2024' : ''}
+                                                        {memorial.personDeathDate ? dayjs(memorial.personDeathDate).format('YYYY') : ''}
                                                     </span>
                                                 </div>
 
