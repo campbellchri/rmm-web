@@ -4,6 +4,7 @@ import { LayoutPanelTop, PlayCircle, CalendarDays } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import ProgressBar from '@/components/ui/ProgressBar/ProgressBar'
 import { apiGetMemorialModeList } from '@/services/axios/MemorialModeService'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 type LandingModeType = 'full-mode' | 'video-only-mode' | 'event-mode'
 
@@ -30,10 +31,12 @@ const MODE_ICON_MAP: Record<LandingModeType, any> = {
 const CreateMemorial = () => {
     const navigate = useNavigate()
     const [modes, setModes] = useState<MemorialMode[]>([])
+    const [isLoading, setIsLoading] = useState(true)
     const [selectedMode, setSelectedMode] = useState<LandingModeType | ''>('')
 
     useEffect(() => {
         const fetchModes = async () => {
+            setIsLoading(true)
             try {
                 const res = (await apiGetMemorialModeList()) as MemorialMode[]
 
@@ -52,6 +55,8 @@ const CreateMemorial = () => {
                 }
             } catch (error) {
                 console.error('Failed to fetch memorial modes', error)
+            } finally {
+                setIsLoading(false)
             }
         }
 
@@ -117,73 +122,111 @@ const CreateMemorial = () => {
 
                         {/* Mode Cards */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
-                            {modes.map((mode) => {
-                                const Icon = MODE_ICON_MAP[mode.landingModeType]
-                                const isSelected =
-                                    selectedMode === mode.landingModeType
-
-                                return (
+                            {isLoading
+                                ? Array.from({ length: 3 }).map((_, index) => (
                                     <div
-                                        key={mode.id}
-                                        className={`relative bg-[#2F3349] rounded-lg shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] p-6 cursor-pointer transition-all duration-200 ${
-                                            isSelected
-                                                ? 'border-2 border-[#C7A30D]'
-                                                : 'border-2 border-transparent hover:border-gray-200'
-                                        }`}
-                                        onClick={() =>
-                                            setSelectedMode(
-                                                mode.landingModeType,
-                                            )
-                                        }
+                                        key={`skeleton-${index}`}
+                                        className="bg-[#2F3349] rounded-lg p-6 border-2 border-transparent space-y-6"
                                     >
-                                        {/* Selection Indicator */}
-                                        <div className="absolute top-6 right-6">
-                                            {isSelected ? (
-                                                <div className="w-6 h-6 bg-[#C7A30D] rounded-full flex items-center justify-center">
-                                                    <Check
-                                                        className="w-5 h-5 text-white"
-                                                        strokeWidth={2.5}
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="w-6 h-6 border-2 border-[#9CA3AF] rounded-full" />
-                                            )}
+                                        <div className="flex justify-end">
+                                            <Skeleton
+                                                variant="circle"
+                                                width={24}
+                                                height={24}
+                                            />
                                         </div>
+                                        <div className="flex justify-center pt-4">
+                                            <Skeleton
+                                                width={45}
+                                                height={45}
+                                            />
+                                        </div>
+                                        <div className="flex justify-center">
+                                            <Skeleton
+                                                width="60%"
+                                                height={20}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Skeleton
+                                                width="100%"
+                                                height={16}
+                                            />
+                                            <Skeleton
+                                                width="80%"
+                                                height={16}
+                                                className="mx-auto"
+                                            />
+                                        </div>
+                                    </div>
+                                ))
+                                : modes.map((mode) => {
+                                    const Icon =
+                                        MODE_ICON_MAP[mode.landingModeType]
+                                    const isSelected =
+                                        selectedMode === mode.landingModeType
 
-                                        {/* Content */}
-                                        <div className="space-y-6">
-                                            {/* Icon */}
-                                            <div className="flex justify-center pt-4">
-                                                {Icon && (
-                                                    <Icon
-                                                        size={45}
-                                                        strokeWidth={2.5}
-                                                        className={
-                                                            isSelected
-                                                                ? 'text-[#C7A30D]'
-                                                                : 'text-gray-500'
-                                                        }
-                                                    />
+                                    return (
+                                        <div
+                                            key={mode.id}
+                                            className={`relative bg-[#2F3349] rounded-lg shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] p-6 cursor-pointer transition-all duration-200 ${isSelected
+                                                    ? 'border-2 border-[#C7A30D]'
+                                                    : 'border-2 border-transparent hover:border-gray-200'
+                                                }`}
+                                            onClick={() =>
+                                                setSelectedMode(
+                                                    mode.landingModeType,
+                                                )
+                                            }
+                                        >
+                                            {/* Selection Indicator */}
+                                            <div className="absolute top-6 right-6">
+                                                {isSelected ? (
+                                                    <div className="w-6 h-6 bg-[#C7A30D] rounded-full flex items-center justify-center">
+                                                        <Check
+                                                            className="w-5 h-5 text-white"
+                                                            strokeWidth={2.5}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-6 h-6 border-2 border-[#9CA3AF] rounded-full" />
                                                 )}
                                             </div>
 
-                                            {/* Title */}
-                                            <div className="text-center">
-                                                <p className="md:text-lg text-base DMSerif text-white capitalize">
-                                                    {mode.title}
-                                                </p>
-                                            </div>
+                                            {/* Content */}
+                                            <div className="space-y-6">
+                                                {/* Icon */}
+                                                <div className="flex justify-center pt-4">
+                                                    {Icon && (
+                                                        <Icon
+                                                            size={45}
+                                                            strokeWidth={2.5}
+                                                            className={
+                                                                isSelected
+                                                                    ? 'text-[#C7A30D]'
+                                                                    : 'text-gray-500'
+                                                            }
+                                                        />
+                                                    )}
+                                                </div>
 
-                                            {/* Description */}
-                                            <div className="text-center">
-                                                <p className="md:text-base text-sm font-poppins text-[#ffffff] leading-relaxed">
-                                                    {mode.description}
-                                                </p>
+                                                {/* Title */}
+                                                <div className="text-center">
+                                                    <p className="md:text-lg text-base DMSerif text-white capitalize">
+                                                        {mode.title}
+                                                    </p>
+                                                </div>
+
+                                                {/* Description */}
+                                                <div className="text-center">
+                                                    <p className="md:text-base text-sm font-poppins text-[#ffffff] leading-relaxed">
+                                                        {mode.description}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )
-                            })}
+                                    )
+                                })}
                         </div>
                     </div>
 

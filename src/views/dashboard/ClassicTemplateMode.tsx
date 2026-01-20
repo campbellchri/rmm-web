@@ -488,10 +488,8 @@ export default function ClassicTemplateMode() {
                         </div>
                     </div>
 
-                    {/* Profile Section */}
                     <div className="flex flex-col items-center gap-5 mb-8">
                         <div className="flex items-center gap-4">
-                            {/* Avatar Preview */}
                             <div className="lg:w-31 lg:h-31 md:w-25 md:h-25 h-20 w-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                                 {profileImage ? (
                                     <img
@@ -508,7 +506,6 @@ export default function ClassicTemplateMode() {
                                 )}
                             </div>
 
-                            {/* Upload Button */}
                             <button
                                 type="button"
                                 disabled={uploadingProfile}
@@ -522,7 +519,6 @@ export default function ClassicTemplateMode() {
                                 {uploadingProfile ? 'Uploading...' : 'Upload Profile'}
                             </button>
 
-                            {/* Hidden File Input */}
                             <input
                                 id="profileUpload"
                                 type="file"
@@ -542,14 +538,13 @@ export default function ClassicTemplateMode() {
                             />
                         </div>
 
-                        {/* Basic Info */}
                         <div className="w-full bg-[#2f3349] rounded-lg p-6 shadow">
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <CommonInput
                                         name="personName"
                                         control={control}
-                                        value="Full Name"
+                                        placeholder='Full Name'
                                     />
                                     <CommonSelect
                                         name="personGender"

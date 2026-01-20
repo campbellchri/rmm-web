@@ -1,13 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { QRCodeCanvas } from 'qrcode.react'
 import { apiSetFeaturedMemorial, apiGetMemorialById } from '@/services/axios/MemorialModeService'
 import { useMemorialStore } from '@/store/memorialStore'
 import { toast, Notification } from '@/components/ui'
 import { ArrowLeft, Copy, Facebook, Play, QrCode, Twitter } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import MemberAvatar from '../../../public//img//others/member-avatar-4.jpg.png'
-import videoFrame12 from '../../../public/img/others/FRAME (12).png'
-import videoFrame13 from '../../../public/img/others/FRAME (13).png'
-import videoFrame14 from '../../../public/img/others/FRAME (14).png'
 import VideoFrame from '../../../public//img/others/FRAME (11).png'
 import LogoFrame from '../../../public//img/others/FRAME (16).png'
 
@@ -19,6 +16,7 @@ export default function VideoMemorial() {
     const memorialId = activeMemorialId
 
     const navigate = useNavigate()
+    const qrRef = useRef<HTMLCanvasElement>(null)
 
     useEffect(() => {
         fetchMemorials()
@@ -36,13 +34,26 @@ export default function VideoMemorial() {
         }
     }
     const handleCopyUrl = () => {
-        navigator.clipboard.writeText('memorial.com/robert-johnson')
+        navigator.clipboard.writeText(memorialDetails?.pageURL)
         setCopiedUrl(true)
         setTimeout(() => setCopiedUrl(false), 2000)
     }
 
     const handlePlayVideo = (videoId: string) => {
         setActiveVideo(videoId)
+    }
+
+    const handleDownloadQRCode = () => {
+        if (qrRef.current) {
+            const canvas = qrRef.current
+            const url = canvas.toDataURL('image/png')
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `memorial-qr-${memorialDetails?.personName || 'code'}.png`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+        }
     }
 
     const featuredVideo = memorialDetails?.userMedia?.find(
@@ -53,14 +64,6 @@ export default function VideoMemorial() {
         (m: any) => m.category === 'gallery' && m.type === 'video'
     ) || []
 
-    const galleryItems = galleryVideos.map((item: any, index: number) => ({
-        id: item.id || `gallery-${index}`,
-        title: item.videoTitle || 'Gallery Video',
-        subtitle: item.videoDescription || '',
-        thumbnail: item.fileURL, // Using video URL as thumbnail for now, or could use a placeholder
-        videoURL: item.fileURL,
-        hasPlayButton: true,
-    }))
 
     return (
         <>
@@ -117,21 +120,14 @@ export default function VideoMemorial() {
                 </button>
             </div>
             <div className="min-h-screen">
-                {/* Hero Section with Profile and Testimonial */}
                 <div
                     className="relative w-full bg-cover bg-center"
-                // style={{
-                //     backgroundImage:
-                //         "url('https://api.builder.io/api/v1/image/assets/TEMP/2f525d80d45fde76e6bf817c53bf3e2a59dc45ea?width=2880')",
-                // }}
+
                 >
-                    {/* Overlay */}
                     <div className="absolute inset-0"></div>
 
                     <div className="relative max-w-7xl mx-auto px-6 py-12">
-                        {/* Profile Info + Quote wrapper */}
                         <div className="flex flex-col md:items-center md:justify-between lg:flex-row lg:items-end lg:justify-between gap-8">
-                            {/* Profile Info */}
                             <div className="flex flex-col sm:flex-row sm:items-end gap-6 sm:gap-8">
                                 <div className="flex justify-center sm:justify-start">
                                     <img
@@ -143,13 +139,7 @@ export default function VideoMemorial() {
                                 <div className="flex flex-col gap-2.5 text-center sm:text-left">
                                     <div className="space-y-1">
                                         <p className="DMSerif text-[28px] sm:text-[42px] leading-[34px] sm:leading-[50px] text-[#ffffff]">
-                                            {memorialDetails?.personName || (
-                                                <>
-                                                    James William
-                                                    <br />
-                                                    Thompson
-                                                </>
-                                            )}
+                                            {memorialDetails?.personName}
                                         </p>
                                         <div className="font-poppins text-lg sm:text-2xl text-[#ffffff]">
                                             {memorialDetails?.personBirthDate &&
@@ -205,50 +195,46 @@ export default function VideoMemorial() {
                     </div>
                 </div>
 
-                {/* Main Tribute Gallery Section */}
                 <div className="py-12">
                     <div className="max-w-4xl mx-auto px-6">
-                        {/* Main Video Player */}
                         <div className="mb-8">
                             <div className="relative">
-                                {/* Golden Border Frame */}
                                 <div className="border-2 border-[#C7A30D] bg-white/30 p-3.5 rounded-lg">
                                     <div className="relative md:w-full md:h-[452px] rounded-lg overflow-hidden bg-black">
-                                        {activeVideo === 'main' && (featuredVideo?.fileURL) ? (
-                                            <video
-                                                src={featuredVideo.fileURL}
-                                                controls
-                                                autoPlay
-                                                className="w-full h-full object-contain"
-                                            />
-                                        ) : (
-                                            <>
-                                                <img
-                                                    src={VideoFrame}
-                                                    alt="Tribute Gallery Main Video Placeholder"
-                                                    className="md:w-full md:h-full object-cover opacity-60"
+                                        {memorialDetails?.videos[0] ? (
+                                            <div className="relative w-full h-full">
+                                                <video
+                                                    key={`main-${activeVideo === 'main'}`}
+                                                    src={memorialDetails?.videos[0].fileURL}
+                                                    controls={activeVideo === 'main'}
+                                                    autoPlay={activeVideo === 'main'}
+                                                    className="w-full h-full object-contain"
                                                 />
-                                                {/* Play Button Overlay */}
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                    <button
-                                                        onClick={() =>
-                                                            handlePlayVideo('main')
-                                                        }
-                                                        className="w-15 h-15 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
-                                                    >
-                                                        <Play
-                                                            className="w-8 h-8 text-white ml-1"
-                                                            fill="currentColor"
-                                                        />
-                                                    </button>
-                                                </div>
-                                            </>
+                                                {activeVideo !== 'main' && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                                        <button
+                                                            onClick={() => handlePlayVideo('main')}
+                                                            className="w-15 h-15 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
+                                                        >
+                                                            <Play
+                                                                className="w-8 h-8 text-white ml-1"
+                                                                fill="currentColor"
+                                                            />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <img
+                                                src={VideoFrame}
+                                                alt="Tribute Gallery Main Video Placeholder"
+                                                className="md:w-full md:h-full object-cover opacity-60"
+                                            />
                                         )}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Section Title */}
                             <div className="text-center mt-8 space-y-2">
                                 <p className="DMSerif md:text-[40px] text-2xl text-white leading-tight">
                                     {featuredVideo?.videoTitle || 'Tribute Gallery'}
@@ -261,59 +247,54 @@ export default function VideoMemorial() {
                     </div>
                 </div>
 
-                {/* Gallery Sections */}
                 <div className="py-8">
                     <div className="max-w-7xl mx-auto px-6">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {galleryItems.map((item: any) => (
+                            {memorialDetails?.videos.map((item: any) => (
                                 <div
-                                    key={item.id}
+                                    key={item.fileId}
                                     className="flex flex-col items-center space-y-4"
                                 >
-                                    {/* Video/Image Frame */}
                                     <div className="relative">
                                         <div className="border-2 border-[#C7A30D] bg-white/30 p-3.5 rounded-lg">
                                             <div className="relative w-80 h-60 rounded-lg overflow-hidden bg-black">
-                                                {activeVideo === item.id ? (
-                                                    <video
-                                                        src={item.videoURL}
-                                                        controls
-                                                        autoPlay
-                                                        className="w-full h-full object-contain"
-                                                    />
-                                                ) : (
-                                                    <>
-                                                        <img
-                                                            src={LogoFrame} // Using LogoFrame as a fallback or could use a thumbnail if available
-                                                            alt={item.title}
-                                                            className="w-full h-full object-cover opacity-60"
+                                                {item.fileURL ? (
+                                                    <div className="relative w-full h-full">
+                                                        <video
+                                                            key={`${item.fileId}-${activeVideo === item.fileId}`}
+                                                            src={item.fileURL}
+                                                            controls={activeVideo === item.fileId}
+                                                            autoPlay={activeVideo === item.fileId}
+                                                            className="w-full h-full object-contain"
                                                         />
-                                                        {/* Play Button Overlay */}
-                                                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                                            <button
-                                                                onClick={() =>
-                                                                    handlePlayVideo(
-                                                                        item.id,
-                                                                    )
-                                                                }
-                                                                className="w-10 h-10 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
-                                                            >
-                                                                <Play
-                                                                    className="w-5 h-5 text-white ml-0.5"
-                                                                    fill="currentColor"
-                                                                />
-                                                            </button>
-                                                        </div>
-                                                    </>
+                                                        {activeVideo !== item.fileId && (
+                                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                                                <button
+                                                                    onClick={() => handlePlayVideo(item.fileId)}
+                                                                    className="w-10 h-10 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
+                                                                >
+                                                                    <Play
+                                                                        className="w-5 h-5 text-white ml-0.5"
+                                                                        fill="currentColor"
+                                                                    />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <img
+                                                        src={LogoFrame}
+                                                        alt={item.title}
+                                                        className="w-full h-full object-cover opacity-60"
+                                                    />
                                                 )}
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Title and Subtitle */}
                                     <div className="text-center space-y-1">
                                         <p className="DMSerif md:text-2xl text-xl text-[#fff]">
-                                            {item.title}
+                                            {item.videoTitle}
                                         </p>
                                         <p className="monteCarlo text-base text-[#fff]">
                                             {item.subtitle}
@@ -325,11 +306,9 @@ export default function VideoMemorial() {
                     </div>
                 </div>
 
-                {/* Decorative Divider */}
                 <div className="flex items-center justify-center gap-6 py-8">
                     <div className="w-[200px] h-0.5 bg-gradient-to-r from-transparent via-[#B99F6B] to-transparent"></div>
 
-                    {/* Cross/Star Icon */}
                     <div className="w-8 h-8 text-[#C7A30D]">
                         <svg
                             width="32"
@@ -348,13 +327,11 @@ export default function VideoMemorial() {
                     <div className="w-[200px] h-0.5 bg-gradient-to-r from-transparent via-[#B99F6B] to-transparent"></div>
                 </div>
 
-                {/* Footer */}
                 <section className="bg-[#2F3349] rounded-lg p-6 shadow-sm">
                     <p className="font-poppins text-lg text-[#ffffff] mb-4">
                         Share Memorial Page
                     </p>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Social Sharing */}
                         <div className="space-y-4">
                             <p className="font-poppins text-base text-[#ffffff]">
                                 Share this memorial page with friends and family
@@ -374,7 +351,6 @@ export default function VideoMemorial() {
                                 </button>
                             </div>
 
-                            {/* URL Copy */}
                             <div className="space-y-1">
                                 <label className="font-poppins text-sm text-[#ffffff]">
                                     Memorial URL
@@ -382,29 +358,41 @@ export default function VideoMemorial() {
                                 <div className="flex">
                                     <input
                                         type="text"
-                                        value="memorial.com/robert-johnson"
+                                        value={memorialDetails?.pageURL}
                                         readOnly
                                         className="flex-1 px-3 py-2 bg-transparent border border-[#D1D5DB] rounded-l-md font-poppins text-sm text-[#ffffff] focus:outline-none focus:ring-2 focus:ring-[#C7A30D]"
                                     />
                                     <button
-                                        // onClick={handleCopyUrl}
-                                        className={`px-3 py-2 border border-[#D1D5DB] border-l-0 rounded-r-md bg-[#F3F4F6] hover:bg-[#E5E7EB] transition-colors ${copiedUrl ? 'bg-green-100' : ''}`}
+                                        onClick={handleCopyUrl}
+                                        className={`px-3 py-2 border border-[#D1D5DB] border-l-0 rounded-r-md bg-[#f3f4f6] hover:bg-[#E5E7EB] transition-colors ${copiedUrl ? 'bg-green-100' : ''}`}
                                     >
-                                        <Copy className="w-4 h-4 text-[#ffffff]" />
+                                        <Copy className="w-4 h-4 text-[#353F4A]" />
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        {/* QR Code */}
                         <div className="flex flex-col items-center justify-center border-l border-[#E5E7EB] pl-6">
-                            <div className="w-[120px] h-[120px] bg-[#1F2937] rounded-lg flex items-center justify-center mb-3">
-                                <QrCode className="w-20 h-20 text-white" />
+                            <div className="w-[140px] h-[140px] bg-white rounded-lg flex items-center justify-center mb-3 p-3 shadow-inner">
+                                {memorialDetails?.pageURL ? (
+                                    <QRCodeCanvas
+                                        ref={qrRef}
+                                        value={memorialDetails?.qrCode?.qrCodeData || memorialDetails?.pageURL}
+                                        size={120}
+                                        marginSize={2}
+                                        level="H"
+                                    />
+                                ) : (
+                                    <QrCode className="w-20 h-20 text-gray-400" />
+                                )}
                             </div>
                             <p className="font-poppins text-sm text-[#ffffff] text-center mb-2">
                                 Scan for in-person sharing
                             </p>
-                            <button className="font-poppins text-sm text-[#C7A30D] hover:underline">
+                            <button
+                                onClick={handleDownloadQRCode}
+                                className="font-poppins text-sm text-[#C7A30D] hover:underline"
+                            >
                                 Download QR Code
                             </button>
                         </div>

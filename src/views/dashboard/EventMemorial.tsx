@@ -1,17 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { QRCodeCanvas } from 'qrcode.react'
 import { apiSetFeaturedMemorial, apiGetMemorialById } from '@/services/axios/MemorialModeService'
 import { useMemorialStore } from '@/store/memorialStore'
 import { toast, Notification } from '@/components/ui'
 import { ArrowLeft, Copy, Facebook, Play, QrCode, Twitter } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { MediaType } from '@/constants/memorial.constant'
 
 export default function EventMemorial() {
     const [isPlaying, setIsPlaying] = useState(false)
     const [copiedUrl, setCopiedUrl] = useState(false)
     const [memorialDetails, setMemorialDetails] = useState<any>(null)
-    const { memorials, fetchMemorials, activeMemorialId } = useMemorialStore()
+    const { fetchMemorials, activeMemorialId } = useMemorialStore()
     const memorialId = activeMemorialId
     const navigate = useNavigate()
+    const qrRef = useRef<HTMLCanvasElement>(null)
 
     useEffect(() => {
         fetchMemorials()
@@ -30,20 +33,35 @@ export default function EventMemorial() {
     }
 
     const handleCopyUrl = () => {
-        navigator.clipboard.writeText('memorial.com/robert-johnson')
+        navigator.clipboard.writeText(memorialDetails?.pageURL)
         setCopiedUrl(true)
         setTimeout(() => setCopiedUrl(false), 2000)
     }
 
+    const videoUrl = memorialDetails?.userMedia?.find(
+        (m: any) => m.type === MediaType.VIDEO
+    )?.fileURL
+
     const handlePlayVideo = () => {
         setIsPlaying(true)
-        // Video play logic would go here
+    }
+
+    const handleDownloadQRCode = () => {
+        if (qrRef.current) {
+            const canvas = qrRef.current
+            const url = canvas.toDataURL('image/png')
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `memorial-qr-${memorialDetails?.personName || 'code'}.png`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+        }
     }
 
     return (
         <>
             <div className="min-h-screen">
-                {/* Title Section */}
                 <div className=" py-16 relative">
                     <div className="absolute top-3 w-full px-6 flex justify-between items-center">
                         <button
@@ -102,35 +120,43 @@ export default function EventMemorial() {
                             {memorialDetails?.personName || 'James William Thompson'}
                         </p>
                         <p className="font-poppins md:text-2xl text:2xl font-[500] text-[#ffffff] mb-2.5">
-                            Memorial Tribute
+                            {memorialDetails?.personName}
                         </p>
                         <p className="monteCarlo text-[22px] text-[#ffffff]">
-                            A Life Well Lived
+                            {memorialDetails?.personName}
                         </p>
                     </div>
                 </div>
 
-                {/* Main Content */}
                 <div className="py-12">
                     <div className="max-w-7xl mx-auto px-6">
-                        {/* Video Player Section */}
                         <div className="mb-8">
                             <div className="relative">
-                                {/* Golden Border Frame */}
                                 <div className="border-2 border-[#C7A30D] bg-transparent p-4 rounded-lg">
-                                    <div className="relative md:w-full md:h-[585px] rounded-lg overflow-hidden">
-                                        <img
-                                            src="https://api.builder.io/api/v1/image/assets/TEMP/04b24a281d67806b9ac0bcb3134cd859cf474329?width=2540"
-                                            alt="Memorial Service Video"
-                                            className="md:w-full md:h-full object-cover"
-                                        />
+                                    <div className="relative md:w-full md:h-[585px] rounded-lg overflow-hidden bg-black flex items-center justify-center">
+                                        {videoUrl ? (
+                                            <video
+                                                src={videoUrl}
+                                                className="md:w-full md:h-full object-contain"
+                                                controls={isPlaying}
+                                                onPlay={() => setIsPlaying(true)}
+                                                onPause={() => setIsPlaying(false)}
+                                                onEnded={() => setIsPlaying(false)}
+                                                autoPlay={isPlaying}
+                                            />
+                                        ) : (
+                                            <img
+                                                src="https://api.builder.io/api/v1/image/assets/TEMP/04b24a281d67806b9ac0bcb3134cd859cf474329?width=2540"
+                                                alt="Memorial Service Video Placeholder"
+                                                className="md:w-full md:h-full object-cover"
+                                            />
+                                        )}
 
-                                        {/* Play Button Overlay */}
                                         {!isPlaying && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
                                                 <button
                                                     onClick={handlePlayVideo}
-                                                    className="w-15 h-15 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
+                                                    className="w-15 h-15 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg pointer-events-auto"
                                                 >
                                                     <Play
                                                         className="w-8 h-8 text-white ml-1"
@@ -143,10 +169,9 @@ export default function EventMemorial() {
                                 </div>
                             </div>
 
-                            {/* Service Title */}
                             <div className="text-center mt-8 space-y-2">
                                 <p className="DMSerif md:text-[40px] text-2xl leading-tight text-[#ffffff]">
-                                    Memorial Service July 10, 2025
+                                    Memorial Service {memorialDetails?.eventStart && new Date(memorialDetails.eventStart).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                                 </p>
                                 <p className="monteCarlo text-[22px] text-[#ffffff]">
                                     A Life Well Lived
@@ -156,11 +181,9 @@ export default function EventMemorial() {
                     </div>
                 </div>
 
-                {/* Decorative Divider */}
                 <div className="flex items-center justify-center gap-6 py-8">
                     <div className="w-[200px] h-0.5 bg-gradient-to-r from-transparent via-[#B99F6B] to-transparent"></div>
 
-                    {/* Cross/Star Icon */}
                     <div className="w-8 h-8 text-[#C7A30D]">
                         <svg
                             width="32"
@@ -179,13 +202,11 @@ export default function EventMemorial() {
                     <div className="w-[200px] h-0.5 bg-gradient-to-r from-transparent via-[#B99F6B] to-transparent"></div>
                 </div>
 
-                {/* Footer */}
                 <section className="bg-[#2F3349] rounded-lg p-6 shadow-sm">
                     <p className="font-poppins text-lg text-[#ffffff] mb-4">
                         Share Memorial Page
                     </p>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Social Sharing */}
                         <div className="space-y-4">
                             <p className="font-poppins text-base text-[#ffffff]">
                                 Share this memorial page with friends and family
@@ -205,7 +226,6 @@ export default function EventMemorial() {
                                 </button>
                             </div>
 
-                            {/* URL Copy */}
                             <div className="space-y-1">
                                 <label className="font-poppins text-sm text-[#ffffff]">
                                     Memorial URL
@@ -213,29 +233,41 @@ export default function EventMemorial() {
                                 <div className="flex">
                                     <input
                                         type="text"
-                                        value="memorial.com/robert-johnson"
+                                        value={memorialDetails?.pageURL}
                                         readOnly
                                         className="flex-1 px-3 py-2 bg-transparent border border-[#D1D5DB] rounded-l-md font-poppins text-sm text-[#ffffff] focus:outline-none focus:ring-2 focus:ring-[#C7A30D]"
                                     />
                                     <button
-                                        // onClick={handleCopyUrl}
+                                        onClick={handleCopyUrl}
                                         className={`px-3 py-2 border border-[#D1D5DB] border-l-0 rounded-r-md bg-[#F3F4F6] hover:bg-[#E5E7EB] transition-colors ${copiedUrl ? 'bg-green-100' : ''}`}
                                     >
-                                        <Copy className="w-4 h-4 text-[#ffffff]" />
+                                        <Copy className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        {/* QR Code */}
                         <div className="flex flex-col items-center justify-center border-l border-[#E5E7EB] pl-6">
-                            <div className="w-[120px] h-[120px] bg-[#1F2937] rounded-lg flex items-center justify-center mb-3">
-                                <QrCode className="w-20 h-20 text-white" />
+                            <div className="w-[140px] h-[140px] bg-white rounded-lg flex items-center justify-center mb-3 p-3 shadow-inner">
+                                {memorialDetails?.pageURL ? (
+                                    <QRCodeCanvas
+                                        ref={qrRef}
+                                        value={memorialDetails?.qrCode?.qrCodeData || memorialDetails?.pageURL}
+                                        size={120}
+                                        marginSize={2}
+                                        level="H"
+                                    />
+                                ) : (
+                                    <QrCode className="w-20 h-20 text-gray-400" />
+                                )}
                             </div>
                             <p className="font-poppins text-sm text-[#ffffff] text-center mb-2">
                                 Scan for in-person sharing
                             </p>
-                            <button className="font-poppins text-sm text-[#C7A30D] hover:underline">
+                            <button
+                                onClick={handleDownloadQRCode}
+                                className="font-poppins text-sm text-[#C7A30D] hover:underline"
+                            >
                                 Download QR Code
                             </button>
                         </div>

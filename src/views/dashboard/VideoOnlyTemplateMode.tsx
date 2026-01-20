@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import Upload from '@/components/ui/Upload'
-import DatePicker from '@/components/ui/DatePicker/DatePicker'
-import { useNavigate } from 'react-router-dom'
-import { Input, Select, toast, Notification } from '@/components/ui'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { toast, Notification } from '@/components/ui'
+import { CommonInput, CommonSelect, CommonDatePicker } from '@/components/shared'
+import { ChevronDown } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
-import { apiCreateMemorial, apiGetMemorialModeList, apiGetMemorialTemplateList } from '@/services/axios/MemorialModeService'
+import {
+    apiCreateMemorial,
+    apiGetMemorialModeList,
+    apiGetMemorialTemplateList,
+    apiGetMemorialById,
+    apiUpdateMemorial,
+} from '@/services/axios/MemorialModeService'
 import dayjs from 'dayjs'
 import { apiUploadMedia } from '@/services/MediaService'
 import {
@@ -17,7 +24,6 @@ import {
 import { useMemorialStore } from '@/store/memorialStore'
 import { useMediaStore } from '@/store/mediaStore'
 
-// Form Section Component
 const FormSection = ({
     title,
     children,
@@ -51,19 +57,21 @@ export default function VideoOnlyMemorial() {
     const [featuredData, setFeaturedData] = useState<any>(null)
     const [videoData, setVideoData] = useState<{ file: File; res: any }[]>([])
     const { addMedia, getMedia, clearMedia } = useMediaStore()
-    const [featured, setFeatured] = useState<File[]>([])
-    const [video, setVideo] = useState<File[]>([])
     const [landingModeId, setLandingModeId] = useState<string>('')
     const [templateId, setTemplateId] = useState<string>('')
     const navigate = useNavigate()
+    const location = useLocation()
     const { fetchMemorials, setActiveMemorialId } = useMemorialStore()
+    const { mode, memorialId } = location.state || {}
+    const [isEditMode, setIsEditMode] = useState(mode === 'edit')
+    const [existingMemorialData, setExistingMemorialData] = useState<any>(null)
 
-    const { control, handleSubmit } = useForm({
+    const { control, handleSubmit, reset } = useForm({
         defaultValues: {
             personName: '',
             personGender: Gender.MALE,
-            personBirthDate: null,
-            personDeathDate: null,
+            personBirthDate: null as Date | null,
+            personDeathDate: null as Date | null,
             favQuote: '',
             featuredVideoTitle: '',
             favSaying: '',
@@ -82,19 +90,54 @@ export default function VideoOnlyMemorial() {
         const fetchData = async () => {
             try {
                 const templatesRes: any = await apiGetMemorialTemplateList()
-                const videoTemplate = templatesRes.find((t: any) => t.landingMode?.landingModeType === 'video-only-mode')
+                const videoTemplate = templatesRes.find(
+                    (t: any) => t.landingMode?.landingModeType === 'video-only-mode',
+                )
 
                 if (videoTemplate) {
                     setTemplateId(videoTemplate.id)
-                    // Use the landingModeId directly from the template object
                     setLandingModeId(videoTemplate.landingModeId)
+                }
+
+                if (isEditMode && memorialId) {
+                    const memorialRes: any = await apiGetMemorialById(memorialId)
+                    if (memorialRes) {
+                        setExistingMemorialData(memorialRes)
+                        reset({
+                            personName: memorialRes.personName || '',
+                            personGender: memorialRes.personGender || Gender.MALE,
+                            personBirthDate: memorialRes.personBirthDate
+                                ? new Date(memorialRes.personBirthDate)
+                                : null,
+                            personDeathDate: memorialRes.personDeathDate
+                                ? new Date(memorialRes.personDeathDate)
+                                : null,
+                            favQuote: memorialRes.favQuote || '',
+                            featuredVideoTitle:
+                                memorialRes.userMedia?.find(
+                                    (m: any) => m.category === MediaCategory.FEATURED,
+                                )?.videoTitle || '',
+                            favSaying:
+                                memorialRes.userMedia?.find(
+                                    (m: any) => m.category === MediaCategory.FEATURED,
+                                )?.videoDescription || '',
+                            galleryVideoTitle:
+                                memorialRes.userMedia?.find(
+                                    (m: any) => m.category === MediaCategory.GALLERY,
+                                )?.videoTitle || '',
+                        })
+
+                        if (memorialRes.personProfilePicture) {
+                            setProfileImage(memorialRes.personProfilePicture)
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching templates:', error)
             }
         }
         fetchData()
-    }, [])
+    }, [isEditMode, memorialId, reset])
 
     const uploadFiles = async (files: File[]) => {
         if (files.length === 0) return []
@@ -225,11 +268,11 @@ export default function VideoOnlyMemorial() {
                     })),
             ]
 
-            // If no videos are uploaded, add a dummy one to satisfy backend requirement
-            if (mediaList.length === 0) {
+            if (mediaList.length === 0 && !isEditMode) {
                 mediaList.push({
                     mimeType: 'video/mp4',
-                    fileURL: 'https://www.pexels.com/video/medical-training-855480/',
+                    fileURL:
+                        'https://www.pexels.com/video/medical-training-855480/',
                     fileId: 'dummy-video-id',
                     type: MediaType.VIDEO,
                     category: MediaCategory.FEATURED,
@@ -241,46 +284,98 @@ export default function VideoOnlyMemorial() {
                 } as any)
             }
 
-            const payload = {
+            const payload: any = {
                 landingModeId: landingModeId.toString(),
                 templateId: templateId,
                 personName: data.personName,
                 personGender: data.personGender,
                 personBirthDate: data.personBirthDate
-                    ? dayjs(data.personBirthDate).format('YYYY-MM-DD')
+                    ? dayjs(data.personBirthDate).toISOString()
                     : null,
                 personDeathDate: data.personDeathDate
-                    ? dayjs(data.personDeathDate).format('YYYY-MM-DD')
+                    ? dayjs(data.personDeathDate).toISOString()
                     : null,
-                profilePictureId: profileData?.fileId || null,
-                pageURL: `https://rememberme.com/memorial/${data.personName.toLowerCase().replace(/\s+/g, '-')}`,
-                personProfilePicture: profileData?.fileURL || profileImage || '',
+                profilePictureId:
+                    profileData?.fileId ||
+                    (isEditMode ? existingMemorialData?.profilePictureId : null),
+                pageURL: `https://rememberme.com/memorial/${data.personName
+                    .toLowerCase()
+                    .replace(/\s+/g, '-')}`,
+                personProfilePicture:
+                    profileData?.fileURL || profileImage || '',
                 favQuote: data.favQuote,
                 publishStatus: PublishStatus.DRAFT,
                 userMedia: mediaList,
             }
 
-            const response = await apiCreateMemorial(payload)
-            console.log('API Response:', response)
+            console.log('Final Payload:', JSON.stringify(payload, null, 2))
 
-            toast.push(
-                <Notification type="success" title="Success" duration={2000}>
-                    Video memorial created successfully!
-                </Notification>,
-                { placement: 'top-center' },
-            )
+            if (isEditMode && memorialId && existingMemorialData) {
+                const {
+                    id,
+                    creatorId,
+                    landingMode,
+                    favoriteSayings,
+                    qrCode,
+                    favSayings,
+                    ...restExistingData
+                } = existingMemorialData
+
+                const updatePayload = {
+                    ...restExistingData,
+                    ...payload,
+                    userMedia: [
+                        ...(existingMemorialData.userMedia || []).filter(
+                            (m: any) =>
+                                !mediaList.some(
+                                    (nm) => m.category === nm.category,
+                                ),
+                        ),
+                        ...payload.userMedia,
+                    ],
+                }
+
+                await apiUpdateMemorial(memorialId, updatePayload)
+                toast.push(
+                    <Notification
+                        type="success"
+                        title="Success"
+                        duration={2000}
+                    >
+                        Video memorial updated successfully!
+                    </Notification>,
+                    { placement: 'top-center' },
+                )
+            } else {
+                // Create Logic
+                const response: any = await apiCreateMemorial(payload)
+                if (response && response.id) {
+                    setActiveMemorialId(response.id)
+                }
+                toast.push(
+                    <Notification
+                        type="success"
+                        title="Success"
+                        duration={2000}
+                    >
+                        Video memorial created successfully!
+                    </Notification>,
+                    { placement: 'top-center' },
+                )
+            }
 
             await fetchMemorials(true)
-            if (response && (response as any).id) {
-                setActiveMemorialId((response as any).id)
-            }
             clearMedia()
             navigate('/dashboard/video-memorial')
-        } catch (error) {
-            console.error('Error creating memorial:', error)
+        } catch (error: any) {
+            console.error('Error saving memorial:', error)
+            const errorMsg =
+                error.response?.data?.message ||
+                error.message ||
+                'Failed to save memorial.'
             toast.push(
-                <Notification type="danger" title="Error" duration={2000}>
-                    Failed to create memorial. Please try again.
+                <Notification type="danger" title="Error" duration={5000}>
+                    {errorMsg}
                 </Notification>,
                 { placement: 'top-center' },
             )
@@ -311,7 +406,9 @@ export default function VideoOnlyMemorial() {
                                 <ArrowLeft />
                             </button>
                             <p className="md:text-2xl text-lg DMSerif font-[400] text-[#ffffff] text-memorial-text-primary">
-                                Template Video Only Mode
+                                {isEditMode
+                                    ? 'Edit Memorial'
+                                    : 'Template Video Only Mode'}
                             </p>
                         </div>
                     </div>
@@ -371,93 +468,51 @@ export default function VideoOnlyMemorial() {
                         <div className="w-full bg-[#2f3349] rounded-lg p-6 shadow">
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Controller
+                                    <CommonInput
                                         name="personName"
                                         control={control}
-                                        render={({ field }) => (
-                                            <Input
-                                                {...field}
-                                                placeholder="Full Name"
-                                                className="text-white bg-[#383c56] border-none"
-                                            />
-                                        )}
+                                        placeholder='Full Name'
                                     />
-                                    <Controller
+                                    <CommonSelect
                                         name="personGender"
                                         control={control}
-                                        render={({ field }) => (
-                                            <Select
-                                                options={genderOptions}
-                                                placeholder="Gender"
-                                                className="w-full font-poppins border-none"
-                                                value={genderOptions.find(
-                                                    (opt) =>
-                                                        opt.value ===
-                                                        field.value,
-                                                )}
-                                                onChange={(option: any) =>
-                                                    field.onChange(option.value)
-                                                }
-                                                styles={{
-                                                    singleValue: (
-                                                        base: any,
-                                                    ) => ({
-                                                        ...base,
-                                                        color: '#ffffff',
-                                                        border: 'none',
-                                                    }),
-                                                }}
-                                            />
-                                        )}
+                                        options={genderOptions}
+                                        placeholder="Gender"
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Controller
+                                    <CommonDatePicker
                                         name="personBirthDate"
                                         control={control}
-                                        render={({ field }) => (
-                                            <DatePicker
-                                                placeholder="Date of Birth"
-                                                type="date"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                className="text-white bg-[#383c56] border-none"
-                                            />
-                                        )}
+                                        value="Date of Birth"
+                                        label="Date of Birth"
+                                        type="date"
+                                        inputSuffix={
+                                            <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
+                                        }
                                     />
-                                    <Controller
+                                    <CommonDatePicker
                                         name="personDeathDate"
                                         control={control}
-                                        render={({ field }) => (
-                                            <DatePicker
-                                                placeholder="Date of Death"
-                                                type="date"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                className="text-white bg-[#383c56] border-none"
-                                            />
-                                        )}
+                                        value="Date of Death"
+                                        label="Date of Death"
+                                        type="date"
+                                        inputSuffix={
+                                            <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
+                                        }
                                     />
                                 </div>
                             </div>
                             <div className="mt-6">
-                                <label className="block text-base font-medium  text-[#ffffff] font-poppins mb-2">
-                                    Write a Quote (Optional)
-                                </label>
-                                <Controller
+                                <CommonInput
                                     name="favQuote"
                                     control={control}
-                                    render={({ field }) => (
-                                        <Input
-                                            {...field}
-                                            textArea
-                                            placeholder="Type here..."
-                                            maxLength={150}
-                                            rows={3}
-                                            className="text-white bg-[#383c56] border-none"
-                                        />
-                                    )}
+                                    label="Write a Quote (Optional)"
+                                    placeholder="Type here..."
+                                    maxLength={150}
+                                    rows={3}
+                                    textArea
                                 />
                             </div>
                         </div>
@@ -480,37 +535,19 @@ export default function VideoOnlyMemorial() {
                             uploading={uploadingFeatured}
                         />
                         <div className="mt-4">
-                            <label className="block text-sm text-white font-poppins mb-2">
-                                Video Title
-                            </label>
-                            <Controller
+                            <CommonInput
                                 name="featuredVideoTitle"
                                 control={control}
-                                render={({ field }) => (
-                                    <Input
-                                        {...field}
-                                        type="text"
-                                        placeholder="Enter title here..."
-                                        className="w-full  font-poppins bg-[#383c56] border-none text-white"
-                                    />
-                                )}
+                                label="Video Title"
+                                placeholder="Enter title here..."
                             />
                         </div>
                         <div className="mt-4">
-                            <label className="block text-sm text-white font-poppins mb-2">
-                                Favorite Sayings (Optional)
-                            </label>
-                            <Controller
+                            <CommonInput
                                 name="favSaying"
                                 control={control}
-                                render={({ field }) => (
-                                    <Input
-                                        {...field}
-                                        type="text"
-                                        placeholder="Enter sayings here..."
-                                        className="w-full font-poppins bg-[#383c56] border-none text-white"
-                                    />
-                                )}
+                                label="Favorite Sayings (Optional)"
+                                placeholder="Enter sayings here..."
                             />
                         </div>
                     </FormSection>
@@ -532,20 +569,11 @@ export default function VideoOnlyMemorial() {
                             uploading={uploadingVideos}
                         />
                         <div className="mt-4">
-                            <label className="block text-sm text-white font-poppins mb-2">
-                                Video Title
-                            </label>
-                            <Controller
+                            <CommonInput
                                 name="galleryVideoTitle"
                                 control={control}
-                                render={({ field }) => (
-                                    <Input
-                                        {...field}
-                                        type="text"
-                                        placeholder="Enter Video Title here ..."
-                                        className="w-full font-poppins bg-[#383c56] border-none text-white"
-                                    />
-                                )}
+                                label="Video Title"
+                                placeholder="Enter Video Title here ..."
                             />
                         </div>
                     </FormSection>
@@ -568,7 +596,11 @@ export default function VideoOnlyMemorial() {
                                     : 'linear-gradient(96.23deg, #ECA024 5.01%, #F9C94F 50.03%, #EAA32A 95.05%)',
                             }}
                         >
-                            {isSubmitting ? 'Saving...' : 'Save & Finish'}
+                            {isSubmitting
+                                ? 'Saving...'
+                                : isEditMode
+                                    ? 'Update & Finish'
+                                    : 'Save & Finish'}
                         </button>
                     </div>
                 </div>

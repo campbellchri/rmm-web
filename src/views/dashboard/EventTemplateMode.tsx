@@ -1,10 +1,20 @@
 import { useState, useEffect } from 'react'
-import { Calendar, Clock, ChevronDown, ArrowLeft } from 'lucide-react'
+import { Clock, ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { DatePicker, Input, Select, TimeInput, Upload, toast, Notification } from '@/components/ui'
+import {
+    TimeInput,
+    Upload,
+    toast,
+    Notification,
+} from '@/components/ui'
 import { useForm, Controller } from 'react-hook-form'
-import { apiCreateMemorial, apiGetMemorialModeList, apiGetMemorialTemplateList } from '@/services/axios/MemorialModeService'
+import {
+    apiCreateMemorial,
+    apiGetMemorialModeList,
+    apiGetMemorialTemplateList,
+} from '@/services/axios/MemorialModeService'
 import dayjs from 'dayjs'
+import { apiUploadMedia } from '@/services/MediaService'
 import {
     MediaCategory,
     MediaType,
@@ -12,14 +22,25 @@ import {
     Gender,
 } from '@/constants/memorial.constant'
 import { useMemorialStore } from '@/store/memorialStore'
+import { useMediaStore } from '@/store/mediaStore'
+import {
+    CommonInput,
+    CommonSelect,
+    CommonDatePicker,
+} from '@/components/shared'
 
 export default function EventMode() {
     const [profileImage, setProfileImage] = useState<string | null>(null)
-    const [video, setVideo] = useState<File[]>([])
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [uploadingProfile, setUploadingProfile] = useState(false)
+    const [uploadingVideo, setUploadingVideo] = useState(false)
+    const [profileData, setProfileData] = useState<any>(null)
+    const [videoData, setVideoData] = useState<any>(null)
     const [landingModeId, setLandingModeId] = useState<string>('')
     const [templateId, setTemplateId] = useState<string>('')
     const navigate = useNavigate()
     const { fetchMemorials, setActiveMemorialId } = useMemorialStore()
+    const { addMedia, getMedia, clearMedia } = useMediaStore()
 
     const { control, handleSubmit } = useForm({
         defaultValues: {
@@ -51,7 +72,10 @@ export default function EventMode() {
         const fetchData = async () => {
             try {
                 const templatesRes: any = await apiGetMemorialTemplateList()
-                const eventTemplate = templatesRes.find((t: any) => t.landingMode?.landingModeType === 'event-mode')
+                const eventTemplate = templatesRes.find(
+                    (t: any) =>
+                        t.landingMode?.landingModeType === 'event-mode',
+                )
 
                 if (eventTemplate) {
                     setTemplateId(eventTemplate.id)
@@ -65,7 +89,81 @@ export default function EventMode() {
         fetchData()
     }, [])
 
+    const uploadFiles = async (files: File[]) => {
+        if (files.length === 0) return []
+
+        const results: any[] = []
+        const filesToUpload: File[] = []
+        const indicesToUpload: number[] = []
+
+        files.forEach((file, index) => {
+            const key = `${file.name}-${file.size}`
+            const stored = getMedia(key)
+            if (stored) {
+                results[index] = stored
+            } else {
+                filesToUpload.push(file)
+                indicesToUpload.push(index)
+            }
+        })
+
+        if (filesToUpload.length > 0) {
+            const formData = new FormData()
+            filesToUpload.forEach((file) => {
+                formData.append('files', file)
+            })
+            try {
+                const response: any = await apiUploadMedia(formData)
+                response.forEach((res: any, i: number) => {
+                    const originalIndex = indicesToUpload[i]
+                    const file = filesToUpload[i]
+                    const key = `${file.name}-${file.size}`
+                    addMedia(key, res)
+                    results[originalIndex] = res
+                })
+            } catch (error) {
+                console.error('Upload failed:', error)
+                toast.push(
+                    <Notification
+                        type="danger"
+                        title="Upload Failed"
+                        duration={2000}
+                    >
+                        Failed to upload one or more files.
+                    </Notification>,
+                    { placement: 'top-center' },
+                )
+            }
+        }
+
+        return results
+    }
+
+    const handleProfileUpload = async (file: File) => {
+        setUploadingProfile(true)
+        const res = await uploadFiles([file])
+        if (res && res.length > 0) {
+            setProfileData(res[0])
+            setProfileImage(res[0].fileURL)
+        }
+        setUploadingProfile(false)
+    }
+
+    const handleVideoUpload = async (files: File[]) => {
+        if (files.length === 0) {
+            setVideoData(null)
+            return
+        }
+        setUploadingVideo(true)
+        const res = await uploadFiles(files)
+        if (res && res.length > 0) {
+            setVideoData(res[0])
+        }
+        setUploadingVideo(false)
+    }
+
     const onSubmit = async (data: any) => {
+        setIsSubmitting(true)
         try {
             // Construct eventStart ISO string
             let eventStart = null
@@ -79,40 +177,31 @@ export default function EventMode() {
                     .toISOString()
             }
 
-            const payload = {
-                landingModeId: (landingModeId).toString(),
-                templateId: templateId,
-                personName: data.personName,
-                personGender: data.personGender,
-                profilePictureId: 'profile-photo-id',
-                personProfilePicture: profileImage || 'https://cdn.example.com/photos/john.jpg',
-                favQuote: data.favQuote,
-                pageURL: `https://rememberme.com/memorial/${data.personName.toLowerCase().replace(/\s+/g, '-')}`,
-                eventStart: eventStart,
-                eventDuration: data.eventDuration,
-                autoRevertToFullMode: true,
-                publishStatus: PublishStatus.DRAFT,
-                userMedia: [
-                    ...video.map((file, index) => ({
-                        mimeType: file.type,
-                        fileURL: 'https://cdn.example.com/uploads/event-video.mp4', // Placeholder
-                        fileId: `event-video-${index}`,
-                        type: MediaType.VIDEO,
-                        category: MediaCategory.GALLERY,
-                        videoTitle: data.videoTitle || 'Event Video',
-                        videoDescription: '',
-                        isMainVideo: true,
-                        isActive: true,
-                        sortOrder: index,
-                    })),
-                ],
-            }
+            const mediaList = [
+                ...(videoData
+                    ? [
+                        {
+                            mimeType: videoData.mimeType || 'video/mp4',
+                            fileURL: videoData.fileURL,
+                            fileId: videoData.fileId,
+                            type: MediaType.VIDEO,
+                            category: MediaCategory.GALLERY,
+                            videoTitle: data.videoTitle || 'Event Video',
+                            videoDescription: '',
+                            isMainVideo: true,
+                            isActive: true,
+                            sortOrder: 0,
+                        },
+                    ]
+                    : []),
+            ]
 
             // Fallback dummy video if empty to satisfy backend
-            if (payload.userMedia.length === 0) {
-                payload.userMedia.push({
+            if (mediaList.length === 0) {
+                mediaList.push({
                     mimeType: 'video/mp4',
-                    fileURL: 'https://www.pexels.com/video/medical-training-855480/',
+                    fileURL:
+                        'https://www.pexels.com/video/medical-training-855480/',
                     fileId: 'dummy-video-id',
                     type: MediaType.VIDEO,
                     category: MediaCategory.GALLERY,
@@ -124,6 +213,24 @@ export default function EventMode() {
                 } as any)
             }
 
+            const payload = {
+                landingModeId: landingModeId.toString(),
+                templateId: templateId,
+                personName: data.personName,
+                personGender: data.personGender,
+                profilePictureId: profileData?.fileId || null,
+                personProfilePicture: profileData?.fileURL || profileImage || '',
+                favQuote: data.favQuote,
+                pageURL: `https://rememberme.com/memorial/${data.personName
+                    .toLowerCase()
+                    .replace(/\s+/g, '-')}`,
+                eventStart: eventStart,
+                eventDuration: data.eventDuration,
+                autoRevertToFullMode: true,
+                publishStatus: PublishStatus.DRAFT,
+                userMedia: mediaList,
+            }
+
             const response = await apiCreateMemorial(payload)
             console.log('API Response:', response)
 
@@ -131,10 +238,11 @@ export default function EventMode() {
                 <Notification type="success" title="Success" duration={2000}>
                     Event memorial created successfully!
                 </Notification>,
-                { placement: 'top-center' }
+                { placement: 'top-center' },
             )
 
             await fetchMemorials(true)
+            clearMedia()
             if (response && (response as any).id) {
                 setActiveMemorialId((response as any).id)
             }
@@ -147,6 +255,8 @@ export default function EventMode() {
                 </Notification>,
                 { placement: 'top-center' }
             )
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -201,14 +311,17 @@ export default function EventMode() {
                                 {/* Upload Button */}
                                 <button
                                     type="button"
+                                    disabled={uploadingProfile}
                                     onClick={() =>
                                         document
                                             .getElementById('profileUpload')
                                             ?.click()
                                     }
-                                    className="md:px-6 px-3 font-medium text-[21.26px] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-poppins border-[#FFB84C]"
+                                    className="md:px-6 px-3 font-medium text-[21.26px] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-poppins border-[#FFB84C] disabled:opacity-50"
                                 >
-                                    Upload Profile
+                                    {uploadingProfile
+                                        ? 'Uploading...'
+                                        : 'Upload Profile'}
                                 </button>
 
                                 {/* Hidden File Input */}
@@ -220,12 +333,7 @@ export default function EventMode() {
                                     onChange={(e) => {
                                         const file = e.target.files?.[0]
                                         if (file) {
-                                            const reader = new FileReader()
-                                            reader.onload = () =>
-                                                setProfileImage(
-                                                    reader.result as string,
-                                                )
-                                            reader.readAsDataURL(file)
+                                            handleProfileUpload(file)
                                         }
                                     }}
                                 />
@@ -233,34 +341,20 @@ export default function EventMode() {
 
                             {/* Event Mode Info Section */}
                             <div className="w-full bg-[#2f3349] rounded-lg p-6 shadow">
-                                <Controller
+                                <CommonInput
                                     name="personName"
                                     control={control}
-                                    render={({ field }) => (
-                                        <Input
-                                            {...field}
-                                            placeholder="Full Name"
-                                            className="text-white bg-[#383C56] border-none"
-                                        />
-                                    )}
+                                    placeholder="Full Name"
                                 />
                                 <div className="mt-6">
-                                    <label className="block text-base font-medium text-[#ffffff] font-poppins mb-2">
-                                        Write a Quote (Optional)
-                                    </label>
-                                    <Controller
+                                    <CommonInput
                                         name="favQuote"
                                         control={control}
-                                        render={({ field }) => (
-                                            <Input
-                                                {...field}
-                                                placeholder="Type here..."
-                                                maxLength={150}
-                                                rows={3}
-                                                textArea
-                                                className="text-white bg-[#383C56] border-none"
-                                            />
-                                        )}
+                                        label="Write a Quote (Optional)"
+                                        placeholder="Type here..."
+                                        maxLength={150}
+                                        rows={3}
+                                        textArea
                                     />
                                 </div>
                             </div>
@@ -295,17 +389,10 @@ export default function EventMode() {
                                     <div className="flex flex-col sm:flex-row gap-2">
                                         {/* Date Input */}
                                         <div className="relative flex-1">
-                                            <Controller
+                                            <CommonDatePicker
                                                 name="eventStartDate"
                                                 control={control}
-                                                render={({ field }) => (
-                                                    <DatePicker
-                                                        value={field.value}
-                                                        onChange={field.onChange}
-                                                        placeholder="Select Date"
-                                                        className="text-white bg-[#383C56] border-none"
-                                                    />
-                                                )}
+                                                placeholder="Select Date"
                                             />
                                         </div>
 
@@ -337,31 +424,11 @@ export default function EventMode() {
                                         Duration
                                     </label>
                                     <div className="relative">
-                                        <Controller
+                                        <CommonSelect
                                             name="eventDuration"
                                             control={control}
-                                            render={({ field }) => (
-                                                <Select
-                                                    value={durationOptions.find(opt => opt.value === field.value)}
-                                                    onChange={(option: any) =>
-                                                        field.onChange(option.value)
-                                                    }
-                                                    options={durationOptions}
-                                                    placeholder="Select duration"
-                                                    className="w-full font-poppins border-none"
-                                                    styles={{
-                                                        singleValue: (base: any) => ({
-                                                            ...base,
-                                                            color: '#ffffff',
-                                                        }),
-                                                        control: (base: any) => ({
-                                                            ...base,
-                                                            backgroundColor: '#383C56',
-                                                            border: 'none',
-                                                        }),
-                                                    }}
-                                                />
-                                            )}
+                                            options={durationOptions}
+                                            placeholder="Select duration"
                                         />
                                     </div>
                                 </div>
@@ -382,25 +449,17 @@ export default function EventMode() {
                                 <Upload
                                     accept="video/*"
                                     uploadLimit={1}
-                                    onChange={setVideo}
+                                    onChange={handleVideoUpload}
+                                    uploading={uploadingVideo}
                                 />
                             </div>
 
                             <div className="mt-3">
-                                <label className="block text-sm font-poppins text-white mb-2">
-                                    Video Title
-                                </label>
-                                <Controller
+                                <CommonInput
                                     name="videoTitle"
                                     control={control}
-                                    render={({ field }) => (
-                                        <Input
-                                            {...field}
-                                            type="text"
-                                            placeholder="Enter Video Title "
-                                            className="w-full font-poppins bg-[#383C56] border-none text-white"
-                                        />
-                                    )}
+                                    label="Video Title"
+                                    placeholder="Enter Video Title "
                                 />
                             </div>
                         </div>
@@ -415,13 +474,15 @@ export default function EventMode() {
                             </button>
                             <button
                                 onClick={handleSaveFinish}
-                                className="bg-[#C7A30D] text-[#000000] font-[500] font-poppins text-base px-6 py-2.5 hover:bg-[#B8940C] transition-colors rounded-[1000px]"
+                                disabled={isSubmitting}
+                                className="bg-[#C7A30D] text-[#000000] font-[500] font-poppins text-base px-6 py-2.5 hover:bg-[#B8940C] transition-colors rounded-[1000px] disabled:opacity-50"
                                 style={{
-                                    background:
-                                        'linear-gradient(96.23deg, #ECA024 5.01%, #F9C94F 50.03%, #EAA32A 95.05%)',
+                                    background: isSubmitting
+                                        ? 'gray'
+                                        : 'linear-gradient(96.23deg, #ECA024 5.01%, #F9C94F 50.03%, #EAA32A 95.05%)',
                                 }}
                             >
-                                Save & Finish
+                                {isSubmitting ? 'Saving...' : 'Save & Finish'}
                             </button>
                         </div>
                     </div>

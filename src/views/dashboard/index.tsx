@@ -1,12 +1,8 @@
-import React, { useState } from 'react'
-
-import { Calendar, ChevronDown } from 'lucide-react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useMemorialStore } from '@/store/memorialStore'
 import AllMemories1 from '../../../public/img/others/All-memories1.png'
-import AllMemories2 from '../../../public/img/others/All-memories2.png'
-import AllMemories3 from '../../../public/img/others/All-memories3.png'
 import { DatePicker, Select } from '@/components/ui'
 import { SingleValue, StylesConfig } from 'react-select'
 import ProgressBar from '@/components/ui/ProgressBar/ProgressBar'
@@ -28,7 +24,6 @@ const Dashboard = () => {
         { value: '10:00', label: '10:00' },
         { value: '11:00', label: '11:00' },
         { value: '12:00', label: '12:00' },
-        // add more times as needed
     ]
 
     return (
@@ -60,9 +55,7 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Upcoming Anniversary */}
                         <div className="bg-[#2f3349] rounded-lg shadow-[0_4px_18px_0_rgba(75,70,92,0.10)] p-5">
                             <div className="space-y-1">
                                 <p className="text-sm font-poppins text-[#ffffff]">
@@ -77,7 +70,6 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Upcoming Events */}
                         <div className="bg-[#2f3349] rounded-lg shadow-[0_4px_18px_0_rgba(75,70,92,0.10)] p-5">
                             <div className="space-y-1">
                                 <p className="text-sm font-poppins text-[#ffffff]">
@@ -92,7 +84,6 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Total Memories */}
                         <div className="bg-[#2f3349] rounded-lg shadow-[0_4px_18px_0_rgba(75,70,92,0.10)] p-5">
                             <div className="space-y-1">
                                 <p className="text-sm font-poppins text-[#ffffff]">
@@ -105,16 +96,13 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* Main Content Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Memorial Presentation */}
                         <div className="bg-[#2f3349] rounded-lg shadow-[0_4px_18px_0_rgba(75,70,92,0.10)] p-6">
                             <div className="space-y-4">
                                 <p className="text-lg font-poppins text-[#ffffff]">
                                     Memorial Presentation
                                 </p>
 
-                                {/* Dropdown */}
                                 <div className="relative">
                                     <Select<Option>
                                         className="w-full cursor-pointer border-none"
@@ -147,14 +135,12 @@ const Dashboard = () => {
                                     />
                                 </div>
 
-                                {/* Event Date & Time Section */}
                                 <div className="pt-4 border-t border-[#44475b] space-y-4">
                                     <p className="text-sm font-poppins text-[#ffffff]">
                                         Event Date & Time
                                     </p>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                        {/* Date Picker */}
                                         <div className="sm:col-span-2 relative">
                                             <DatePicker
                                                 value={selectedDate}
@@ -164,7 +150,6 @@ const Dashboard = () => {
                                             />
                                         </div>
 
-                                        {/* Time Picker */}
                                         <div className="relative">
                                             <Select<Option>
                                                 options={timeOptions}
@@ -199,14 +184,12 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Storage Space */}
                         <div className="bg-[#2f3349] rounded-lg shadow-[0_4px_18px_0_rgba(75,70,92,0.10)] p-6">
                             <div className="space-y-4">
                                 <p className="md:text-lg text-base font-poppins text-[#ffffff]">
                                     Storage Space
                                 </p>
 
-                                {/* Main Progress Bar */}
                                 <ProgressBar
                                     used={3.2}
                                     total={5}
@@ -215,14 +198,12 @@ const Dashboard = () => {
                                     showTotal={true}
                                 />
 
-                                {/* Storage Details */}
                                 <div className="pt-4 border-t border-[#F3F4F6] space-y-4">
                                     <p className="text-base font-poppins text-[#ffffff]">
                                         Storage Details
                                     </p>
 
                                     <div className="space-y-3">
-                                        {/* Photos */}
                                         <ProgressBar
                                             label="Photos"
                                             used={1.8}
@@ -232,7 +213,6 @@ const Dashboard = () => {
                                             showTotal={false}
                                         />
 
-                                        {/* Videos */}
                                         <ProgressBar
                                             label="Videos"
                                             used={1.2}
@@ -247,10 +227,8 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* All Memories Section */}
-                    <div className=" ">
+                    <div>
                         <div className="space-y-6">
-                            {/* Header */}
                             <div className=" w-full flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <p className="md:text-2xl text-lg DMSerif font-medium text-[#ffffff]">
                                     All Memories
@@ -268,11 +246,17 @@ const Dashboard = () => {
                                         className="group cursor-pointer"
                                         onClick={() => {
                                             setActiveMemorialId(memorial.id)
-                                            navigate('/dashboard/memorial')
+                                            const landingMode = (memorial as any).template?.landingMode?.landingModeType
+                                            if (landingMode === 'video-only-mode') {
+                                                navigate('/dashboard/video-memorial')
+                                            } else if (landingMode === 'event-mode') {
+                                                navigate('/dashboard/event-memorial')
+                                            } else {
+                                                navigate('/dashboard/memorial')
+                                            }
                                         }}
                                     >
                                         <div className="space-y-3">
-                                            {/* Image */}
                                             <div className="rounded-lg overflow-hidden">
                                                 <img
                                                     src={AllMemories1}
@@ -281,9 +265,7 @@ const Dashboard = () => {
                                                 />
                                             </div>
 
-                                            {/* Memorial Info */}
                                             <div className="space-y-2">
-                                                {/* Years */}
                                                 <div className="flex items-center justify-center gap-1">
                                                     <span className="text-xs font-manrope font-medium text-[#ffffff]">
                                                         {memorial.personName ? '2023' : ''}
@@ -296,7 +278,6 @@ const Dashboard = () => {
                                                     </span>
                                                 </div>
 
-                                                {/* Name */}
                                                 <p className="text-center text-base font-poppins md:font-medium font-normal text-[#ffffff] leading-tight">
                                                     {memorial.personName}
                                                 </p>

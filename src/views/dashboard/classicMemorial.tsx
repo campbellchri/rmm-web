@@ -1,4 +1,5 @@
-import { Key, useEffect, useState } from 'react'
+import { Key, useEffect, useState, useRef } from 'react'
+import { QRCodeCanvas } from 'qrcode.react'
 import { useForm } from 'react-hook-form'
 import CommonInput from '@/components/shared/CommonInput'
 import { apiSetFeaturedMemorial, apiGetMemorialById } from '@/services/axios/MemorialModeService'
@@ -6,30 +7,22 @@ import { useMemorialStore } from '@/store/memorialStore'
 import { toast, Notification } from '@/components/ui'
 import { Play, Facebook, Twitter, Copy, QrCode, ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import MemberAvatar from '../../../public/img/others/member-avatar-4.jpg.png'
-import FeaturedExperice from '../../../public//img/others/FRAMEFRAME.png'
-import videoFrame1 from '../../../public/img//others/FRAME (1).png'
-import videoFrame2 from '../../../public/img//others/FRAME (2).png'
-import videoFrame3 from '../../../public/img//others/FRAME (3).png'
-import photoFrame4 from '../../../public/img//others/FRAME (4).png'
-import photoFrame5 from '../../../public/img//others/FRAME (5).png'
-import photoFrame6 from '../../../public/img//others/FRAME (6).png'
-import photoFrame7 from '../../../public/img//others/FRAME (7).png'
 
 export default function Memorial() {
     const [copiedUrl, setCopiedUrl] = useState(false)
     const [memorialDetails, setMemorialDetails] = useState<any>(null)
-    const { memorials, fetchMemorials, activeMemorialId } = useMemorialStore()
+    const { fetchMemorials, activeMemorialId } = useMemorialStore()
     const memorialId = activeMemorialId
     const navigate = useNavigate()
+    const qrRef = useRef<HTMLCanvasElement>(null)
+    const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
+
 
     const { control, setValue } = useForm({
         defaultValues: {
-            memorialUrl: 'memorial.com/robert-johnson',
+            memorialUrl: '',
         },
     })
-
-    console.log(memorialDetails, 'memorialDetails sata')
 
     useEffect(() => {
         fetchMemorials()
@@ -54,6 +47,25 @@ export default function Memorial() {
         setCopiedUrl(true)
         setTimeout(() => setCopiedUrl(false), 2000)
     }
+
+    const handleDownloadQRCode = () => {
+        if (qrRef.current) {
+            const canvas = qrRef.current
+            const url = canvas.toDataURL('image/png')
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `memorial-qr-${memorialDetails?.personName || 'code'}.png`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+        }
+    }
+
+    const handlePlayVideo = (videoId: string) => {
+        setActiveVideoId(videoId)
+    }
+
+
 
     return (
         <>
@@ -112,13 +124,8 @@ export default function Memorial() {
                     Set As Featured
                 </button>
             </div>
-            {/* Hero Section with Profile and Testimonial */}
             <div
                 className="relative w-full bg-cover bg-center"
-            // style={{
-            //     backgroundImage:
-            //         "url('https://api.builder.io/api/v1/image/assets/TEMP/2f525d80d45fde76e6bf817c53bf3e2a59dc45ea?width=2880')",
-            // }}
             >
                 <div className="absolute inset-0 bg-transparent"></div>
 
@@ -163,7 +170,6 @@ export default function Memorial() {
                             </div>
                         </div>
 
-                        {/* Testimonial Quote */}
                         <div className="lg:max-w-[500px] w-full">
                             <div className="bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow-sm md:shadow-none">
                                 <p className="font-poppins text-base md:text-[19px] text-[#ffffff] leading-relaxed mb-4 sm:mb-6 text-center md:text-left">
@@ -197,10 +203,8 @@ export default function Memorial() {
                 </div>
             </div>
 
-            {/* Main Content */}
             <div className="max-w-7xl mx-auto px-6 py-10">
                 <div className="space-y-16">
-                    {/* Featured Experience */}
                     <section className="space-y-6">
                         <p className="DMSerif md:text-[28px] text-lg text-[#ffffff]">
                             Featured Experience
@@ -224,29 +228,45 @@ export default function Memorial() {
                         </div>
                     </section>
 
-                    {/* Videos Section */}
                     <section className="space-y-6">
                         <p className="DMSerif md:text-2xl text-lg text-[#ffffff]">
                             Videos
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-                            {memorialDetails?.videos?.map((video: { id: Key | null | undefined; thumbnail: string | undefined; title: string | undefined; }) => (
+                            {memorialDetails?.videos?.map((video: { id: Key | null | undefined; thumbnail: string | undefined; title: string | undefined; fileURL: string | undefined }) => (
                                 <div key={video.id} className="space-y-2">
+
                                     <div className="relative group cursor-pointer rounded-lg overflow-hidden shadow-sm">
-                                        <img
-                                            src={video.thumbnail}
-                                            alt={video.title}
-                                            className="w-full h-[140px] object-cover"
-                                        />
-                                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                            <div className="w-12 h-12 bg-white/80 rounded-full flex items-center justify-center group-hover:bg-white transition-colors">
-                                                <Play
-                                                    className="w-4 h-4 text-[#263859] ml-0.5"
-                                                    fill="currentColor"
+                                        {activeVideoId === video.id ? (
+                                            <video
+                                                src={video.fileURL}
+                                                controls
+                                                autoPlay
+                                                className="w-full h-[140px] bg-black"
+                                            />
+                                        ) : (
+                                            <>
+                                                <img
+                                                    src={video.thumbnail}
+                                                    alt={video.title}
+                                                    className="w-full h-[140px] object-cover"
+                                                    onClick={() => handlePlayVideo(video.id as string)}
                                                 />
-                                            </div>
-                                        </div>
+                                                <div
+                                                    className="absolute inset-0 bg-black/30 flex items-center justify-center"
+                                                    onClick={() => handlePlayVideo(video.id as string)}
+                                                >
+                                                    <div className="w-12 h-12 bg-white/80 rounded-full flex items-center justify-center group-hover:bg-white transition-colors">
+                                                        <Play
+                                                            className="w-4 h-4 text-[#263859] ml-0.5"
+                                                            fill="currentColor"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
+
                                     <p className="font-poppins font-[400] md:text-base text-sm text-[#ffffff]">
                                         {video.title}
                                     </p>
@@ -255,7 +275,6 @@ export default function Memorial() {
                         </div>
                     </section>
 
-                    {/* Photo Albums */}
                     <section className="space-y-6">
                         <div className="flex items-center justify-between">
                             <p className="DMSerif md:text-2xl text-lg text-[#ffffff]">
@@ -278,7 +297,6 @@ export default function Memorial() {
                         </div>
                     </section>
 
-                    {/* Life Story */}
                     <section className="space-y-6">
                         <p className="DMSerif md:text-2xl text-lg text-[#ffffff]">
                             Life Story
@@ -303,13 +321,11 @@ export default function Memorial() {
                         </div>
                     </section>
 
-                    {/* Share Memorial Page */}
                     <section className="bg-[#2F3349] rounded-lg p-6 shadow-sm">
                         <p className="font-poppins text-lg text-[#ffffff] mb-4">
                             Share Memorial Page
                         </p>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Social Sharing */}
                             <div className="space-y-4">
                                 <p className="font-poppins text-base text-[#ffffff]">
                                     Share this memorial page with friends and
@@ -330,7 +346,6 @@ export default function Memorial() {
                                     </button>
                                 </div>
 
-                                {/* URL Copy */}
                                 <div className="space-y-1">
                                     <label className="font-poppins text-sm text-[#ffffff]">
                                         Memorial URL
@@ -354,15 +369,27 @@ export default function Memorial() {
                                 </div>
                             </div>
 
-                            {/* QR Code */}
                             <div className="flex flex-col items-center justify-center border-l border-[#E5E7EB] pl-6">
-                                <div className="w-[120px] h-[120px] bg-[#1F2937] rounded-lg flex items-center justify-center mb-3">
-                                    <QrCode className="w-20 h-20 text-white" />
+                                <div className="w-[140px] h-[140px] bg-white rounded-lg flex items-center justify-center mb-3 p-3 shadow-inner">
+                                    {memorialDetails?.pageURL ? (
+                                        <QRCodeCanvas
+                                            ref={qrRef}
+                                            value={memorialDetails?.qrCode?.qrCodeData || memorialDetails?.pageURL}
+                                            size={120}
+                                            marginSize={2}
+                                            level="H"
+                                        />
+                                    ) : (
+                                        <QrCode className="w-20 h-20 text-gray-400" />
+                                    )}
                                 </div>
                                 <p className="font-poppins text-sm text-[#ffffff] text-center mb-2">
                                     Scan for in-person sharing
                                 </p>
-                                <button className="font-poppins text-sm text-[#C7A30D] hover:underline">
+                                <button
+                                    onClick={handleDownloadQRCode}
+                                    className="font-poppins text-sm text-[#C7A30D] hover:underline"
+                                >
                                     Download QR Code
                                 </button>
                             </div>
