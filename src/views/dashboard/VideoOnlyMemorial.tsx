@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import React from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { apiSetFeaturedMemorial, apiGetMemorialById } from '@/services/axios/MemorialModeService'
 import { useMemorialStore } from '@/store/memorialStore'
@@ -66,7 +67,7 @@ export default function VideoMemorial() {
 
 
     return (
-        <>
+        <React.Fragment>
             <div className="flex items-center justify-between gap-4 p-4">
                 <button
                     onClick={() => navigate(-1)}
@@ -399,6 +400,6 @@ export default function VideoMemorial() {
                     </div>
                 </section>
             </div>
-        </>
+        </React.Fragment>
     )
 }
