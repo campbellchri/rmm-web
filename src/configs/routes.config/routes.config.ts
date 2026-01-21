@@ -3,7 +3,7 @@ import authRoute from './authRoute'
 import othersRoute from './othersRoute'
 import type { Routes } from '@/@types/routes'
 
-export const publicRoutes: Routes = [...authRoute,  ...othersRoute]
+export const publicRoutes: Routes = [...authRoute, ...othersRoute]
 
 export const protectedRoutes: Routes = [
     {
@@ -61,6 +61,12 @@ export const protectedRoutes: Routes = [
         key: 'video-memorial',
         path: '/dashboard/video-memorial',
         component: lazy(() => import('@/views/dashboard/VideoOnlyMemorial')),
+        authority: [],
+    },
+    {
+        key: 'memorialView',
+        path: '/memorial/:slug',
+        component: lazy(() => import('@/views/dashboard/MemorialResolver')),
         authority: [],
     },
     {

@@ -216,13 +216,11 @@ export default function Memorial() {
                                 className="md:w-full md:h-[420px] object-cover"
                             />
                             <div className="bg-[#2F3349] p-6 space-y-2">
-                                <p className="font-poppins text-base  font-[400] text-[#ffffff]">
-                                    A collection of James' most cherished
-                                    moments throughout his life, from childhood
-                                    adventures to his last family gathering.
+                                <p className="font-poppins text-base font-[400] text-[#ffffff]">
+                                    {memorialDetails?.favoriteSayings?.[0]?.content}
                                 </p>
                                 <p className="font-poppins italic font-[400] text-sm text-[#ffffff]">
-                                    Selected by family
+                                    {memorialDetails?.favoriteSayings?.[0]?.authorName}
                                 </p>
                             </div>
                         </div>

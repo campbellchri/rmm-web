@@ -25,7 +25,6 @@ export const SignUpBase = ({
                 <Logo type="streamline" mode={mode} imgClass="mx-auto" logoWidth={60} />
             </div> */}
 
-            {/* Heading Section */}
             <div className="flex flex-col gap-2 sm:gap-4">
                 <h2 className="text-[clamp(1.125rem,1vw+1rem,1.5rem)] DMSerifPro leading-tight text-[#ffffff]">
                     Welcome Back 👋
@@ -36,14 +35,12 @@ export const SignUpBase = ({
                 </p>
             </div>
 
-            {/* Error Alert */}
             {message && (
                 <Alert showIcon className="mt-4" type="danger">
                     <span className="break-all">{message}</span>
                 </Alert>
             )}
 
-            {/* Form */}
             <div className="mt-6 sm:mt-8">
                 <SignUpForm
                     disableSubmit={disableSubmit}
@@ -52,7 +49,7 @@ export const SignUpBase = ({
             </div>
 
             {/* OR Divider */}
-            <div className="mt-8 flex flex-col gap-6">
+            {/* <div className="mt-8 flex flex-col gap-6">
                 <div className="flex items-center gap-2">
                     <div className="flex-1 border-t border-gray-200 dark:border-gray-800" />
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -64,12 +61,11 @@ export const SignUpBase = ({
                     disableSubmit={disableSubmit}
                     setMessage={setMessage}
                 />
-            </div>
+            </div> */}
 
-            {/* Sign In Link */}
             <div className="mt-6 text-center font-poppins font-[400] text-[16px]">
                 <span className="text-[#ffffff] dark:text-gray-300">
-                    Already have an account?{' '}
+                    Already have an account?
                 </span>
                 <ActionLink
                     to={signInUrl}

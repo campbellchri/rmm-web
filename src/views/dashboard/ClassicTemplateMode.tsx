@@ -430,7 +430,7 @@ export default function ClassicTemplateMode() {
                 profilePictureId: profileData?.fileId || (isEditMode ? existingMemorialData?.profilePictureId : null),
                 personProfilePicture: profileData?.fileURL || profileImage || null,
                 favQuote: data.favQuote,
-                pageURL: `https://rememberme.com/memorial/${data.personName.toLowerCase().replace(/\s+/g, '-')}`,
+                pageURL: `${window.location.origin}/memorial/${data.personName.toLowerCase().replace(/\s+/g, '-')}`,
                 featuredPhotoId: featuredData?.fileId || null,
                 featuredPhotoURL: featuredData?.fileURL || null,
                 lifeStoryText: data.lifeStoryText,

@@ -386,7 +386,7 @@ export default function VideoOnlyMemorial() {
                 profilePictureId:
                     profileData?.fileId ||
                     (isEditMode ? existingMemorialData?.profilePictureId : null),
-                pageURL: `https://rememberme.com/memorial/${data.personName
+                pageURL: `${window.location.origin}/memorial/${data.personName
                     .toLowerCase()
                     .replace(/\s+/g, '-')}`,
                 personProfilePicture:

@@ -252,7 +252,7 @@ export default function EventMode() {
                 profilePictureId: profileData?.fileId || null,
                 personProfilePicture: profileData?.fileURL || profileImage || '',
                 favQuote: data.favQuote,
-                pageURL: `https://rememberme.com/memorial/${data.personName
+                pageURL: `${window.location.origin}/memorial/${data.personName
                     .toLowerCase()
                     .replace(/\s+/g, '-')}`,
                 eventStart: eventStart,
