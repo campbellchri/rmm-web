@@ -14,7 +14,7 @@ import {
     apiUpdateMemorial,
 } from '@/services/axios/MemorialModeService'
 import dayjs from 'dayjs'
-import { apiUploadMedia } from '@/services/MediaService'
+import { apiUploadMedia, apiDeleteMedia } from '@/services/MediaService'
 import {
     MediaCategory,
     MediaType,
@@ -55,7 +55,7 @@ export default function VideoOnlyMemorial() {
     const [uploadingVideos, setUploadingVideos] = useState(false)
     const [profileData, setProfileData] = useState<any>(null)
     const [featuredData, setFeaturedData] = useState<any>(null)
-    const [videoData, setVideoData] = useState<{ file: File; res: any }[]>([])
+    const [videoData, setVideoData] = useState<{ file: File | any; res: any }[]>([])
     const { addMedia, getMedia, clearMedia } = useMediaStore()
     const [landingModeId, setLandingModeId] = useState<string>('')
     const [templateId, setTemplateId] = useState<string>('')
@@ -130,6 +130,28 @@ export default function VideoOnlyMemorial() {
                         if (memorialRes.personProfilePicture) {
                             setProfileImage(memorialRes.personProfilePicture)
                         }
+
+                        // Populate existing media
+                        if (memorialRes.userMedia) {
+                            const featured = memorialRes.userMedia.find(
+                                (m: any) => m.category === MediaCategory.FEATURED,
+                            )
+                            if (featured) {
+                                setFeaturedData({
+                                    fileURL: featured.fileURL,
+                                    mimeType: featured.mimeType,
+                                    fileId: featured.fileId,
+                                })
+                            }
+
+                            const gallery = memorialRes.userMedia
+                                .filter((m: any) => m.category === MediaCategory.GALLERY)
+                                .map((m: any) => ({
+                                    file: { fileURL: m.fileURL, mimeType: m.mimeType, fileId: m.fileId },
+                                    res: m
+                                }))
+                            setVideoData(gallery)
+                        }
                     }
                 }
             } catch (error) {
@@ -199,34 +221,62 @@ export default function VideoOnlyMemorial() {
         setUploadingProfile(false)
     }
 
-    const handleFeaturedVideoUpload = async (files: File[]) => {
+    const handleFeaturedVideoUpload = async (files: (File | any)[]) => {
         if (files.length === 0) {
+            if (featuredData?.fileId) {
+                try {
+                    await apiDeleteMedia(featuredData.fileId)
+                } catch (error) {
+                    console.error('Error deleting featured video:', error)
+                }
+            }
             setFeaturedData(null)
             return
         }
+
+        const file = files[0]
+        if (!(file instanceof File)) {
+            // It's existing media
+            setFeaturedData(file)
+            return
+        }
+
         setUploadingFeatured(true)
-        const res = await uploadFiles(files)
+        const res = await uploadFiles([file])
         if (res && res.length > 0) {
             setFeaturedData(res[0])
         }
         setUploadingFeatured(false)
     }
 
-    const handleGalleryVideosUpload = async (files: File[]) => {
-        const existingFiles = videoData.map((v) => v.file)
-        const newFiles = files.filter((f) => !existingFiles.includes(f))
+    const handleGalleryVideosUpload = async (files: (File | any)[]) => {
+        // Find removed files to call delete API
+        const removedFiles = videoData.filter(v => !files.some(f =>
+            (f instanceof File ? f === v.file : (f.fileId === v.file.fileId || f.fileURL === v.file.fileURL))
+        ))
+
+        for (const removed of removedFiles) {
+            const fileId = removed.res?.fileId || removed.file?.fileId
+            if (fileId) {
+                try {
+                    await apiDeleteMedia(fileId)
+                } catch (error) {
+                    console.error('Error deleting gallery video:', error)
+                }
+            }
+        }
+
+        const existingEntries = videoData.filter(v => files.includes(v.file))
+        const newFiles = files.filter(f => f instanceof File) as File[]
 
         if (newFiles.length > 0) {
             setUploadingVideos(true)
             const res = await uploadFiles(newFiles)
             const newData = newFiles.map((file, i) => ({ file, res: res[i] }))
-            setVideoData((prev) => [
-                ...prev.filter((v) => files.includes(v.file)),
-                ...newData,
-            ])
+            setVideoData([...existingEntries, ...newData])
             setUploadingVideos(false)
         } else {
-            setVideoData((prev) => prev.filter((v) => files.includes(v.file)))
+            setVideoData(existingEntries)
         }
     }
 
@@ -252,12 +302,12 @@ export default function VideoOnlyMemorial() {
                     ]
                     : []),
                 ...videoData
-                    .filter((item) => !!item.res?.fileURL)
+                    .filter((item) => !!item.res?.fileURL || !!item.file?.fileURL)
                     .map((item, index: number) => ({
                         mimeType:
-                            item.res?.mimeType || item.file?.type || 'video/mp4',
-                        fileURL: item.res?.fileURL,
-                        fileId: item.res?.fileId,
+                            item.res?.mimeType || (item.file instanceof File ? item.file.type : item.file.mimeType) || 'video/mp4',
+                        fileURL: item.res?.fileURL || item.file?.fileURL,
+                        fileId: item.res?.fileId || item.file?.fileId,
                         type: MediaType.VIDEO,
                         category: MediaCategory.GALLERY,
                         videoTitle: data.galleryVideoTitle || 'Gallery Video',
@@ -533,6 +583,7 @@ export default function VideoOnlyMemorial() {
                             onChange={handleFeaturedVideoUpload}
                             onFileRemove={() => handleFeaturedVideoUpload([])}
                             uploading={uploadingFeatured}
+                            defaultFiles={featuredData ? [featuredData] : []}
                         />
                         <div className="mt-4">
                             <CommonInput
@@ -567,6 +618,7 @@ export default function VideoOnlyMemorial() {
                             onChange={handleGalleryVideosUpload}
                             onFileRemove={handleGalleryVideosUpload}
                             uploading={uploadingVideos}
+                            defaultFiles={videoData.map(v => v.file)}
                         />
                         <div className="mt-4">
                             <CommonInput

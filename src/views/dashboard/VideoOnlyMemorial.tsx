@@ -178,7 +178,7 @@ export default function VideoMemorial() {
                                         <button
                                             onClick={() =>
                                                 navigate(
-                                                    '/dashboard/edit-memorial',
+                                                    '/dashboard/videoOnly-template',
                                                     { state: { mode: 'edit', memorialId } }
                                                 )
                                             }

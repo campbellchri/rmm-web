@@ -10,3 +10,10 @@ export async function apiUploadMedia<T>(formData: FormData) {
         },
     })
 }
+
+export async function apiDeleteMedia<T>(id: string) {
+    return ApiService.fetchDataWithAxios<T>({
+        url: `/user-media/${id}`,
+        method: 'delete',
+    })
+}
