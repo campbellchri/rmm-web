@@ -9,7 +9,8 @@ import {
     apiProfileUpdate,
 } from '@/services/axios/ProfileService'
 import { useProfileStore, UserProfile } from '@/store/profileStore'
-import { apiUploadMedia } from '@/services/MediaService'
+import { apiDeleteMedia, apiUploadMedia } from '@/services/MediaService'
+import { useMediaStore } from '@/store/mediaStore'
 
 export default function Profile() {
     const {
@@ -25,11 +26,22 @@ export default function Profile() {
     } = useProfileStore()
 
     const [isUploading, setIsUploading] = useState(false)
+    const [isRemoving, setIsRemoving] = useState(false)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
+    const { addMedia, getMedia } = useMediaStore()
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0]
+            const key = `${file.name}-${file.size}`
+            const stored = getMedia(key)
+
+            if (stored) {
+                updateProfileField('photoURL', stored.fileURL)
+                updateProfileField('photoId', stored.fileId)
+                return
+            }
+
             const formData = new FormData()
             formData.append('files', file)
 
@@ -38,6 +50,7 @@ export default function Profile() {
                 const response: any = await apiUploadMedia(formData)
                 if (response && response.length > 0) {
                     const uploadedImage = response[0]
+                    addMedia(key, uploadedImage)
                     updateProfileField('photoURL', uploadedImage.fileURL)
                     updateProfileField('photoId', uploadedImage.fileId)
                 }
@@ -51,6 +64,41 @@ export default function Profile() {
             } finally {
                 setIsUploading(false)
             }
+        }
+    }
+
+    const handleRemoveImage = async () => {
+        if (!profile?.photoId) {
+            updateProfileField(
+                'photoURL',
+                'https://api.builder.io/api/v1/image/assets/TEMP/c3a907805cc2ed46951553fa92d51390341a3196?width=164',
+            )
+            updateProfileField('photoId', null)
+            return
+        }
+
+        try {
+            setIsRemoving(true)
+            await apiDeleteMedia(profile.photoId)
+            updateProfileField(
+                'photoURL',
+                'https://api.builder.io/api/v1/image/assets/TEMP/c3a907805cc2ed46951553fa92d51390341a3196?width=164',
+            )
+            updateProfileField('photoId', null)
+            toast.push(
+                <Notification title="Image Removed" type="success">
+                    Profile image has been removed.
+                </Notification>,
+            )
+        } catch (error) {
+            console.error('Failed to remove image', error)
+            toast.push(
+                <Notification title="Removal Failed" type="danger">
+                    Failed to remove image. Please try again.
+                </Notification>,
+            )
+        } finally {
+            setIsRemoving(false)
         }
     }
     const [selectedCountry, setSelectedCountry] = useState<any>(null)
@@ -89,6 +137,7 @@ export default function Profile() {
                 gender: profile.gender,
                 country: selectedCountry?.value || profile.country,
                 photoId: profile.photoId,
+                photoURL: profile.photoURL,
             }
 
             if (password) {
@@ -121,9 +170,7 @@ export default function Profile() {
         }
     }, [])
 
-    const profilePic =
-        profile?.photoURL ||
-        'https://api.builder.io/api/v1/image/assets/TEMP/c3a907805cc2ed46951553fa92d51390341a3196?width=164'
+    const profilePic = profile?.photoURL || 'https://api.builder.io/api/v1/image/assets/TEMP/83dc85ca9155608ff3d7e17a997653fd5f9ed739?width=248'
 
     useEffect(() => {
         const countryValue = profile?.country || profile?.callingCode || 'US'
@@ -203,16 +250,11 @@ export default function Profile() {
                     </button>
 
                     <button
-                        onClick={() => {
-                            updateProfileField(
-                                'photoURL',
-                                'https://api.builder.io/api/v1/image/assets/TEMP/c3a907805cc2ed46951553fa92d51390341a3196?width=164',
-                            )
-                            updateProfileField('photoId', null)
-                        }}
-                        className="w-full md:w-auto border border-[#D4D4D4] bg-[#2f3349] hover:bg-[#2f3349] text-[#ffffff] font-poppins font-bold text-sm px-3 py-2.5 rounded-[1000px] transition-colors"
+                        onClick={handleRemoveImage}
+                        disabled={isRemoving || isUploading}
+                        className="w-full md:w-auto border border-[#D4D4D4] bg-[#2f3349] hover:bg-[#2f3349] text-[#ffffff] font-poppins font-bold text-sm px-3 py-2.5 rounded-[1000px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Remove
+                        {isRemoving ? 'Removing...' : 'Remove'}
                     </button>
                 </div>
 

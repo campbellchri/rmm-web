@@ -16,6 +16,7 @@ export async function apiProfileUpdate(data: {
     postal?: string
     country?: string
     photoId?: string
+    photoURL?: string
 }) {
     return ApiService.fetchDataWithAxios({
         url: endpointConfig.profileUpdate,

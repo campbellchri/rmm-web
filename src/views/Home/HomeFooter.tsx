@@ -1,18 +1,55 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { ArrowRight } from 'lucide-react'
+
 const Logo = '/img/others/logo.png'
 
 const Footer = () => {
     const [email, setEmail] = useState('')
+    const location = useLocation()
+    const navigate = useNavigate()
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         console.log('Newsletter signup:', email)
         setEmail('')
     }
+
+    const scrollToSection = (id: string) => {
+        if (location.pathname !== '/') {
+            navigate(`/?scroll=${id}`)
+            return
+        }
+
+        const element = document.getElementById(id)
+        if (element) {
+            const navbarHeight = 100
+            const top = element.offsetTop - navbarHeight
+
+            window.scrollTo({
+                top,
+                behavior: 'smooth',
+            })
+        }
+    }
+
+    const links = [
+        { label: 'Home', scrollId: 'home' },
+        { label: 'How It Works', scrollId: 'how-it-works' },
+        { label: 'FAQ', scrollId: 'faq' },
+        { label: 'Create Memorial', path: '/sign-in' },
+        {
+            label: 'Terms and Conditions',
+            path: '/terms-and-conditions',
+        },
+        {
+            label: 'Privacy Policy',
+            path: '/privacy-policy',
+        },
+    ]
+
     return (
         <footer
             className="text-white"
@@ -48,28 +85,27 @@ const Footer = () => {
                                 Quick links
                             </p>
                             <nav className="space-y-3">
-                                {[
-                                    { label: 'Home', path: '/' },
-                                    { label: 'How It Works', path: '#' },
-                                    { label: 'FAQ', path: '#' },
-                                    { label: 'Create Memorial', path: '#' },
-                                    {
-                                        label: 'Terms and Conditions',
-                                        path: '/terms-and-conditions',
-                                    },
-                                    {
-                                        label: 'Privacy Policy',
-                                        path: '/privacy-policy',
-                                    },
-                                ].map((link) => (
-                                    <Link
-                                        key={link.label}
-                                        to={link.path}
-                                        className="block font-poppins text-base font-medium text-[#B8B8B8] hover:text-white transition-colors"
-                                    >
-                                        {link.label}
-                                    </Link>
-                                ))}
+                                {links.map((link) =>
+                                    link.path ? (
+                                        <Link
+                                            key={link.label}
+                                            to={link.path}
+                                            className="block font-poppins text-base font-medium text-[#B8B8B8] hover:text-white transition-colors"
+                                        >
+                                            {link.label}
+                                        </Link>
+                                    ) : (
+                                        <button
+                                            key={link.label}
+                                            className="block font-poppins text-base font-medium text-[#B8B8B8] hover:text-white transition-colors text-left w-full"
+                                            onClick={() =>
+                                                scrollToSection(link.scrollId!)
+                                            }
+                                        >
+                                            {link.label}
+                                        </button>
+                                    ),
+                                )}
                             </nav>
                         </div>
 

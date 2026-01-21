@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import Container from '@/components/shared/Container'
 import classNames from '@/utils/classNames'
 import { APP_NAME } from '@/constants/app.constant'
@@ -18,22 +19,30 @@ const FooterContent = () => {
                 <span className="font-semibold">{`${APP_NAME}`}</span> All
                 rights reserved.
             </span>
-            <div className="">
-                <a
-                    className="text-gray"
-                    href="/#"
-                    onClick={(e) => e.preventDefault()}
-                >
+            <div className="flex gap-4">
+                <Link className="text-gray" to="/?scroll=home">
+                    Home
+                </Link>
+                <span className="text-muted"> | </span>
+                <Link className="text-gray" to="/sign-in">
+                    Create Memorial
+                </Link>
+                <span className="text-muted"> | </span>
+                <Link className="text-gray" to="/?scroll=how-it-works">
+                    How It Works
+                </Link>
+                <span className="text-muted"> | </span>
+                <Link className="text-gray" to="/?scroll=faq">
+                    FAQ
+                </Link>
+                <span className="text-muted"> | </span>
+                <Link className="text-gray" to="/terms-and-conditions">
                     Term & Conditions
-                </a>
-                <span className="mx-2 text-muted"> | </span>
-                <a
-                    className="text-gray"
-                    href="/#"
-                    onClick={(e) => e.preventDefault()}
-                >
+                </Link>
+                <span className="text-muted"> | </span>
+                <Link className="text-gray" to="/privacy-policy">
                     Privacy & Policy
-                </a>
+                </Link>
             </div>
         </div>
     )
