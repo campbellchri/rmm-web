@@ -63,16 +63,13 @@ const CommonSelect = <TFieldValues extends FieldValues, Option = any>(
                             placeholder={!floatingLabel ? placeholder : ''}
                             className={className || 'w-full font-poppins'}
                             value={
-                                (options?.find(
+                                options?.find(
                                     (opt: any) =>
                                         opt.value ===
                                         (propValue !== undefined
                                             ? propValue
                                             : field.value),
-                                ) ||
-                                    (placeholder
-                                        ? { label: placeholder, value: '' }
-                                        : null)) as any
+                                ) as any
                             }
                             onChange={(option: any) =>
                                 field.onChange(option?.value)
@@ -104,7 +101,7 @@ const CommonSelect = <TFieldValues extends FieldValues, Option = any>(
                                 }),
                                 placeholder: (base: any) => ({
                                     ...base,
-                                    color: '#A1A1AA',
+                                    color: '#9CA3AF',
                                 }),
                                 ...styles,
                             }}

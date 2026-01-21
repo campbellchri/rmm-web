@@ -125,7 +125,7 @@ export default function ClassicTemplateMode() {
     const { control, handleSubmit, reset } = useForm({
         defaultValues: {
             personName: '',
-            personGender: Gender.MALE,
+            personGender: '',
             personBirthDate: null as Date | null,
             personDeathDate: null as Date | null,
             favQuote: '',
@@ -606,9 +606,8 @@ export default function ClassicTemplateMode() {
                                     <CommonDatePicker
                                         name="personBirthDate"
                                         control={control}
-                                        value="Date of Birth"
-                                        label="Date of Birth"
-                                        type="date"
+                                        placeholder="Date of Birth"
+
                                         inputSuffix={
                                             <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
                                         }
@@ -616,9 +615,7 @@ export default function ClassicTemplateMode() {
                                     <CommonDatePicker
                                         name="personDeathDate"
                                         control={control}
-                                        value="Date of Death"
-                                        label="Date of Death"
-                                        type="date"
+                                        placeholder="Date of Death"
                                         inputSuffix={
                                             <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
                                         }

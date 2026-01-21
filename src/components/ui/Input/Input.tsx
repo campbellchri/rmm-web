@@ -17,10 +17,10 @@ import type {
 
 export interface InputProps
     extends CommonProps,
-        Omit<
-            InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>,
-            'size' | 'prefix'
-        > {
+    Omit<
+        InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>,
+        'size' | 'prefix'
+    > {
     asElement?: ElementType
     disabled?: boolean
     invalid?: boolean
@@ -86,7 +86,7 @@ const Input = (props: InputProps) => {
   font-normal   
   placeholder:text-sm 
   placeholder:font-poppins
-  placeholder:text-[#A1A1AA]
+  placeholder:text-[#9CA3AF]
   placeholder:font-normal
 `
     const inputSizeClass = `input-${inputSize} ${CONTROL_SIZES[inputSize].h}`
@@ -94,7 +94,7 @@ const Input = (props: InputProps) => {
   focus-within:ring-[#C7A30D]
   focus-within:border-[#C7A30D] 
   focus:border-[#C7A30D]`
-  const inputWrapperClass = classNames('input-wrapper')
+    const inputWrapperClass = classNames('input-wrapper')
     const inputClass = classNames(
         inputDefaultClass,
         !textArea && inputSizeClass,

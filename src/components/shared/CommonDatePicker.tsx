@@ -56,7 +56,7 @@ const CommonDatePicker = <TFieldValues extends FieldValues>(
                     const datePickerElement = (
                         <DatePicker
                             {...rest}
-                            placeholder={propValue || placeholder}
+                            placeholder={placeholder}
                             className={className || `text-white bg-[#383C56] border border-[#454a64] rounded-md ${floatingLabel ? 'pt-6 pb-2' : ''}`}
                             value={field.value}
                             onChange={field.onChange}

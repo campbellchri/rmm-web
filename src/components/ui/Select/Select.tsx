@@ -121,7 +121,7 @@ function Select<
                                     'rounded-[12px]',
                                     'placeholder:text-sm',
                                     'placeholder:font-poppins',
-                                    'placeholder:text-[#A1A1AA]',
+                                    'placeholder:text-[#9CA3AF]',
                                     'placeholder:font-normal',
                                     'font-normal',
                                     'text-sm',
