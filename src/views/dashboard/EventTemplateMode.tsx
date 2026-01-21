@@ -14,6 +14,8 @@ import {
     apiGetMemorialTemplateList,
 } from '@/services/axios/MemorialModeService'
 import dayjs from 'dayjs'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { apiUploadMedia } from '@/services/MediaService'
 import {
     MediaCategory,
@@ -29,6 +31,26 @@ import {
     CommonDatePicker,
 } from '@/components/shared'
 
+const validationSchema = z.object({
+    personName: z.string().min(1, { message: 'Full Name is required' }),
+    personGender: z.string().min(1, { message: 'Gender is required' }),
+    favQuote: z.string().optional(),
+    eventStartDate: z.date({
+        required_error: 'Start Date is required',
+        invalid_type_error: 'Invalid date format',
+    }),
+    eventStartTime: z.date({
+        required_error: 'Start Time is required',
+        invalid_type_error: 'Invalid date format',
+    }),
+    eventDuration: z.string().min(1, { message: 'Duration is required' }),
+    videoTitle: z.string().min(1, { message: 'Video Title is required' }),
+    profilePicture: z.any().optional(), // Following VideoOnly pattern (backend validated)
+    eventVideo: z.any().refine((val) => !!val, { message: 'Event Video is required' }),
+})
+
+type FormSchema = z.infer<typeof validationSchema>
+
 export default function EventMode() {
     const [profileImage, setProfileImage] = useState<string | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -42,15 +64,23 @@ export default function EventMode() {
     const { fetchMemorials, setActiveMemorialId } = useMemorialStore()
     const { addMedia, getMedia, clearMedia } = useMediaStore()
 
-    const { control, handleSubmit } = useForm({
+    const {
+        control,
+        handleSubmit,
+        setValue,
+        formState: { errors }
+    } = useForm<FormSchema>({
+        resolver: zodResolver(validationSchema),
         defaultValues: {
             personName: '',
-            personGender: Gender.MALE,
+            personGender: '' as any,
             favQuote: '',
-            eventStartDate: null as Date | null,
-            eventStartTime: null as Date | null,
+            eventStartDate: undefined,
+            eventStartTime: undefined,
             eventDuration: '48h',
             videoTitle: '',
+            profilePicture: undefined,
+            eventVideo: undefined,
         },
     })
 
@@ -64,7 +94,6 @@ export default function EventMode() {
     const genderOptions = [
         { value: Gender.MALE, label: 'Male' },
         { value: Gender.FEMALE, label: 'Female' },
-        { value: Gender.OTHER, label: 'Other' },
         { value: Gender.PREFER_NOT_TO_SAY, label: 'Prefer not to say' },
     ]
 
@@ -145,6 +174,7 @@ export default function EventMode() {
         if (res && res.length > 0) {
             setProfileData(res[0])
             setProfileImage(res[0].fileURL)
+            setValue('profilePicture', res[0].fileURL)
         }
         setUploadingProfile(false)
     }
@@ -158,6 +188,7 @@ export default function EventMode() {
         const res = await uploadFiles(files)
         if (res && res.length > 0) {
             setVideoData(res[0])
+            setValue('eventVideo', res[0].fileURL)
         }
         setUploadingVideo(false)
     }
@@ -308,7 +339,6 @@ export default function EventMode() {
                                     )}
                                 </div>
 
-                                {/* Upload Button */}
                                 <button
                                     type="button"
                                     disabled={uploadingProfile}
@@ -324,7 +354,6 @@ export default function EventMode() {
                                         : 'Upload Profile'}
                                 </button>
 
-                                {/* Hidden File Input */}
                                 <input
                                     id="profileUpload"
                                     type="file"
@@ -339,13 +368,24 @@ export default function EventMode() {
                                 />
                             </div>
 
-                            {/* Event Mode Info Section */}
                             <div className="w-full bg-[#2f3349] rounded-lg p-6 shadow">
                                 <CommonInput
                                     name="personName"
                                     control={control}
                                     placeholder="Full Name"
+                                    invalid={Boolean(errors.personName)}
+                                    errorMessage={errors.personName?.message}
                                 />
+                                <div className="mt-6">
+                                    <CommonSelect
+                                        name="personGender"
+                                        control={control}
+                                        options={genderOptions}
+                                        placeholder="Gender"
+                                        invalid={Boolean(errors.personGender)}
+                                        errorMessage={errors.personGender?.message}
+                                    />
+                                </div>
                                 <div className="mt-6">
                                     <CommonInput
                                         name="favQuote"
@@ -374,51 +414,53 @@ export default function EventMode() {
                             </p>
                         </div>
 
-                        {/* Event Duration Section */}
                         <div className="bg-[#2f3349] rounded-lg p-6 shadow">
                             <p className="text-base font-poppins font-[400] text-[#ffffff] mb-4">
                                 Event Duration
                             </p>
 
                             <div className="flex flex-col lg:flex-row gap-4 mb-5">
-                                {/* Start Date & Time */}
                                 <div className="flex-1">
                                     <label className="block text-sm font-poppins text-white mb-1">
                                         Start Date & Time
                                     </label>
                                     <div className="flex flex-col sm:flex-row gap-2">
-                                        {/* Date Input */}
                                         <div className="relative flex-1">
                                             <CommonDatePicker
                                                 name="eventStartDate"
                                                 control={control}
                                                 placeholder="Select Date"
+                                                invalid={Boolean(errors.eventStartDate)}
+                                                errorMessage={errors.eventStartDate?.message}
                                             />
                                         </div>
 
-                                        {/* Time Input */}
                                         <div className="relative flex-1">
                                             <Controller
                                                 name="eventStartTime"
                                                 control={control}
                                                 render={({ field }) => (
-                                                    <TimeInput
-                                                        value={field.value}
-                                                        onChange={field.onChange}
-                                                        format="12"
-                                                        showSeconds={false}
-                                                        suffix={
-                                                            <Clock className="w-4 h-4 text-memorial-gray-500 pointer-events-none" />
-                                                        }
-                                                        className="text-white bg-[#383C56] border-none"
-                                                    />
+                                                    <div>
+                                                        <TimeInput
+                                                            value={field.value}
+                                                            onChange={field.onChange}
+                                                            format="12"
+                                                            showSeconds={false}
+                                                            suffix={
+                                                                <Clock className="w-4 h-4 text-memorial-gray-500 pointer-events-none" />
+                                                            }
+                                                            className={`text-white bg-[#383C56] border-none ${errors.eventStartTime ? 'border-red-500' : ''}`}
+                                                        />
+                                                        {errors.eventStartTime && (
+                                                            <p className="text-red-500 text-sm mt-1">{(errors.eventStartTime as any).message}</p>
+                                                        )}
+                                                    </div>
                                                 )}
                                             />
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Duration */}
                                 <div className="flex-1">
                                     <label className="block text-sm font-poppins text-white mb-1">
                                         Duration
@@ -429,6 +471,8 @@ export default function EventMode() {
                                             control={control}
                                             options={durationOptions}
                                             placeholder="Select duration"
+                                            invalid={Boolean(errors.eventDuration)}
+                                            errorMessage={errors.eventDuration?.message}
                                         />
                                     </div>
                                 </div>
@@ -440,7 +484,6 @@ export default function EventMode() {
                             </p>
                         </div>
 
-                        {/* Upload Video Section */}
                         <div className="bg-[#2f3349] rounded-lg p-6 shadow">
                             <p className="text-base font-poppins font-[400] text-[#ffffff] mb-4">
                                 Upload Video
@@ -452,6 +495,9 @@ export default function EventMode() {
                                     onChange={handleVideoUpload}
                                     uploading={uploadingVideo}
                                 />
+                                {errors.eventVideo && (
+                                    <p className="text-red-500 text-sm mt-2">{(errors.eventVideo as any).message}</p>
+                                )}
                             </div>
 
                             <div className="mt-3">
@@ -460,11 +506,12 @@ export default function EventMode() {
                                     control={control}
                                     label="Video Title"
                                     placeholder="Enter Video Title "
+                                    invalid={Boolean(errors.videoTitle)}
+                                    errorMessage={errors.videoTitle?.message}
                                 />
                             </div>
                         </div>
 
-                        {/* Footer Actions */}
                         <div className="px-6 py-6 flex justify-between items-center rounded-lg shadow-sm">
                             <button
                                 onClick={handlePreview}

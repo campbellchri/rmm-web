@@ -14,6 +14,8 @@ import {
     apiUpdateMemorial,
 } from '@/services/axios/MemorialModeService'
 import dayjs from 'dayjs'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { apiUploadMedia } from '@/services/MediaService'
 import {
     MediaCategory,
@@ -97,6 +99,30 @@ const FormTextarea = ({
     )
 }
 
+const validationSchema = z.object({
+    personName: z.string().min(1, { message: 'Full Name is required' }),
+    personGender: z.string().min(1, { message: 'Gender is required' }),
+    personBirthDate: z.date({
+        required_error: 'Date of Birth is required',
+        invalid_type_error: 'Invalid date format',
+    }),
+    personDeathDate: z.date({
+        required_error: 'Date of Death is required',
+        invalid_type_error: 'Invalid date format',
+    }),
+    videoTitle: z.string().min(1, { message: 'Video Title is required' }),
+    lifeStoryText: z.string().min(1, { message: 'Life Story is required' }),
+    favQuote: z.string().optional(),
+    favoriteSaying: z.string().optional(),
+    quoteBy: z.string().optional(),
+    featuredPhoto: z.any().refine((val) => !!val, { message: 'Featured Photo is required' }),
+    videoUploaded: z.any().refine((val) => Array.isArray(val) && val.length > 0, { message: 'At least one video is required' }),
+    photoUploaded: z.any().refine((val) => Array.isArray(val) && val.length > 0, { message: 'At least one photo is required' }),
+    lifeStoryImage: z.any().refine((val) => !!val, { message: 'Life Story Image is required' }),
+})
+
+type FormSchema = z.infer<typeof validationSchema>
+
 export default function ClassicTemplateMode() {
     const [profileImage, setProfileImage] = useState<string | null>(null)
     const [profileFile, setProfileFile] = useState<File | null>(null)
@@ -122,17 +148,28 @@ export default function ClassicTemplateMode() {
     const [isEditMode, setIsEditMode] = useState(mode === 'edit')
     const [existingMemorialData, setExistingMemorialData] = useState<any>(null)
 
-    const { control, handleSubmit, reset } = useForm({
+    const {
+        control,
+        handleSubmit,
+        reset,
+        setValue,
+        formState: { errors },
+    } = useForm<FormSchema>({
+        resolver: zodResolver(validationSchema),
         defaultValues: {
             personName: '',
             personGender: '',
-            personBirthDate: null as Date | null,
-            personDeathDate: null as Date | null,
+            personBirthDate: undefined,
+            personDeathDate: undefined,
             favQuote: '',
             videoTitle: '',
             favoriteSaying: '',
             quoteBy: '',
             lifeStoryText: '',
+            featuredPhoto: undefined,
+            videoUploaded: [],
+            photoUploaded: [],
+            lifeStoryImage: undefined,
         },
     })
 
@@ -158,14 +195,13 @@ export default function ClassicTemplateMode() {
                         setExistingMemorialData(memorialRes)
                         reset({
                             personName: memorialRes.personName || '',
-                            personGender:
-                                memorialRes.personGender || Gender.MALE,
+                            personGender: memorialRes.personGender || '',
                             personBirthDate: memorialRes.personBirthDate
                                 ? new Date(memorialRes.personBirthDate)
-                                : null,
+                                : undefined,
                             personDeathDate: memorialRes.personDeathDate
                                 ? new Date(memorialRes.personDeathDate)
-                                : null,
+                                : undefined,
                             favQuote: memorialRes.favQuote || '',
                             favoriteSaying:
                                 memorialRes.favoriteSayings?.[0]?.content || '',
@@ -177,6 +213,10 @@ export default function ClassicTemplateMode() {
                                     (m: any) => m.type === MediaType.VIDEO,
                                 )?.videoTitle || '',
                             lifeStoryText: memorialRes.lifeStoryText || '',
+                            featuredPhoto: memorialRes.featuredPhotoURL || undefined,
+                            videoUploaded: memorialRes.userMedia?.filter((m: any) => m.type === MediaType.VIDEO && m.category === MediaCategory.GALLERY) || [],
+                            photoUploaded: memorialRes.userMedia?.filter((m: any) => m.type === MediaType.PHOTO && m.category === MediaCategory.GALLERY) || [],
+                            lifeStoryImage: memorialRes.lifeStoryImageURL || undefined,
                         })
 
                         if (memorialRes.personProfilePicture) {
@@ -307,6 +347,7 @@ export default function ClassicTemplateMode() {
         const res = await uploadFiles([file])
         if (res && res.length > 0) {
             setFeaturedData(res[0])
+            setValue('featuredPhoto', res[0].fileURL)
         }
         setUploadingFeatured(false)
     }
@@ -314,6 +355,7 @@ export default function ClassicTemplateMode() {
     const handleLifeStoryImageUpload = async (files: (File | any)[]) => {
         if (files.length === 0) {
             setLifeStoryData(null)
+            setValue('lifeStoryImage', undefined)
             return
         }
 
@@ -321,6 +363,7 @@ export default function ClassicTemplateMode() {
         if (!(file instanceof File)) {
             // It's existing media
             setLifeStoryData(file)
+            setValue('lifeStoryImage', file.fileURL)
             return
         }
 
@@ -328,6 +371,7 @@ export default function ClassicTemplateMode() {
         const res = await uploadFiles([file])
         if (res && res.length > 0) {
             setLifeStoryData(res[0])
+            setValue('lifeStoryImage', res[0].fileURL)
         }
         setUploadingLifeStory(false)
     }
@@ -341,10 +385,13 @@ export default function ClassicTemplateMode() {
             setUploadingPhotos(true)
             const res = await uploadFiles(newFiles)
             const newData = newFiles.map((file, i) => ({ file, res: res[i] }))
-            setPhotosData([...existingEntries, ...newData])
+            const updatedPhotos = [...existingEntries, ...newData]
+            setPhotosData(updatedPhotos)
+            setValue('photoUploaded', updatedPhotos.map(p => p.res || p.file))
             setUploadingPhotos(false)
         } else {
             setPhotosData(existingEntries)
+            setValue('photoUploaded', existingEntries.map(p => p.res || p.file))
         }
     }
 
@@ -356,10 +403,13 @@ export default function ClassicTemplateMode() {
             setUploadingVideos(true)
             const res = await uploadFiles(newFiles)
             const newData = newFiles.map((file, i) => ({ file, res: res[i] }))
-            setVideoData([...existingEntries, ...newData])
+            const updatedVideos = [...existingEntries, ...newData]
+            setVideoData(updatedVideos)
+            setValue('videoUploaded', updatedVideos.map(v => v.res || v.file))
             setUploadingVideos(false)
         } else {
             setVideoData(existingEntries)
+            setValue('videoUploaded', existingEntries.map(v => v.res || v.file))
         }
     }
 
@@ -440,8 +490,6 @@ export default function ClassicTemplateMode() {
             }
 
             if (isEditMode && memorialId && existingMemorialData) {
-                // Update Logic
-                // Exclude properties that should not be in the payload
                 const {
                     id,
                     creatorId,
@@ -592,13 +640,17 @@ export default function ClassicTemplateMode() {
                                     <CommonInput
                                         name="personName"
                                         control={control}
-                                        placeholder='Full Name'
+                                        placeholder="Full Name"
+                                        invalid={Boolean(errors.personName)}
+                                        errorMessage={errors.personName?.message}
                                     />
                                     <CommonSelect
                                         name="personGender"
                                         control={control}
                                         options={genderOptions}
                                         placeholder="Gender"
+                                        invalid={Boolean(errors.personGender)}
+                                        errorMessage={errors.personGender?.message}
                                     />
                                 </div>
 
@@ -607,7 +659,8 @@ export default function ClassicTemplateMode() {
                                         name="personBirthDate"
                                         control={control}
                                         placeholder="Date of Birth"
-
+                                        invalid={Boolean(errors.personBirthDate)}
+                                        errorMessage={errors.personBirthDate?.message}
                                         inputSuffix={
                                             <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
                                         }
@@ -616,6 +669,8 @@ export default function ClassicTemplateMode() {
                                         name="personDeathDate"
                                         control={control}
                                         placeholder="Date of Death"
+                                        invalid={Boolean(errors.personDeathDate)}
+                                        errorMessage={errors.personDeathDate?.message}
                                         inputSuffix={
                                             <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
                                         }
@@ -649,10 +704,16 @@ export default function ClassicTemplateMode() {
                             accept="image/*"
                             uploadLimit={1}
                             onChange={handleFeaturedPhotoUpload}
-                            onFileRemove={() => handleFeaturedPhotoUpload([])}
+                            onFileRemove={() => {
+                                handleFeaturedPhotoUpload([])
+                                setValue('featuredPhoto', undefined)
+                            }}
                             uploading={uploadingFeatured}
                             defaultFiles={featuredData ? [featuredData] : []}
                         />
+                        {errors.featuredPhoto && (
+                            <p className="text-red-500 text-sm mt-2">{(errors.featuredPhoto as any).message}</p>
+                        )}
                     </FormSection>
 
                     {/* Upload Video */}
@@ -668,16 +729,24 @@ export default function ClassicTemplateMode() {
                             accept="video/*"
                             uploadLimit={1}
                             onChange={handleGalleryVideosUpload}
-                            onFileRemove={handleGalleryVideosUpload}
+                            onFileRemove={(files) => {
+                                handleGalleryVideosUpload(files)
+                                if (files.length === 0) setValue('videoUploaded', [])
+                            }}
                             uploading={uploadingVideos}
                             defaultFiles={videoData.map(v => v.file)}
                         />
+                        {errors.videoUploaded && (
+                            <p className="text-red-500 text-sm mt-2">{(errors.videoUploaded as any).message}</p>
+                        )}
                         <div className="mt-4">
                             <CommonInput
                                 name="videoTitle"
                                 control={control}
                                 label="Video Title"
                                 placeholder="Enter Video Title"
+                                invalid={Boolean(errors.videoTitle)}
+                                errorMessage={errors.videoTitle?.message}
                             />
                         </div>
                     </FormSection>
@@ -695,10 +764,16 @@ export default function ClassicTemplateMode() {
                             accept="image/*"
                             multiple
                             onChange={handleGalleryPhotosUpload}
-                            onFileRemove={handleGalleryPhotosUpload}
+                            onFileRemove={(files) => {
+                                handleGalleryPhotosUpload(files)
+                                if (files.length === 0) setValue('photoUploaded', [])
+                            }}
                             uploading={uploadingPhotos}
                             defaultFiles={photosData.map(p => p.file)}
                         />
+                        {errors.photoUploaded && (
+                            <p className="text-red-500 text-sm mt-2">{(errors.photoUploaded as any).message}</p>
+                        )}
                     </FormSection>
 
                     {/* Favorite Sayings */}
@@ -738,14 +813,19 @@ export default function ClassicTemplateMode() {
                         className="mb-8"
                     >
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <Upload
-                                accept="image/*"
-                                uploadLimit={1}
-                                onChange={handleLifeStoryImageUpload}
-                                onFileRemove={() => handleLifeStoryImageUpload([])}
-                                uploading={uploadingLifeStory}
-                                defaultFiles={lifeStoryData ? [lifeStoryData] : []}
-                            />
+                            <div>
+                                <Upload
+                                    accept="image/*"
+                                    uploadLimit={1}
+                                    onChange={handleLifeStoryImageUpload}
+                                    onFileRemove={() => handleLifeStoryImageUpload([])}
+                                    uploading={uploadingLifeStory}
+                                    defaultFiles={lifeStoryData ? [lifeStoryData] : []}
+                                />
+                                {errors.lifeStoryImage && (
+                                    <p className="text-red-500 text-sm mt-2">{(errors.lifeStoryImage as any).message}</p>
+                                )}
+                            </div>
                             <div>
                                 <CommonInput
                                     name="lifeStoryText"
@@ -755,6 +835,8 @@ export default function ClassicTemplateMode() {
                                     placeholder="Type here..."
                                     maxLength={500}
                                     rows={8}
+                                    invalid={Boolean(errors.lifeStoryText)}
+                                    errorMessage={errors.lifeStoryText?.message}
                                 />
                             </div>
                         </div>

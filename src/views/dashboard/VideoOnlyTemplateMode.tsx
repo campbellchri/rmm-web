@@ -14,6 +14,8 @@ import {
     apiUpdateMemorial,
 } from '@/services/axios/MemorialModeService'
 import dayjs from 'dayjs'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { apiUploadMedia, apiDeleteMedia } from '@/services/MediaService'
 import {
     MediaCategory,
@@ -23,6 +25,27 @@ import {
 } from '@/constants/memorial.constant'
 import { useMemorialStore } from '@/store/memorialStore'
 import { useMediaStore } from '@/store/mediaStore'
+
+const validationSchema = z.object({
+    personName: z.string().min(1, { message: 'Full Name is required' }),
+    personGender: z.string().min(1, { message: 'Gender is required' }),
+    personBirthDate: z.date({
+        required_error: 'Date of Birth is required',
+        invalid_type_error: 'Invalid date format',
+    }),
+    personDeathDate: z.date({
+        required_error: 'Date of Death is required',
+        invalid_type_error: 'Invalid date format',
+    }),
+    favQuote: z.string().optional(),
+    featuredVideoTitle: z.string().min(1, { message: 'Video Title is required' }),
+    favSaying: z.string().min(1, { message: 'Favorite Sayings is required' }),
+    profilePicture: z.any().optional(),
+    featuredVideo: z.any().refine((val) => !!val, { message: 'Featured Video is required' }),
+    galleryVideoTitle: z.string().optional(),
+})
+
+type FormSchema = z.infer<typeof validationSchema>
 
 const FormSection = ({
     title,
@@ -66,23 +89,31 @@ export default function VideoOnlyMemorial() {
     const [isEditMode, setIsEditMode] = useState(mode === 'edit')
     const [existingMemorialData, setExistingMemorialData] = useState<any>(null)
 
-    const { control, handleSubmit, reset } = useForm({
+    const {
+        control,
+        handleSubmit,
+        reset,
+        setValue,
+        formState: { errors }
+    } = useForm<FormSchema>({
+        resolver: zodResolver(validationSchema),
         defaultValues: {
             personName: '',
-            personGender: Gender.MALE,
-            personBirthDate: null as Date | null,
-            personDeathDate: null as Date | null,
+            personGender: '',
+            personBirthDate: undefined,
+            personDeathDate: undefined,
             favQuote: '',
             featuredVideoTitle: '',
             favSaying: '',
             galleryVideoTitle: '',
+            profilePicture: undefined,
+            featuredVideo: undefined,
         },
     })
 
     const genderOptions = [
         { value: Gender.MALE, label: 'Male' },
         { value: Gender.FEMALE, label: 'Female' },
-        { value: Gender.OTHER, label: 'Other' },
         { value: Gender.PREFER_NOT_TO_SAY, label: 'Prefer not to say' },
     ]
 
@@ -105,13 +136,13 @@ export default function VideoOnlyMemorial() {
                         setExistingMemorialData(memorialRes)
                         reset({
                             personName: memorialRes.personName || '',
-                            personGender: memorialRes.personGender || Gender.MALE,
+                            personGender: memorialRes.personGender || '',
                             personBirthDate: memorialRes.personBirthDate
                                 ? new Date(memorialRes.personBirthDate)
-                                : null,
+                                : undefined,
                             personDeathDate: memorialRes.personDeathDate
                                 ? new Date(memorialRes.personDeathDate)
-                                : null,
+                                : undefined,
                             favQuote: memorialRes.favQuote || '',
                             featuredVideoTitle:
                                 memorialRes.userMedia?.find(
@@ -125,6 +156,10 @@ export default function VideoOnlyMemorial() {
                                 memorialRes.userMedia?.find(
                                     (m: any) => m.category === MediaCategory.GALLERY,
                                 )?.videoTitle || '',
+                            profilePicture: memorialRes.personProfilePicture || undefined,
+                            featuredVideo: memorialRes.userMedia?.find(
+                                (m: any) => m.category === MediaCategory.FEATURED,
+                            )?.fileURL || undefined,
                         })
 
                         if (memorialRes.personProfilePicture) {
@@ -217,6 +252,7 @@ export default function VideoOnlyMemorial() {
         if (res && res.length > 0) {
             setProfileData(res[0])
             setProfileImage(res[0].fileURL)
+            setValue('profilePicture', res[0].fileURL)
         }
         setUploadingProfile(false)
     }
@@ -231,6 +267,7 @@ export default function VideoOnlyMemorial() {
                 }
             }
             setFeaturedData(null)
+            setValue('featuredVideo', undefined)
             return
         }
 
@@ -245,6 +282,7 @@ export default function VideoOnlyMemorial() {
         const res = await uploadFiles([file])
         if (res && res.length > 0) {
             setFeaturedData(res[0])
+            setValue('featuredVideo', res[0].fileURL)
         }
         setUploadingFeatured(false)
     }
@@ -358,8 +396,6 @@ export default function VideoOnlyMemorial() {
                 userMedia: mediaList,
             }
 
-            console.log('Final Payload:', JSON.stringify(payload, null, 2))
-
             if (isEditMode && memorialId && existingMemorialData) {
                 const {
                     id,
@@ -446,7 +482,6 @@ export default function VideoOnlyMemorial() {
         <>
             <div className="min-h-screen">
                 <div className="max-w-7xl mx-auto ">
-                    {/* Header */}
                     <div className="flex justify-between flex-col md:flex-row gap-2 items-center mb-8">
                         <div className="flex items-center gap-4">
                             <button
@@ -463,10 +498,8 @@ export default function VideoOnlyMemorial() {
                         </div>
                     </div>
 
-                    {/* Profile Section */}
                     <div className="flex flex-col items-center gap-5 mb-8">
                         <div className="flex items-center gap-4">
-                            {/* Avatar Preview */}
                             <div className="lg:w-31 lg:h-31 md:w-25 md:h-25 h-20 w-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                                 {profileImage ? (
                                     <img
@@ -483,7 +516,6 @@ export default function VideoOnlyMemorial() {
                                 )}
                             </div>
 
-                            {/* Upload Button */}
                             <button
                                 type="button"
                                 disabled={uploadingProfile}
@@ -499,7 +531,6 @@ export default function VideoOnlyMemorial() {
                                     : 'Upload Profile'}
                             </button>
 
-                            {/* Hidden File Input */}
                             <input
                                 id="profileUpload"
                                 type="file"
@@ -514,7 +545,6 @@ export default function VideoOnlyMemorial() {
                             />
                         </div>
 
-                        {/* Basic Info */}
                         <div className="w-full bg-[#2f3349] rounded-lg p-6 shadow">
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -522,12 +552,16 @@ export default function VideoOnlyMemorial() {
                                         name="personName"
                                         control={control}
                                         placeholder='Full Name'
+                                        invalid={Boolean(errors.personName)}
+                                        errorMessage={errors.personName?.message}
                                     />
                                     <CommonSelect
                                         name="personGender"
                                         control={control}
                                         options={genderOptions}
                                         placeholder="Gender"
+                                        invalid={Boolean(errors.personGender)}
+                                        errorMessage={errors.personGender?.message}
                                     />
                                 </div>
 
@@ -535,9 +569,9 @@ export default function VideoOnlyMemorial() {
                                     <CommonDatePicker
                                         name="personBirthDate"
                                         control={control}
-                                        value="Date of Birth"
-                                        label="Date of Birth"
-                                        type="date"
+                                        placeholder="Date of Birth"
+                                        invalid={Boolean(errors.personBirthDate)}
+                                        errorMessage={errors.personBirthDate?.message}
                                         inputSuffix={
                                             <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
                                         }
@@ -545,9 +579,9 @@ export default function VideoOnlyMemorial() {
                                     <CommonDatePicker
                                         name="personDeathDate"
                                         control={control}
-                                        value="Date of Death"
-                                        label="Date of Death"
-                                        type="date"
+                                        placeholder="Date of Death"
+                                        invalid={Boolean(errors.personDeathDate)}
+                                        errorMessage={errors.personDeathDate?.message}
                                         inputSuffix={
                                             <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
                                         }
@@ -585,12 +619,17 @@ export default function VideoOnlyMemorial() {
                             uploading={uploadingFeatured}
                             defaultFiles={featuredData ? [featuredData] : []}
                         />
+                        {errors.featuredVideo && (
+                            <p className="text-red-500 text-sm mt-2">{(errors.featuredVideo as any).message}</p>
+                        )}
                         <div className="mt-4">
                             <CommonInput
                                 name="featuredVideoTitle"
                                 control={control}
                                 label="Video Title"
                                 placeholder="Enter title here..."
+                                invalid={Boolean(errors.featuredVideoTitle)}
+                                errorMessage={errors.featuredVideoTitle?.message}
                             />
                         </div>
                         <div className="mt-4">
@@ -599,6 +638,8 @@ export default function VideoOnlyMemorial() {
                                 control={control}
                                 label="Favorite Sayings (Optional)"
                                 placeholder="Enter sayings here..."
+                                invalid={Boolean(errors.favSaying)}
+                                errorMessage={errors.favSaying?.message}
                             />
                         </div>
                     </FormSection>
