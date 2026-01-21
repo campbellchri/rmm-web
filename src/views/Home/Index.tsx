@@ -8,13 +8,15 @@ import UpcommingAnniverseries from './UpcommingAnniverseries'
 import HomeNavbar from './HomeNavbar'
 const LogoLink = '/img/others/Link.png'
 import { useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import 'aos/dist/aos.css'
 import FAQSection from '../AboutUs/FAQSection'
 import FAQ from './FAQ'
 
 const Index = () => {
     const [searchParams] = useSearchParams()
+
+    const navigate = useNavigate()
 
     useEffect(() => {
         const scrollId = searchParams.get('scroll')
@@ -66,6 +68,7 @@ const Index = () => {
                                 text-[#011837]
                                 w-auto
                                 "
+                                onClick={() => navigate('/sign-in')}
                             >
                                 Create Memorial
                             </button>
