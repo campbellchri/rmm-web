@@ -485,7 +485,7 @@ export default function VideoOnlyMemorial() {
                     <div className="flex justify-between flex-col md:flex-row gap-2 items-center mb-8">
                         <div className="flex items-center gap-4">
                             <button
-                                onClick={() => navigate(-1)}
+                                onClick={() => navigate('/dashboard')}
                                 className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
                             >
                                 <ArrowLeft />

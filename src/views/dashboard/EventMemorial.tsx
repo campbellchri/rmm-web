@@ -65,7 +65,7 @@ export default function EventMemorial() {
                 <div className=" py-16 relative">
                     <div className="absolute top-3 w-full px-6 flex justify-between items-center">
                         <button
-                            onClick={() => navigate(-1)}
+                            onClick={() => navigate('/dashboard')}
                             className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
                         >
                             <ArrowLeft />

@@ -12,6 +12,7 @@ interface TemplateOption {
     image: string
     description?: string
     thumbnailURL?: string
+    sortOrder?: number
 }
 
 interface LandingMode {
@@ -34,6 +35,7 @@ interface TemplateApiResponse {
     thumbnailURL?: string
     createdAt: string
     updatedAt: string
+    sortOrder?: number
     landingMode: LandingMode
 }
 
@@ -67,11 +69,10 @@ const TemplateCard = ({
     return (
         <div
             onClick={onSelect}
-            className={`flex flex-col rounded-lg overflow-hidden cursor-pointer transition-all duration-200 bg-white shadow-md hover:shadow-lg ${
-                isSelected
-                    ? 'border-2 border-[#C7A30D]'
-                    : 'border border-gray-200 hover:border-gray-300'
-            }`}
+            className={`flex flex-col rounded-lg overflow-hidden cursor-pointer transition-all duration-200 bg-white shadow-md hover:shadow-lg ${isSelected
+                ? 'border-2 border-[#C7A30D]'
+                : 'border border-gray-200 hover:border-gray-300'
+                }`}
         >
             {/* Header */}
             <div className="px-6 py-6 border-b border-gray-200 bg-[#383C56]">
@@ -155,8 +156,12 @@ const SelectTemplate = () => {
                                     item.description ||
                                     item.landingMode?.description ||
                                     undefined,
+                                sortOrder: item.sortOrder ?? 0,
                             }
                         },
+                    )
+                    apiTemplates.sort(
+                        (a, b) => (a.sortOrder || 0) - (b.sortOrder || 0),
                     )
                     setTemplates(apiTemplates)
                 }

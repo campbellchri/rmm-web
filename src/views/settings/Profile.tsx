@@ -11,6 +11,7 @@ import {
 import { useProfileStore, UserProfile } from '@/store/profileStore'
 import { apiDeleteMedia, apiUploadMedia } from '@/services/MediaService'
 import { useMediaStore } from '@/store/mediaStore'
+import { useSessionUser } from '@/store/authStore'
 
 export default function Profile() {
     const {
@@ -24,6 +25,8 @@ export default function Profile() {
         setPassword,
         updateProfileField,
     } = useProfileStore()
+
+    const setUser = useSessionUser((state) => state.setUser)
 
     const [isUploading, setIsUploading] = useState(false)
     const [isRemoving, setIsRemoving] = useState(false)
@@ -53,6 +56,7 @@ export default function Profile() {
                     addMedia(key, uploadedImage)
                     updateProfileField('photoURL', uploadedImage.fileURL)
                     updateProfileField('photoId', uploadedImage.fileId)
+                    setUser({ avatar: uploadedImage.fileURL })
                 }
             } catch (error) {
                 console.error('Failed to upload image', error)
@@ -74,6 +78,7 @@ export default function Profile() {
                 'https://api.builder.io/api/v1/image/assets/TEMP/c3a907805cc2ed46951553fa92d51390341a3196?width=164',
             )
             updateProfileField('photoId', null)
+            setUser({ avatar: '' })
             return
         }
 
@@ -82,9 +87,10 @@ export default function Profile() {
             await apiDeleteMedia(profile.photoId)
             updateProfileField(
                 'photoURL',
-                'https://api.builder.io/api/v1/image/assets/TEMP/c3a907805cc2ed46951553fa92d51390341a3196?width=164',
+                'https://api.builder.io/api/v1/image/assets/TEMP/83dc85ca9155608ff3d7e17a997653fd5f9ed739?width=248',
             )
             updateProfileField('photoId', null)
+            setUser({ avatar: '' })
             toast.push(
                 <Notification title="Image Removed" type="success">
                     Profile image has been removed.
@@ -110,6 +116,7 @@ export default function Profile() {
             const data = await apiGetCurrentUser<UserProfile>()
             if (data) {
                 setProfile(data)
+                setUser({ avatar: data.photoURL || '' })
             }
         } catch (error) {
             console.error('Failed to fetch user data', error)
