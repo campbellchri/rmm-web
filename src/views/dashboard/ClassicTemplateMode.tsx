@@ -16,7 +16,7 @@ import {
 import dayjs from 'dayjs'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { apiUploadMedia } from '@/services/MediaService'
+import { apiDeleteMedia, apiUploadMedia, apiDeleteGCPFile } from '@/services/MediaService'
 import {
     MediaCategory,
     MediaType,
@@ -25,6 +25,8 @@ import {
 } from '@/constants/memorial.constant'
 import { useMemorialStore } from '@/store/memorialStore'
 import { useMediaStore } from '@/store/mediaStore'
+import useAuth from '@/auth/useAuth'
+import SingleImageUpload from '@/components/ui/SingleImageUpload/SingleImageUpload'
 
 // Form Section Component
 const FormSection = ({
@@ -139,14 +141,17 @@ export default function ClassicTemplateMode() {
     const [photosData, setPhotosData] = useState<{ file: File | any, res: any }[]>([])
     const [lifeStoryData, setLifeStoryData] = useState<any>(null)
     const [landingModeId, setLandingModeId] = useState<string>('')
-    const { addMedia, getMedia, clearMedia } = useMediaStore()
+    const { addMedia, getMedia, clearMedia, clearMediaItem } = useMediaStore()
+
     const [templateId, setTemplateId] = useState<string>('')
     const navigate = useNavigate()
     const location = useLocation()
+    const { user } = useAuth()
     const { fetchMemorials, setActiveMemorialId } = useMemorialStore()
     const { mode, memorialId } = location.state || {}
     const [isEditMode, setIsEditMode] = useState(mode === 'edit')
     const [existingMemorialData, setExistingMemorialData] = useState<any>(null)
+    const [deletedItem, setDeletedItem] = useState<any>(null)
 
     const {
         control,
@@ -173,6 +178,22 @@ export default function ClassicTemplateMode() {
         },
     })
 
+    const mapMediaToUploadFile = (m: any) => ({
+        // MUST match Upload internal expectations
+        originalFileName: m.fileId?.split('/').pop() || 'media',
+        size: 1, // non-zero required by Upload UI
+        mimeType: m.type === MediaType.VIDEO ? 'video/mp4' : 'image/jpeg',
+        fileURL: m.fileURL,
+        uploadId: m.uploadId,
+        fileId: m.fileId,
+
+        // flags used by Upload
+        status: 'done',
+        percent: 100,
+    })
+
+
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -191,6 +212,7 @@ export default function ClassicTemplateMode() {
                     const memorialRes: any = await apiGetMemorialById(
                         memorialId,
                     )
+                    console.log(memorialRes, ' in edit case memorialRes')
                     if (memorialRes) {
                         setExistingMemorialData(memorialRes)
                         reset({
@@ -228,7 +250,7 @@ export default function ClassicTemplateMode() {
                             setFeaturedData({
                                 fileURL: memorialRes.featuredPhotoURL,
                                 fileId: memorialRes.featuredPhotoId,
-                                mimeType: 'image/jpeg', // Default or from API if available
+
                             })
                         }
 
@@ -236,27 +258,51 @@ export default function ClassicTemplateMode() {
                             setLifeStoryData({
                                 fileURL: memorialRes.lifeStoryImageURL,
                                 fileId: memorialRes.lifeStoryImageId,
-                                mimeType: 'image/jpeg',
                             })
                         }
 
+                        // if (memorialRes.userMedia) {
+                        //     const photos = memorialRes.userMedia
+                        //         .filter((m: any) => m.type === MediaType.PHOTO && m.category === MediaCategory.GALLERY)
+                        //         .map((m: any) => ({
+                        //             file: { fileURL: m.fileURL, mimeType: m.mimeType, fileId: m.fileId },
+                        //             res: m
+                        //         }))
+                        //     setPhotosData(photos)
+
+                        //     const videos = memorialRes.userMedia
+                        //         .filter((m: any) => m.type === MediaType.VIDEO && m.category === MediaCategory.GALLERY)
+                        //         .map((m: any) => ({
+                        //             file: { fileURL: m.fileURL, mimeType: m.mimeType, fileId: m.fileId },
+                        //             res: m
+                        //         }))
+                        //     console.log(memorialRes.userMedia, 'memorialRes.userMedia')
+                        //     setVideoData(videos)
+                        // }
                         if (memorialRes.userMedia) {
                             const photos = memorialRes.userMedia
-                                .filter((m: any) => m.type === MediaType.PHOTO && m.category === MediaCategory.GALLERY)
-                                .map((m: any) => ({
-                                    file: { fileURL: m.fileURL, mimeType: m.mimeType, fileId: m.fileId },
-                                    res: m
+                                .filter(m => m.type === MediaType.PHOTO)
+                                .map(m => ({
+                                    file: mapMediaToUploadFile(m),
+                                    res: m,
                                 }))
-                            setPhotosData(photos)
 
                             const videos = memorialRes.userMedia
-                                .filter((m: any) => m.type === MediaType.VIDEO && m.category === MediaCategory.GALLERY)
-                                .map((m: any) => ({
-                                    file: { fileURL: m.fileURL, mimeType: m.mimeType, fileId: m.fileId },
-                                    res: m
+                                .filter(m => m.type === MediaType.VIDEO)
+                                .map(m => ({
+                                    file: mapMediaToUploadFile(m),
+                                    res: m,
                                 }))
+
+                            setPhotosData(photos)
                             setVideoData(videos)
+
+                            setValue('photoUploaded', photos.map(p => p.res))
+                            setValue('videoUploaded', videos.map(v => v.res))
                         }
+
+
+
                     }
                 }
             } catch (error) {
@@ -330,30 +376,109 @@ export default function ClassicTemplateMode() {
         setUploadingProfile(false)
     }
 
-    const handleFeaturedPhotoUpload = async (files: (File | any)[]) => {
-        if (files.length === 0) {
+    const handleFeaturedPhotoUpload = async (files: (File | any)[] | null) => {
+
+        if (!files || files.length === 0) {
+            // Handle deletion of existing photo
+            if (featuredData?.fileId) {
+                try {
+                    // Use apiDeleteGCPFile for both edit and creation modes
+                    await apiDeleteGCPFile(featuredData.fileId)
+
+                    // Clear from media cache
+                    if (featuredData.fileId) {
+                        const key = `featured_${featuredData.fileId}`
+                        clearMediaItem(key)
+                    }
+
+                    if (featuredData.originalFileName) {
+                        const key = `${featuredData.originalFileName}-${featuredData.size || 0}`
+                        clearMediaItem(key)
+                    }
+
+                    toast.push(
+                        <Notification
+                            type="success"
+                            title="Success"
+                            duration={2000}
+                        >
+                            Featured photo deleted successfully!
+                        </Notification>,
+                        { placement: 'top-center' },
+                    )
+                } catch (error: any) {
+                    console.error('Error deleting featured photo:', error)
+                    toast.push(
+                        <Notification
+                            type="danger"
+                            title="Delete Failed"
+                            duration={3000}
+                        >
+                            Failed to delete featured photo:{' '}
+                            {error?.response?.data?.message ||
+                                error?.message ||
+                                'Please try again'}
+                        </Notification>,
+                        { placement: 'top-center' },
+                    )
+                }
+            }
+
+            // Clear state regardless of whether deletion API call succeeded
             setFeaturedData(null)
+            setValue('featuredPhoto', undefined)
             return
         }
 
         const file = files[0]
-        if (!(file instanceof File)) {
-            // It's existing media
+
+        // Handle existing media (not a new File)
+        if (!(file instanceof File) && file.fileURL) {
             setFeaturedData(file)
+            setValue('featuredPhoto', file.fileURL)
             return
         }
 
+        // Delete old photo before uploading new one (both edit and creation mode)
+        if (featuredData?.uploadId) {
+            try {
+                await apiDeleteGCPFile(featuredData.uploadId)
+            } catch (error) {
+                console.error('Failed to delete old featured photo', error)
+            }
+        }
+
+        // Upload new photo
         setUploadingFeatured(true)
         const res = await uploadFiles([file])
+
         if (res && res.length > 0) {
             setFeaturedData(res[0])
             setValue('featuredPhoto', res[0].fileURL)
+
+            // Add to media cache
+            if (res[0].uploadId) {
+                addMedia(`featured_${res[0].uploadId}`, res[0])
+            }
         }
         setUploadingFeatured(false)
     }
 
-    const handleLifeStoryImageUpload = async (files: (File | any)[]) => {
-        if (files.length === 0) {
+    const handleLifeStoryImageUpload = async (files: (File | any)[] | null) => {
+
+        if (!files || files.length === 0) {
+            if (lifeStoryData?.fileId) {
+                try {
+                    await apiDeleteGCPFile(lifeStoryData.fileId)
+                    // Clear from media cache
+                    if (lifeStoryData.fileId) {
+                        const key = `lifeStory_${lifeStoryData?.fileId}`
+                        clearMediaItem(key)
+                    }
+                } catch (error) {
+                    console.error('Error deleting life story image:', error)
+                }
+            }
             setLifeStoryData(null)
             setValue('lifeStoryImage', undefined)
             return
@@ -378,7 +503,28 @@ export default function ClassicTemplateMode() {
 
     const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
         // Separate existing media and newly added files
-        const existingEntries = photosData.filter(p => files.includes(p.file))
+        const existingEntries = photosData.filter(p =>
+            files.some(f => f.uploadId === p.file.uploadId)
+        )
+
+        // Find removed items and delete them
+        const removedItems = photosData.filter(p =>
+            !files.some(f => f.uploadId === p.file.uploadId)
+        )
+        for (const item of removedItems) {
+            if (item.res?.uploadId) {
+                try {
+                    if (isEditMode) {
+                        await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
+                    } else {
+                        await apiDeleteGCPFile(item.res.uploadId)
+                    }
+                } catch (error) {
+                    console.error('Error deleting photo:', error)
+                }
+            }
+        }
+
         const newFiles = files.filter(f => f instanceof File) as File[]
 
         if (newFiles.length > 0) {
@@ -396,7 +542,28 @@ export default function ClassicTemplateMode() {
     }
 
     const handleGalleryVideosUpload = async (files: (File | any)[]) => {
-        const existingEntries = videoData.filter(v => files.includes(v.file))
+        const existingEntries = videoData.filter(v =>
+            files.some(f => f.uploadId === v.file.uploadId)
+        )
+
+        const removedItems = videoData.filter(v =>
+            !files.some(f => f.uploadId === v.file.uploadId)
+        )
+
+        for (const item of removedItems) {
+            if (item.res?.uploadId) {
+                try {
+                    if (isEditMode) {
+                        await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
+                    } else {
+                        await apiDeleteGCPFile(item.res.uploadId)
+                    }
+                } catch (error) {
+                    console.error('Error deleting video:', error)
+                }
+            }
+        }
+
         const newFiles = files.filter(f => f instanceof File) as File[]
 
         if (newFiles.length > 0) {
@@ -431,10 +598,10 @@ export default function ClassicTemplateMode() {
                 personProfilePicture: profileData?.fileURL || profileImage || null,
                 favQuote: data.favQuote,
                 pageURL: `${window.location.origin}/memorial/${data.personName.toLowerCase().replace(/\s+/g, '-')}`,
-                featuredPhotoId: featuredData?.fileId || null,
+                featuredPhotoId: featuredData?.uploadId || null,
                 featuredPhotoURL: featuredData?.fileURL || null,
                 lifeStoryText: data.lifeStoryText,
-                lifeStoryImageId: lifeStoryData?.fileId || null,
+                lifeStoryImageId: lifeStoryData?.uploadId || null,
                 lifeStoryImageURL: lifeStoryData?.fileURL || null,
                 eventStart: isEditMode ? existingMemorialData?.eventStart : dayjs().toISOString(),
                 eventDuration: isEditMode ? existingMemorialData?.eventDuration : "48h",
@@ -447,6 +614,7 @@ export default function ClassicTemplateMode() {
                             mimeType: item.res?.mimeType || (item.file instanceof File ? item.file.type : item.file.mimeType) || 'image/jpeg',
                             fileURL: item.res?.fileURL,
                             fileId: item.res?.fileId,
+                            uploadId: item.res?.uploadId,
                             type: MediaType.PHOTO,
                             category: MediaCategory.GALLERY,
                             photoCaption: item.res?.photoCaption || '',
@@ -460,6 +628,7 @@ export default function ClassicTemplateMode() {
                             mimeType: item.res?.mimeType || (item.file instanceof File ? item.file.type : item.file.mimeType) || 'video/mp4',
                             fileURL: item.res?.fileURL,
                             fileId: item.res?.fileId,
+                            uploadId: item.res?.uploadId,
                             type: MediaType.VIDEO,
                             category: MediaCategory.GALLERY,
                             videoTitle: item.res?.videoTitle || data.videoTitle || 'Memorial Video',
@@ -478,7 +647,6 @@ export default function ClassicTemplateMode() {
                 ],
             }
 
-            console.log('Final Memorial Payload:', JSON.stringify(payload, null, 2))
 
             if (payload.userMedia) {
                 const vidIndex = payload.userMedia.findIndex(
@@ -562,6 +730,8 @@ export default function ClassicTemplateMode() {
     const handlePreview = () => {
         console.log('Preview clicked')
     }
+
+    console.log(videoData, ' video data')
 
     return (
         <>
@@ -700,7 +870,7 @@ export default function ClassicTemplateMode() {
                         }
                         className="mb-8"
                     >
-                        <Upload
+                        {/* <Upload
                             accept="image/*"
                             uploadLimit={1}
                             onChange={handleFeaturedPhotoUpload}
@@ -709,8 +879,40 @@ export default function ClassicTemplateMode() {
                                 setValue('featuredPhoto', undefined)
                             }}
                             uploading={uploadingFeatured}
-                            defaultFiles={featuredData ? [featuredData] : []}
+                            defaultFiles={
+                                featuredData
+                                    ? [
+                                        {
+                                            name: 'Featured Image',
+                                            size: featuredData.size || 0,
+                                            type: 'image',
+                                            mimeType: 'image/jpeg',
+                                            fileURL: featuredData.featuredPhotoURL,
+                                            fileId: featuredData.featuredPhotoId,
+                                            uploadId: featuredData.featuredPhotoId,
+                                        },
+                                    ]
+                                    : []
+                            }
+
+                        /> */}
+                        <SingleImageUpload
+                            accept="image/*"
+                            onChange={(file) => {
+                                if (file) {
+                                    handleFeaturedPhotoUpload([file])
+                                } else {
+                                    handleFeaturedPhotoUpload([])
+                                }
+                            }}
+                            onFileRemove={() => {
+                                handleFeaturedPhotoUpload([])
+                                setValue('featuredPhoto', undefined)
+                            }}
+                            uploading={uploadingFeatured}
+                            defaultFile={featuredData}
                         />
+
                         {errors.featuredPhoto && (
                             <p className="text-red-500 text-sm mt-2">{(errors.featuredPhoto as any).message}</p>
                         )}
@@ -725,7 +927,8 @@ export default function ClassicTemplateMode() {
                         }
                         className="mb-8"
                     >
-                        <Upload
+
+                        {/* <Upload
                             accept="video/*"
                             uploadLimit={1}
                             onChange={handleGalleryVideosUpload}
@@ -734,8 +937,36 @@ export default function ClassicTemplateMode() {
                                 if (files.length === 0) setValue('videoUploaded', [])
                             }}
                             uploading={uploadingVideos}
+                            defaultFiles={
+                                featuredData
+                                    ? [
+                                        {
+                                            name:
+                                                featuredData.videoTitle ||
+                                                'Featured Video',
+                                            size: featuredData.size || 0,
+                                            type:
+                                                featuredData.mimeType ||
+                                                'video/mp4',
+                                            fileURL: featuredData.fileURL,
+                                            mimeType:
+                                                featuredData.mimeType ||
+                                                'video/mp4',
+                                            fileId: featuredData.fileId,
+                                            uploadId: featuredData.uploadId,
+                                        },
+                                    ]
+                                    : []
+                            }
+                        /> */}
+                        <Upload
+                            accept="video/*"
+                            uploadLimit={1}
+                            onChange={handleGalleryVideosUpload}
+                            uploading={uploadingVideos}
                             defaultFiles={videoData.map(v => v.file)}
                         />
+
                         {errors.videoUploaded && (
                             <p className="text-red-500 text-sm mt-2">{(errors.videoUploaded as any).message}</p>
                         )}
@@ -760,7 +991,7 @@ export default function ClassicTemplateMode() {
                         }
                         className="mb-8"
                     >
-                        <Upload
+                        {/* <Upload
                             accept="image/*"
                             multiple
                             onChange={handleGalleryPhotosUpload}
@@ -770,7 +1001,15 @@ export default function ClassicTemplateMode() {
                             }}
                             uploading={uploadingPhotos}
                             defaultFiles={photosData.map(p => p.file)}
+                        /> */}
+                        <Upload
+                            accept="image/*"
+                            multiple
+                            onChange={handleGalleryPhotosUpload}
+                            uploading={uploadingPhotos}
+                            defaultFiles={photosData.map(p => p.file)}
                         />
+
                         {errors.photoUploaded && (
                             <p className="text-red-500 text-sm mt-2">{(errors.photoUploaded as any).message}</p>
                         )}
@@ -814,13 +1053,29 @@ export default function ClassicTemplateMode() {
                     >
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div>
-                                <Upload
+                                {/* <Upload
                                     accept="image/*"
                                     uploadLimit={1}
                                     onChange={handleLifeStoryImageUpload}
                                     onFileRemove={() => handleLifeStoryImageUpload([])}
                                     uploading={uploadingLifeStory}
                                     defaultFiles={lifeStoryData ? [lifeStoryData] : []}
+                                /> */}
+                                <SingleImageUpload
+                                    accept="image/*"
+                                    onChange={(file) => {
+                                        if (file) {
+                                            handleLifeStoryImageUpload([file])
+                                        } else {
+                                            handleLifeStoryImageUpload([])
+                                        }
+                                    }}
+                                    onFileRemove={() => {
+                                        handleLifeStoryImageUpload([])
+                                        setValue('featuredPhoto', undefined)
+                                    }}
+                                    uploading={uploadingLifeStory}
+                                    defaultFile={lifeStoryData}
                                 />
                                 {errors.lifeStoryImage && (
                                     <p className="text-red-500 text-sm mt-2">{(errors.lifeStoryImage as any).message}</p>
