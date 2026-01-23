@@ -67,3 +67,10 @@ export async function apiGetDashboardDetail<T>() {
         method: 'get',
     })
 }
+
+export async function apiGetPublicMemorial<T>(slug: string) {
+    return ApiService.fetchDataWithAxios<T>({
+        url: `/memorials/public/${slug}`,
+        method: 'get',
+    })
+}

@@ -15,6 +15,7 @@ export default function EventMemorial() {
     const memorialId = activeMemorialId
     const navigate = useNavigate()
     const qrRef = useRef<HTMLCanvasElement>(null)
+    const baseUrl = import.meta.env.VITE_WEB_URL
 
     useEffect(() => {
         fetchMemorials()
@@ -33,7 +34,7 @@ export default function EventMemorial() {
     }
 
     const handleCopyUrl = () => {
-        navigator.clipboard.writeText(memorialDetails?.pageURL)
+        navigator.clipboard.writeText(`${baseUrl}/memorials/public/${memorialDetails?.slug}`)
         setCopiedUrl(true)
         setTimeout(() => setCopiedUrl(false), 2000)
     }
@@ -233,7 +234,7 @@ export default function EventMemorial() {
                                 <div className="flex">
                                     <input
                                         type="text"
-                                        value={memorialDetails?.pageURL}
+                                        value={`${baseUrl}/memorials/public/${memorialDetails?.slug}`}
                                         readOnly
                                         className="flex-1 px-3 py-2 bg-transparent border border-[#D1D5DB] rounded-l-md font-poppins text-sm text-[#ffffff] focus:outline-none focus:ring-2 focus:ring-[#C7A30D]"
                                     />

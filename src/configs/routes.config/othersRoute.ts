@@ -49,6 +49,14 @@ const othersRoute: Routes = [
             layout: 'blank',
         },
     },
+    {
+        key: 'publicMemorial',
+        path: '/memorials/public/:slug',
+        component: lazy(() => import('@/views/PublicMemorial')),
+        meta: {
+            layout: 'blank',
+        },
+    },
 ]
 
 export default othersRoute

@@ -129,16 +129,16 @@ const Drawer = (props: DrawerProps) => {
                 }}
             >
                 {title || closable ? (
-                    <div className={classNames('drawer-header', headerClass)}>
+                    <div className={classNames('drawer-header bg-[#2f3349]', headerClass)}>
                         {typeof title === 'string' ? (
-                            <h4>{title}</h4>
+                            <h4 className='text-white'>{title}</h4>
                         ) : (
                             <span>{title}</span>
                         )}
                         {closable && renderCloseButton}
                     </div>
                 ) : null}
-                <div className={classNames('drawer-body', bodyClass)}>
+                <div className={classNames('drawer-body bg-[#2f3349]', bodyClass)}>
                     {children}
                 </div>
                 {footer && (
