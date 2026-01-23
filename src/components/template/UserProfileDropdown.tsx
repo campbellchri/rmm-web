@@ -2,6 +2,7 @@ import Avatar from '@/components/ui/Avatar'
 import Dropdown from '@/components/ui/Dropdown'
 import withHeaderItem from '@/utils/hoc/withHeaderItem'
 import { useSessionUser } from '@/store/authStore'
+import { useAvatarStore } from '@/store/avatarStore'
 import { Link } from 'react-router-dom'
 import { PiUserDuotone, PiSignOutDuotone } from 'react-icons/pi'
 import { HiOutlineChevronDown } from 'react-icons/hi'
@@ -18,6 +19,7 @@ const dropdownItemList: DropdownList[] = []
 
 const _UserDropdown = () => {
     const { avatar, userName, email } = useSessionUser((state) => state.user)
+    const persistentAvatar = useAvatarStore((state) => state.avatar)
 
     const { signOut } = useAuth()
 
@@ -25,8 +27,11 @@ const _UserDropdown = () => {
         signOut()
     }
 
+    // Use avatar from session user, fall back to persistent avatar store
+    const displayAvatar = avatar || persistentAvatar
+
     const avatarProps = {
-        ...(avatar ? { src: avatar } : { icon: <PiUserDuotone /> }),
+        ...(displayAvatar ? { src: displayAvatar } : { icon: <PiUserDuotone /> }),
     }
 
     const getInitials = (name: string) => {

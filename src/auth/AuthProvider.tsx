@@ -2,6 +2,7 @@ import { useRef, useImperativeHandle } from 'react'
 import AuthContext from './AuthContext'
 import appConfig from '@/configs/app.config'
 import { useSessionUser, useToken } from '@/store/authStore'
+import { useAvatarStore } from '@/store/avatarStore'
 import { apiSignIn, apiSignUp } from '@/services/AuthService'
 import { REDIRECT_URL_KEY } from '@/constants/app.constant'
 import { useNavigate } from 'react-router-dom'
@@ -42,6 +43,7 @@ function AuthProvider({ children }: AuthProviderProps) {
         (state) => state.setSessionSignedIn,
     )
     const { token, setToken, removeToken } = useToken()
+    const { avatar } = useAvatarStore()
 
     const authenticated = Boolean(token && signedIn)
 
@@ -62,7 +64,10 @@ function AuthProvider({ children }: AuthProviderProps) {
         setSessionSignedIn(true)
 
         if (user) {
-            setUser(user)
+            setUser({
+                ...user,
+                avatar: user.avatar || avatar || '',
+            })
         }
     }
 
@@ -71,9 +76,10 @@ function AuthProvider({ children }: AuthProviderProps) {
         removeToken()
 
         // Reset user state to initial empty values
+        // But keep the avatar from the persistent store
         setUser({
             userId: '',
-            avatar: '',
+            avatar: avatar || '',
             userName: '',
             name: '',
             surName: '',

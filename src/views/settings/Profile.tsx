@@ -12,6 +12,7 @@ import { useProfileStore, UserProfile } from '@/store/profileStore'
 import { apiUploadMedia, apiDeleteProfilePhoto } from '@/services/MediaService'
 import { useMediaStore } from '@/store/mediaStore'
 import { useSessionUser } from '@/store/authStore'
+import { useAvatarStore } from '@/store/avatarStore'
 
 export default function Profile() {
     const {
@@ -27,6 +28,7 @@ export default function Profile() {
     } = useProfileStore()
 
     const setUser = useSessionUser((state) => state.setUser)
+    const { setAvatar, setPhotoId, setPhotoURL } = useAvatarStore()
 
     const [isUploading, setIsUploading] = useState(false)
     const [isRemoving, setIsRemoving] = useState(false)
@@ -42,6 +44,8 @@ export default function Profile() {
             if (stored) {
                 updateProfileField('photoURL', stored.fileURL)
                 updateProfileField('photoId', stored.fileId)
+                setPhotoURL(stored.fileURL)
+                setPhotoId(stored.fileId)
                 return
             }
 
@@ -57,6 +61,9 @@ export default function Profile() {
                     updateProfileField('photoURL', uploadedImage.fileURL)
                     updateProfileField('photoId', uploadedImage.uploadId)
                     setUser({ avatar: uploadedImage.fileURL })
+                    setPhotoURL(uploadedImage.fileURL)
+                    setPhotoId(uploadedImage.uploadId)
+                    setAvatar(uploadedImage.fileURL)
                 }
             } catch (error) {
                 console.error('Failed to upload image', error)
@@ -79,6 +86,8 @@ export default function Profile() {
             )
             updateProfileField('photoId', null)
             setUser({ avatar: '' })
+            setPhotoURL(null)
+            setPhotoId(null)
             return
         }
 
@@ -91,6 +100,8 @@ export default function Profile() {
             )
             updateProfileField('photoId', null)
             setUser({ avatar: '' })
+            setPhotoURL(null)
+            setPhotoId(null)
             toast.push(
                 <Notification title="Image Removed" type="success">
                     Profile image has been removed.
