@@ -13,6 +13,7 @@ import FileItem from './FileItem'
 import CloseButton from '../CloseButton'
 import Notification from '../Notification/Notification'
 import toast from '../toast/toast'
+import { BiPlus } from 'react-icons/bi'
 
 interface UploadProps {
     accept?: string
@@ -24,6 +25,7 @@ interface UploadProps {
     uploadLimit?: number
     defaultFiles?: any[]
     uploading?: boolean
+    isPlusIconVisible?: boolean
 }
 
 const filesToArray = (files: File[]) =>
@@ -39,6 +41,7 @@ const Upload = ({
     uploadLimit,
     defaultFiles = [],
     uploading = false,
+    isPlusIconVisible = false
 }: UploadProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [files, setFiles] = useState<(File | any)[]>([])
@@ -127,7 +130,7 @@ const Upload = ({
     return (
         <div
             onClick={triggerUpload}
-            className="w-full h-[240px] border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col justify-center items-center cursor-pointer hover:border-[#C7A30D] transition"
+            className="w-full h-[240px] relative border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col justify-center items-center cursor-pointer hover:border-[#C7A30D] transition"
         >
             <input
                 ref={fileInputRef}
@@ -203,6 +206,12 @@ const Upload = ({
                     })}
                 </div>
             )}
+
+        {
+            isPlusIconVisible && 
+        <BiPlus className='text-[#C7A30D] absolute top-[10%] right-[2%]' size={40} />
+        }
+            
         </div>
     )
 }

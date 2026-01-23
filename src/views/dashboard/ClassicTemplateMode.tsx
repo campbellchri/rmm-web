@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ChevronDown, Calendar, ArrowLeft } from 'lucide-react'
 import Upload from '@/components/ui/Upload'
-import DatePicker from '@/components/ui/DatePicker/DatePicker'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { CommonInput, CommonSelect, CommonDatePicker } from '@/components/shared'
 import { toast, Notification } from '@/components/ui'
@@ -33,7 +32,6 @@ const FormSection = ({
     title,
     children,
     className = '',
-    titleClassName = '',
 }: {
     title: React.ReactNode
     children: React.ReactNode
@@ -52,54 +50,6 @@ const FormSection = ({
     )
 }
 
-// Input Component
-const FormInput = ({
-    placeholder,
-    hasDropdown = false,
-}: {
-    placeholder: string
-    hasDropdown?: boolean
-}) => (
-    <div className="relative">
-        <input
-            type="text"
-            placeholder={placeholder}
-            className="w-full px-4 py-3 border border-memorial-blue-divider rounded bg-white text-memorial-blue-tertiary font-poppins text-sm placeholder-memorial-blue-tertiary"
-        />
-        {hasDropdown && (
-            <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-3 h-3 text-memorial-blue-button-text" />
-        )}
-    </div>
-)
-
-// Textarea Component
-const FormTextarea = ({
-    placeholder,
-    maxLength,
-    rows = 3,
-}: {
-    placeholder: string
-    maxLength: number
-    rows?: number
-}) => {
-    const [value, setValue] = useState('')
-
-    return (
-        <div className="relative">
-            <textarea
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                placeholder={placeholder}
-                rows={rows}
-                maxLength={maxLength}
-                className="w-full px-4 py-3 border border-memorial-blue-divider rounded bg-white text-memorial-blue-tertiary font-poppins text-sm placeholder-memorial-blue-tertiary resize-none"
-            />
-            <div className="absolute bottom-3 right-4 text-xs text-memorial-blue-tertiary font-poppins">
-                {value.length}/{maxLength}
-            </div>
-        </div>
-    )
-}
 
 const validationSchema = z.object({
     personName: z.string().min(1, { message: 'Full Name is required' }),
@@ -151,7 +101,6 @@ export default function ClassicTemplateMode() {
     const { mode, memorialId } = location.state || {}
     const [isEditMode, setIsEditMode] = useState(mode === 'edit')
     const [existingMemorialData, setExistingMemorialData] = useState<any>(null)
-    const [deletedItem, setDeletedItem] = useState<any>(null)
 
     const {
         control,
@@ -191,8 +140,6 @@ export default function ClassicTemplateMode() {
         status: 'done',
         percent: 100,
     })
-
-
 
     useEffect(() => {
         const fetchData = async () => {
@@ -261,24 +208,6 @@ export default function ClassicTemplateMode() {
                             })
                         }
 
-                        // if (memorialRes.userMedia) {
-                        //     const photos = memorialRes.userMedia
-                        //         .filter((m: any) => m.type === MediaType.PHOTO && m.category === MediaCategory.GALLERY)
-                        //         .map((m: any) => ({
-                        //             file: { fileURL: m.fileURL, mimeType: m.mimeType, fileId: m.fileId },
-                        //             res: m
-                        //         }))
-                        //     setPhotosData(photos)
-
-                        //     const videos = memorialRes.userMedia
-                        //         .filter((m: any) => m.type === MediaType.VIDEO && m.category === MediaCategory.GALLERY)
-                        //         .map((m: any) => ({
-                        //             file: { fileURL: m.fileURL, mimeType: m.mimeType, fileId: m.fileId },
-                        //             res: m
-                        //         }))
-                        //     console.log(memorialRes.userMedia, 'memorialRes.userMedia')
-                        //     setVideoData(videos)
-                        // }
                         if (memorialRes.userMedia) {
                             const photos = memorialRes.userMedia
                                 .filter(m => m.type === MediaType.PHOTO)
@@ -727,11 +656,6 @@ export default function ClassicTemplateMode() {
         handleSubmit(onSubmit)()
     }
 
-    const handlePreview = () => {
-        console.log('Preview clicked')
-    }
-
-    console.log(videoData, ' video data')
 
     return (
         <>
@@ -870,32 +794,7 @@ export default function ClassicTemplateMode() {
                         }
                         className="mb-8"
                     >
-                        {/* <Upload
-                            accept="image/*"
-                            uploadLimit={1}
-                            onChange={handleFeaturedPhotoUpload}
-                            onFileRemove={() => {
-                                handleFeaturedPhotoUpload([])
-                                setValue('featuredPhoto', undefined)
-                            }}
-                            uploading={uploadingFeatured}
-                            defaultFiles={
-                                featuredData
-                                    ? [
-                                        {
-                                            name: 'Featured Image',
-                                            size: featuredData.size || 0,
-                                            type: 'image',
-                                            mimeType: 'image/jpeg',
-                                            fileURL: featuredData.featuredPhotoURL,
-                                            fileId: featuredData.featuredPhotoId,
-                                            uploadId: featuredData.featuredPhotoId,
-                                        },
-                                    ]
-                                    : []
-                            }
-
-                        /> */}
+                      
                         <SingleImageUpload
                             accept="image/*"
                             onChange={(file) => {
@@ -928,37 +827,6 @@ export default function ClassicTemplateMode() {
                         className="mb-8"
                     >
 
-                        {/* <Upload
-                            accept="video/*"
-                            uploadLimit={1}
-                            onChange={handleGalleryVideosUpload}
-                            onFileRemove={(files) => {
-                                handleGalleryVideosUpload(files)
-                                if (files.length === 0) setValue('videoUploaded', [])
-                            }}
-                            uploading={uploadingVideos}
-                            defaultFiles={
-                                featuredData
-                                    ? [
-                                        {
-                                            name:
-                                                featuredData.videoTitle ||
-                                                'Featured Video',
-                                            size: featuredData.size || 0,
-                                            type:
-                                                featuredData.mimeType ||
-                                                'video/mp4',
-                                            fileURL: featuredData.fileURL,
-                                            mimeType:
-                                                featuredData.mimeType ||
-                                                'video/mp4',
-                                            fileId: featuredData.fileId,
-                                            uploadId: featuredData.uploadId,
-                                        },
-                                    ]
-                                    : []
-                            }
-                        /> */}
                         <Upload
                             accept="video/*"
                             uploadLimit={1}
@@ -982,32 +850,23 @@ export default function ClassicTemplateMode() {
                         </div>
                     </FormSection>
 
-                    {/* Upload Photo */}
+                    {/* Upload Photos */}
                     <FormSection
                         title={
                             <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
-                                Upload Photo
+                                Upload Photos
                             </span>
                         }
                         className="mb-8"
                     >
-                        {/* <Upload
-                            accept="image/*"
-                            multiple
-                            onChange={handleGalleryPhotosUpload}
-                            onFileRemove={(files) => {
-                                handleGalleryPhotosUpload(files)
-                                if (files.length === 0) setValue('photoUploaded', [])
-                            }}
-                            uploading={uploadingPhotos}
-                            defaultFiles={photosData.map(p => p.file)}
-                        /> */}
+                        
                         <Upload
                             accept="image/*"
                             multiple
                             onChange={handleGalleryPhotosUpload}
                             uploading={uploadingPhotos}
                             defaultFiles={photosData.map(p => p.file)}
+                            isPlusIconVisible={photosData.length > 0 ? true : false}
                         />
 
                         {errors.photoUploaded && (
@@ -1053,14 +912,7 @@ export default function ClassicTemplateMode() {
                     >
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div>
-                                {/* <Upload
-                                    accept="image/*"
-                                    uploadLimit={1}
-                                    onChange={handleLifeStoryImageUpload}
-                                    onFileRemove={() => handleLifeStoryImageUpload([])}
-                                    uploading={uploadingLifeStory}
-                                    defaultFiles={lifeStoryData ? [lifeStoryData] : []}
-                                /> */}
+                            
                                 <SingleImageUpload
                                     accept="image/*"
                                     onChange={(file) => {
@@ -1100,7 +952,6 @@ export default function ClassicTemplateMode() {
                     {/* Footer Actions */}
                     <div className=" px-6 py-6 flex justify-between items-center rounded-lg shadow-sm">
                         <button
-                            onClick={handlePreview}
                             className="px-6 font-[500] md:text-base text-sm py-2.5 border text-[#4EB1C9] rounded-[76px] font-poppins"
                         >
                             Preview
