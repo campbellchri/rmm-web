@@ -128,15 +128,12 @@ export default function ClassicTemplateMode() {
     })
 
     const mapMediaToUploadFile = (m: any) => ({
-        // MUST match Upload internal expectations
         originalFileName: m.fileId?.split('/').pop() || 'media',
         size: 1, // non-zero required by Upload UI
         mimeType: m.type === MediaType.VIDEO ? 'video/mp4' : 'image/jpeg',
         fileURL: m.fileURL,
         uploadId: m.uploadId,
         fileId: m.fileId,
-
-        // flags used by Upload
         status: 'done',
         percent: 100,
     })
@@ -159,7 +156,6 @@ export default function ClassicTemplateMode() {
                     const memorialRes: any = await apiGetMemorialById(
                         memorialId,
                     )
-                    console.log(memorialRes, ' in edit case memorialRes')
                     if (memorialRes) {
                         setExistingMemorialData(memorialRes)
                         reset({
@@ -431,44 +427,54 @@ export default function ClassicTemplateMode() {
     }
 
     const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
-        // Separate existing media and newly added files
-        const existingEntries = photosData.filter(p =>
-            files.some(f => f.uploadId === p.file.uploadId)
-        )
+    const incomingExisting = files.filter(
+        f => !(f instanceof File) && f.uploadId
+    )
 
-        // Find removed items and delete them
-        const removedItems = photosData.filter(p =>
-            !files.some(f => f.uploadId === p.file.uploadId)
-        )
-        for (const item of removedItems) {
-            if (item.res?.uploadId) {
-                try {
-                    if (isEditMode) {
-                        await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
-                    } else {
-                        await apiDeleteGCPFile(item.res.uploadId)
-                    }
-                } catch (error) {
-                    console.error('Error deleting photo:', error)
+    const incomingNewFiles = files.filter(
+        f => f instanceof File
+    ) as File[]
+
+    const keptExisting = photosData.filter(p =>
+        incomingExisting.some(e => e.uploadId === p.res?.uploadId)
+    )
+    const removedItems = photosData.filter(p =>
+        !incomingExisting.some(e => e.uploadId === p.res?.uploadId)
+    )
+    for (const item of removedItems) {
+        if (item.res?.uploadId) {
+            try {
+                if (isEditMode) {
+                    await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
+                } else {
+                    await apiDeleteGCPFile(item.res.uploadId)
                 }
+            } catch (err) {
+                console.error('Error deleting photo:', err)
             }
         }
-
-        const newFiles = files.filter(f => f instanceof File) as File[]
-
-        if (newFiles.length > 0) {
-            setUploadingPhotos(true)
-            const res = await uploadFiles(newFiles)
-            const newData = newFiles.map((file, i) => ({ file, res: res[i] }))
-            const updatedPhotos = [...existingEntries, ...newData]
-            setPhotosData(updatedPhotos)
-            setValue('photoUploaded', updatedPhotos.map(p => p.res || p.file))
-            setUploadingPhotos(false)
-        } else {
-            setPhotosData(existingEntries)
-            setValue('photoUploaded', existingEntries.map(p => p.res || p.file))
-        }
     }
+
+    // 5. Upload new files
+    let newlyUploaded: { file: File; res: any }[] = []
+
+    if (incomingNewFiles.length > 0) {
+        setUploadingPhotos(true)
+        const res = await uploadFiles(incomingNewFiles)
+        newlyUploaded = incomingNewFiles.map((file, i) => ({
+            file,
+            res: res[i],
+        }))
+        setUploadingPhotos(false)
+    }
+
+    // 6. Merge ONCE
+    const finalPhotos = [...keptExisting, ...newlyUploaded]
+
+    setPhotosData(finalPhotos)
+    setValue('photoUploaded', finalPhotos.map(p => p.res))
+}
+
 
     const handleGalleryVideosUpload = async (files: (File | any)[]) => {
         const existingEntries = videoData.filter(v =>
@@ -817,7 +823,6 @@ export default function ClassicTemplateMode() {
                         )}
                     </FormSection>
 
-                    {/* Upload Video */}
                     <FormSection
                         title={
                             <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
@@ -849,8 +854,6 @@ export default function ClassicTemplateMode() {
                             />
                         </div>
                     </FormSection>
-
-                    {/* Upload Photos */}
                     <FormSection
                         title={
                             <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
@@ -861,6 +864,7 @@ export default function ClassicTemplateMode() {
                     >
                         
                         <Upload
+                        key={isEditMode ? memorialId : 'create-photos'}
                             accept="image/*"
                             multiple
                             onChange={handleGalleryPhotosUpload}

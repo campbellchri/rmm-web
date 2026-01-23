@@ -7,10 +7,7 @@ import {
     MouseEvent,
 } from 'react'
 import { Image as ImageIcon, X } from 'lucide-react'
-import classNames from '../utils/classNames'
 import cloneDeep from 'lodash/cloneDeep'
-import FileItem from './FileItem'
-import CloseButton from '../CloseButton'
 import Notification from '../Notification/Notification'
 import toast from '../toast/toast'
 import { BiPlus } from 'react-icons/bi'
@@ -46,14 +43,14 @@ const Upload = ({
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [files, setFiles] = useState<(File | any)[]>([])
 
-    // initialize default files
     useEffect(() => {
-        if (defaultFiles && defaultFiles.length > 0) {
-            setFiles(defaultFiles)
-        } else {
-            setFiles([])
-        }
-    }, [defaultFiles])
+    // Only sync defaultFiles when Upload has no local files yet
+    if (defaultFiles?.length && files.length === 0) {
+        setFiles(defaultFiles)
+    }
+}, [defaultFiles])
+
+
 
     const triggerMessage = (msg: string = 'Upload Failed!') => {
         toast.push(
@@ -74,21 +71,18 @@ const Upload = ({
     }
 
     const addNewFiles = (newFiles: FileList | null) => {
-        let file = cloneDeep(files)
+    if (!newFiles) return files
 
-        if (typeof uploadLimit === 'number' && uploadLimit !== 0) {
-            if (file.length >= uploadLimit) {
-                if (uploadLimit === 1) {
-                    file.shift() // replace the old one
-                    file = pushFile(newFiles, file)
-                }
-                return file // ✅ return array directly
-            }
-        }
+    const file = uploadLimit === 1 ? [] : cloneDeep(files)
 
-        file = pushFile(newFiles, file)
-        return file // ✅ no need to wrap with filesToArray
-    }
+    const toAdd =
+        uploadLimit === 1
+            ? [newFiles[0]]
+            : Array.from(newFiles)
+
+    return [...file, ...toAdd]
+}
+
 
     const onNewFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
         const { files: newFiles } = e.target
@@ -110,7 +104,8 @@ const Upload = ({
         if (result) {
             const updatedFiles = addNewFiles(newFiles)
             setFiles(updatedFiles)
-            onChange?.(updatedFiles, files)
+            onChange?.(updatedFiles, updatedFiles)
+             e.target.value = ''
         }
     }
 
@@ -126,11 +121,16 @@ const Upload = ({
         }
         e.stopPropagation()
     }
+    const MAX_PREVIEW = 2
+const previewFiles = isPlusIconVisible
+    ? files.slice(0, MAX_PREVIEW)
+    : files
+
 
     return (
         <div
             onClick={triggerUpload}
-            className="w-full h-[240px] relative border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col justify-center items-center cursor-pointer hover:border-[#C7A30D] transition"
+            className="w-full min-h-[240px] relative border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col justify-center items-center cursor-pointer hover:border-[#C7A30D] transition"
         >
             <input
                 ref={fileInputRef}
@@ -164,7 +164,7 @@ const Upload = ({
                 </div>
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
-                    {files.map((file, index) => {
+                    {previewFiles.map((file, index) => {
                         const isExisting = !(file instanceof File)
                         const fileURL = isExisting ? file.fileURL : URL.createObjectURL(file)
                         const mimeType = isExisting ? file.mimeType : file.type
@@ -201,6 +201,15 @@ const Upload = ({
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
+                               
+                               {isPlusIconVisible &&
+                                        index === MAX_PREVIEW - 1 &&
+                                        files.length > MAX_PREVIEW && (
+                                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-lg font-bold">
+                                                +{files.length - MAX_PREVIEW}
+                                            </div>
+                                    )}
+
                             </div>
                         )
                     })}
