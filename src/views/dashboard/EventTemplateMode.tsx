@@ -16,36 +16,40 @@ import {
 import dayjs from 'dayjs'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { apiUploadMedia } from '@/services/MediaService'
+import { apiUploadMedia, apiDeleteMedia, apiDeleteGCPFile } from '@/services/MediaService'
 import {
     MediaCategory,
     MediaType,
     PublishStatus,
-    Gender,
 } from '@/constants/memorial.constant'
 import { useMemorialStore } from '@/store/memorialStore'
 import { useMediaStore } from '@/store/mediaStore'
+import useAuth from '@/auth/useAuth'
 import {
     CommonInput,
     CommonSelect,
     CommonDatePicker,
 } from '@/components/shared'
 
+
 const validationSchema = z.object({
-    personName: z.string().min(1, { message: 'Full Name is required' }),
-    personGender: z.string().min(1, { message: 'Gender is required' }),
+    personName: z.string().trim().min(1, { message: 'Full Name is required' }),
     favQuote: z.string().optional(),
     eventStartDate: z.date({
         required_error: 'Start Date is required',
         invalid_type_error: 'Invalid date format',
+    }).refine(date => date instanceof Date && !isNaN(date.getTime()), {
+        message: 'Start Date is required'
     }),
     eventStartTime: z.date({
         required_error: 'Start Time is required',
         invalid_type_error: 'Invalid date format',
+    }).refine(date => date instanceof Date && !isNaN(date.getTime()), {
+        message: 'Start Time is required'
     }),
     eventDuration: z.string().min(1, { message: 'Duration is required' }),
-    videoTitle: z.string().min(1, { message: 'Video Title is required' }),
-    profilePicture: z.any().optional(), // Following VideoOnly pattern (backend validated)
+    videoTitle: z.string().trim().min(1, { message: 'Video Title is required' }),
+    profilePicture: z.any().optional(),
     eventVideo: z.any().refine((val) => !!val, { message: 'Event Video is required' }),
 })
 
@@ -60,20 +64,22 @@ export default function EventMode() {
     const [videoData, setVideoData] = useState<any>(null)
     const [landingModeId, setLandingModeId] = useState<string>('')
     const [templateId, setTemplateId] = useState<string>('')
+    const [uploadKey, setUploadKey] = useState(0) // Force re-render of Upload component
     const navigate = useNavigate()
     const { fetchMemorials, setActiveMemorialId } = useMemorialStore()
     const { addMedia, getMedia, clearMedia } = useMediaStore()
+    const { user } = useAuth()
 
     const {
         control,
         handleSubmit,
         setValue,
+        getValues,
         formState: { errors }
     } = useForm<FormSchema>({
         resolver: zodResolver(validationSchema),
         defaultValues: {
             personName: '',
-            personGender: '' as any,
             favQuote: '',
             eventStartDate: undefined,
             eventStartTime: undefined,
@@ -89,12 +95,6 @@ export default function EventMode() {
         { value: '24h', label: '24h' },
         { value: '72h', label: '72h' },
         { value: '1 week', label: '1 week' },
-    ]
-
-    const genderOptions = [
-        { value: Gender.MALE, label: 'Male' },
-        { value: Gender.FEMALE, label: 'Female' },
-        { value: Gender.PREFER_NOT_TO_SAY, label: 'Prefer not to say' },
     ]
 
     useEffect(() => {
@@ -126,14 +126,8 @@ export default function EventMode() {
         const indicesToUpload: number[] = []
 
         files.forEach((file, index) => {
-            const key = `${file.name}-${file.size}`
-            const stored = getMedia(key)
-            if (stored) {
-                results[index] = stored
-            } else {
-                filesToUpload.push(file)
-                indicesToUpload.push(index)
-            }
+            filesToUpload.push(file)
+            indicesToUpload.push(index)
         })
 
         if (filesToUpload.length > 0) {
@@ -145,9 +139,6 @@ export default function EventMode() {
                 const response: any = await apiUploadMedia(formData)
                 response.forEach((res: any, i: number) => {
                     const originalIndex = indicesToUpload[i]
-                    const file = filesToUpload[i]
-                    const key = `${file.name}-${file.size}`
-                    addMedia(key, res)
                     results[originalIndex] = res
                 })
             } catch (error) {
@@ -175,20 +166,94 @@ export default function EventMode() {
             setProfileData(res[0])
             setProfileImage(res[0].fileURL)
             setValue('profilePicture', res[0].fileURL)
+            // Save uploadId to store
+            if (res[0].uploadId) {
+                addMedia(`profile_${res[0].uploadId}`, res[0])
+            }
         }
         setUploadingProfile(false)
     }
 
-    const handleVideoUpload = async (files: File[]) => {
+    const handleVideoUpload = async (files: (File | any)[]) => {
         if (files.length === 0) {
+            if (videoData?.uploadId) {
+                console.log('Attempting to delete video from GCP storage:', {
+                    uploadId: videoData.uploadId,
+                    fileId: videoData.fileId
+                })
+                try {
+                    await apiDeleteGCPFile(videoData.uploadId)
+                    toast.push(
+                        <Notification
+                            type="success"
+                            title="Success"
+                            duration={2000}
+                        >
+                            Video deleted successfully!
+                        </Notification>,
+                        { placement: 'top-center' },
+                    )
+                } catch (error: any) {
+                    console.error('Error deleting video:', error)
+                    console.error('Error response:', error?.response)
+                    toast.push(
+                        <Notification
+                            type="danger"
+                            title="Delete Failed"
+                            duration={3000}
+                        >
+                            Failed to delete video: {error?.response?.data?.message || error?.message || 'Please try again'}
+                        </Notification>,
+                        { placement: 'top-center' },
+                    )
+                }
+            }
             setVideoData(null)
+            setValue('eventVideo', undefined)
+            // Force re-render of Upload component to clear any cached file state
+            setUploadKey(prev => prev + 1)
             return
         }
+
+        const file = files[0]
+        if (!(file instanceof File)) {
+            // It's existing media
+            setVideoData(file)
+            return
+        }
+
+        if (videoData?.uploadId) {
+            console.log('Attempting to delete old video from GCP storage before upload:', {
+                uploadId: videoData.uploadId,
+                fileId: videoData.fileId
+            })
+            try {
+                await apiDeleteGCPFile(videoData.uploadId)
+            } catch (error: any) {
+                console.error('Error deleting old video:', error)
+                console.error('Error response:', error?.response)
+                toast.push(
+                    <Notification
+                        type="warning"
+                        title="Warning"
+                        duration={3000}
+                    >
+                        Failed to delete old video: {error?.response?.data?.message || error?.message || 'Continuing with upload...'}
+                    </Notification>,
+                    { placement: 'top-center' },
+                )
+            }
+        }
+
         setUploadingVideo(true)
-        const res = await uploadFiles(files)
+        const res = await uploadFiles([file])
         if (res && res.length > 0) {
             setVideoData(res[0])
             setValue('eventVideo', res[0].fileURL)
+            // Save uploadId to store
+            if (res[0].uploadId) {
+                addMedia(`video_${res[0].uploadId}`, res[0])
+            }
         }
         setUploadingVideo(false)
     }
@@ -212,6 +277,7 @@ export default function EventMode() {
                 ...(videoData
                     ? [
                         {
+                            uploadId: videoData.uploadId,
                             mimeType: videoData.mimeType || 'video/mp4',
                             fileURL: videoData.fileURL,
                             fileId: videoData.fileId,
@@ -227,7 +293,6 @@ export default function EventMode() {
                     : []),
             ]
 
-            // Fallback dummy video if empty to satisfy backend
             if (mediaList.length === 0) {
                 mediaList.push({
                     mimeType: 'video/mp4',
@@ -248,8 +313,7 @@ export default function EventMode() {
                 landingModeId: landingModeId.toString(),
                 templateId: templateId,
                 personName: data.personName,
-                personGender: data.personGender,
-                profilePictureId: profileData?.fileId || null,
+                profilePictureId: profileData?.uploadId || null,
                 personProfilePicture: profileData?.fileURL || profileImage || '',
                 favQuote: data.favQuote,
                 pageURL: `${window.location.origin}/memorial/${data.personName
@@ -292,7 +356,10 @@ export default function EventMode() {
     }
 
     const handleSaveFinish = () => {
-        handleSubmit(onSubmit)()
+        const values = getValues(); // import getValues from useForm
+        console.log('Form values:', values);
+        console.log('Form errors:', errors);
+        handleSubmit(onSubmit)();
     }
 
     const handlePreview = () => {
@@ -303,7 +370,6 @@ export default function EventMode() {
         <>
             <div className="min-h-screen">
                 <div className="max-w-7xl mx-auto">
-                    {/* Header */}
                     <div className="flex justify-between flex-col md:flex-row gap-2 items-center mb-8">
                         <div className="flex items-center gap-4">
                             <button
@@ -319,10 +385,8 @@ export default function EventMode() {
                     </div>
 
                     <div className="flex flex-col gap-5">
-                        {/* Profile Section */}
                         <div className="flex flex-col items-center gap-5 mb-8">
                             <div className="flex items-center gap-4">
-                                {/* Avatar Preview */}
                                 <div className="lg:w-31 lg:h-31 md:w-25 md:h-25 h-20 w-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                                     {profileImage ? (
                                         <img
@@ -363,6 +427,7 @@ export default function EventMode() {
                                         const file = e.target.files?.[0]
                                         if (file) {
                                             handleProfileUpload(file)
+                                            e.target.value = ''
                                         }
                                     }}
                                 />
@@ -376,16 +441,6 @@ export default function EventMode() {
                                     invalid={Boolean(errors.personName)}
                                     errorMessage={errors.personName?.message}
                                 />
-                                <div className="mt-6">
-                                    <CommonSelect
-                                        name="personGender"
-                                        control={control}
-                                        options={genderOptions}
-                                        placeholder="Gender"
-                                        invalid={Boolean(errors.personGender)}
-                                        errorMessage={errors.personGender?.message}
-                                    />
-                                </div>
                                 <div className="mt-6">
                                     <CommonInput
                                         name="favQuote"
@@ -490,10 +545,13 @@ export default function EventMode() {
                             </p>
                             <div>
                                 <Upload
+                                    key={uploadKey}
                                     accept="video/*"
                                     uploadLimit={1}
                                     onChange={handleVideoUpload}
+                                    onFileRemove={() => handleVideoUpload([])}
                                     uploading={uploadingVideo}
+                                    defaultFiles={videoData ? [videoData] : []}
                                 />
                                 {errors.eventVideo && (
                                     <p className="text-red-500 text-sm mt-2">{(errors.eventVideo as any).message}</p>

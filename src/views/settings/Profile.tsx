@@ -9,7 +9,7 @@ import {
     apiProfileUpdate,
 } from '@/services/axios/ProfileService'
 import { useProfileStore, UserProfile } from '@/store/profileStore'
-import { apiDeleteMedia, apiUploadMedia } from '@/services/MediaService'
+import { apiUploadMedia, apiDeleteProfilePhoto } from '@/services/MediaService'
 import { useMediaStore } from '@/store/mediaStore'
 import { useSessionUser } from '@/store/authStore'
 
@@ -55,7 +55,7 @@ export default function Profile() {
                     const uploadedImage = response[0]
                     addMedia(key, uploadedImage)
                     updateProfileField('photoURL', uploadedImage.fileURL)
-                    updateProfileField('photoId', uploadedImage.fileId)
+                    updateProfileField('photoId', uploadedImage.uploadId)
                     setUser({ avatar: uploadedImage.fileURL })
                 }
             } catch (error) {
@@ -84,7 +84,7 @@ export default function Profile() {
 
         try {
             setIsRemoving(true)
-            await apiDeleteMedia(profile.photoId)
+            await apiDeleteProfilePhoto(profile.photoId)
             updateProfileField(
                 'photoURL',
                 'https://api.builder.io/api/v1/image/assets/TEMP/83dc85ca9155608ff3d7e17a997653fd5f9ed739?width=248',

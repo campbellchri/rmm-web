@@ -11,9 +11,23 @@ export async function apiUploadMedia<T>(formData: FormData) {
     })
 }
 
-export async function apiDeleteMedia<T>(id: string) {
+export async function apiDeleteMedia<T>(userId: string, uploadId: string) {
     return ApiService.fetchDataWithAxios<T>({
-        url: `/user-media/${id}`,
+        url: `/user-media/remove/${userId}/${uploadId}`,
+        method: 'delete',
+    })
+}
+
+export async function apiDeleteProfilePhoto<T>(photoId: string) {
+    return ApiService.fetchDataWithAxios<T>({
+        url: `/users/profile-photo/remove/${photoId}`,
+        method: 'delete',
+    })
+}
+
+export async function apiDeleteGCPFile<T>(uploadId: string) {
+    return ApiService.fetchDataWithAxios<T>({
+        url: `/gcp-storage/delete-file/${uploadId}`,
         method: 'delete',
     })
 }

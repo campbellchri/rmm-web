@@ -3,7 +3,11 @@ import { ArrowLeft } from 'lucide-react'
 import Upload from '@/components/ui/Upload'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast, Notification } from '@/components/ui'
-import { CommonInput, CommonSelect, CommonDatePicker } from '@/components/shared'
+import {
+    CommonInput,
+    CommonSelect,
+    CommonDatePicker,
+} from '@/components/shared'
 import { ChevronDown } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
 import {
@@ -16,7 +20,11 @@ import {
 import dayjs from 'dayjs'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { apiUploadMedia, apiDeleteMedia } from '@/services/MediaService'
+import {
+    apiUploadMedia,
+    apiDeleteMedia,
+    apiDeleteGCPFile,
+} from '@/services/MediaService'
 import {
     MediaCategory,
     MediaType,
@@ -25,6 +33,7 @@ import {
 } from '@/constants/memorial.constant'
 import { useMemorialStore } from '@/store/memorialStore'
 import { useMediaStore } from '@/store/mediaStore'
+import useAuth from '@/auth/useAuth'
 
 const validationSchema = z.object({
     personName: z.string().min(1, { message: 'Full Name is required' }),
@@ -38,10 +47,14 @@ const validationSchema = z.object({
         invalid_type_error: 'Invalid date format',
     }),
     favQuote: z.string().optional(),
-    featuredVideoTitle: z.string().min(1, { message: 'Video Title is required' }),
-    favSaying: z.string().min(1, { message: 'Favorite Sayings is required' }),
+    featuredVideoTitle: z
+        .string()
+        .min(1, { message: 'Video Title is required' }),
+    favSaying: z.string().optional(),
     profilePicture: z.any().optional(),
-    featuredVideo: z.any().refine((val) => !!val, { message: 'Featured Video is required' }),
+    featuredVideo: z
+        .any()
+        .refine((val) => !!val, { message: 'Featured Video is required' }),
     galleryVideoTitle: z.string().optional(),
 })
 
@@ -78,23 +91,26 @@ export default function VideoOnlyMemorial() {
     const [uploadingVideos, setUploadingVideos] = useState(false)
     const [profileData, setProfileData] = useState<any>(null)
     const [featuredData, setFeaturedData] = useState<any>(null)
-    const [videoData, setVideoData] = useState<{ file: File | any; res: any }[]>([])
-    const { addMedia, getMedia, clearMedia } = useMediaStore()
+    const [videoData, setVideoData] = useState<any[]>([])
+    const [uploadKey, setUploadKey] = useState(0)
+    const { addMedia, getMedia, clearMedia, clearMediaItem } = useMediaStore()
     const [landingModeId, setLandingModeId] = useState<string>('')
     const [templateId, setTemplateId] = useState<string>('')
     const navigate = useNavigate()
     const location = useLocation()
     const { fetchMemorials, setActiveMemorialId } = useMemorialStore()
+    const { user } = useAuth()
     const { mode, memorialId } = location.state || {}
     const [isEditMode, setIsEditMode] = useState(mode === 'edit')
     const [existingMemorialData, setExistingMemorialData] = useState<any>(null)
-
+    const [deletedItem, setDeletedItem] = useState<any>(null)
+    console.log(user);
     const {
         control,
         handleSubmit,
         reset,
         setValue,
-        formState: { errors }
+        formState: { errors },
     } = useForm<FormSchema>({
         resolver: zodResolver(validationSchema),
         defaultValues: {
@@ -111,6 +127,8 @@ export default function VideoOnlyMemorial() {
         },
     })
 
+    console.log(videoData, 'videoData')
+
     const genderOptions = [
         { value: Gender.MALE, label: 'Male' },
         { value: Gender.FEMALE, label: 'Female' },
@@ -122,7 +140,8 @@ export default function VideoOnlyMemorial() {
             try {
                 const templatesRes: any = await apiGetMemorialTemplateList()
                 const videoTemplate = templatesRes.find(
-                    (t: any) => t.landingMode?.landingModeType === 'video-only-mode',
+                    (t: any) =>
+                        t.landingMode?.landingModeType === 'video-only-mode',
                 )
 
                 if (videoTemplate) {
@@ -131,9 +150,16 @@ export default function VideoOnlyMemorial() {
                 }
 
                 if (isEditMode && memorialId) {
-                    const memorialRes: any = await apiGetMemorialById(memorialId)
+                    const memorialRes: any =
+                        await apiGetMemorialById(memorialId)
                     if (memorialRes) {
                         setExistingMemorialData(memorialRes)
+
+                        // Find featured video
+                        const featuredVideo = memorialRes.userMedia?.find(
+                            (m: any) => m.category === MediaCategory.FEATURED,
+                        )
+
                         reset({
                             personName: memorialRes.personName || '',
                             personGender: memorialRes.personGender || '',
@@ -144,47 +170,64 @@ export default function VideoOnlyMemorial() {
                                 ? new Date(memorialRes.personDeathDate)
                                 : undefined,
                             favQuote: memorialRes.favQuote || '',
-                            featuredVideoTitle:
-                                memorialRes.userMedia?.find(
-                                    (m: any) => m.category === MediaCategory.FEATURED,
-                                )?.videoTitle || '',
-                            favSaying:
-                                memorialRes.userMedia?.find(
-                                    (m: any) => m.category === MediaCategory.FEATURED,
-                                )?.videoDescription || '',
+                            featuredVideoTitle: featuredVideo?.videoTitle || '',
+                            favSaying: featuredVideo?.videoDescription || '',
                             galleryVideoTitle:
                                 memorialRes.userMedia?.find(
-                                    (m: any) => m.category === MediaCategory.GALLERY,
+                                    (m: any) =>
+                                        m.category === MediaCategory.GALLERY,
                                 )?.videoTitle || '',
-                            profilePicture: memorialRes.personProfilePicture || undefined,
-                            featuredVideo: memorialRes.userMedia?.find(
-                                (m: any) => m.category === MediaCategory.FEATURED,
-                            )?.fileURL || undefined,
+                            profilePicture:
+                                memorialRes.personProfilePicture || undefined,
+                            featuredVideo: featuredVideo?.fileURL || undefined,
                         })
 
                         if (memorialRes.personProfilePicture) {
                             setProfileImage(memorialRes.personProfilePicture)
+                            setProfileData({
+                                fileURL: memorialRes.personProfilePicture,
+                                fileId: memorialRes.profilePictureId,
+                                uploadId: memorialRes.profilePictureId,
+                                mimeType: 'image/*',
+                            })
                         }
 
-                        // Populate existing media
                         if (memorialRes.userMedia) {
-                            const featured = memorialRes.userMedia.find(
-                                (m: any) => m.category === MediaCategory.FEATURED,
-                            )
-                            if (featured) {
+                            // Get the FIRST featured video only
+                            if (featuredVideo) {
                                 setFeaturedData({
-                                    fileURL: featured.fileURL,
-                                    mimeType: featured.mimeType,
-                                    fileId: featured.fileId,
+                                    fileURL: featuredVideo.fileURL,
+                                    mimeType: featuredVideo.mimeType,
+                                    fileId: featuredVideo.fileId,
+                                    uploadId: featuredVideo.uploadId,
+                                    id: featuredVideo.id, // Important: preserve ID
+                                    videoTitle:
+                                        featuredVideo.videoTitle ||
+                                        'Featured Video',
+                                    videoDescription:
+                                        featuredVideo.videoDescription || '',
                                 })
                             }
 
+                            // Get gallery videos
                             const gallery = memorialRes.userMedia
-                                .filter((m: any) => m.category === MediaCategory.GALLERY)
+                                .filter(
+                                    (m: any) =>
+                                        m.category === MediaCategory.GALLERY,
+                                )
                                 .map((m: any) => ({
-                                    file: { fileURL: m.fileURL, mimeType: m.mimeType, fileId: m.fileId },
-                                    res: m
+                                    file: {
+                                        fileURL: m.fileURL,
+                                        fileId: m.fileId,
+                                        uploadId: m.uploadId,
+                                        mimeType: m.mimeType,
+                                        id: m.id, // Important: preserve ID
+                                        videoTitle:
+                                            m.videoTitle || 'Gallery Video',
+                                    },
+                                    res: m,
                                 }))
+
                             setVideoData(gallery)
                         }
                     }
@@ -207,7 +250,9 @@ export default function VideoOnlyMemorial() {
             const key = `${file.name}-${file.size}`
             const stored = getMedia(key)
             if (stored) {
-                results[index] = stored
+                results[index] = null // Don't use cached result
+                filesToUpload.push(file)
+                indicesToUpload.push(index)
             } else {
                 filesToUpload.push(file)
                 indicesToUpload.push(index)
@@ -253,107 +298,239 @@ export default function VideoOnlyMemorial() {
             setProfileData(res[0])
             setProfileImage(res[0].fileURL)
             setValue('profilePicture', res[0].fileURL)
+            if (res[0].uploadId) {
+                addMedia(`profile_${res[0].uploadId}`, res[0])
+            }
         }
         setUploadingProfile(false)
     }
 
     const handleFeaturedVideoUpload = async (files: (File | any)[]) => {
         if (files.length === 0) {
-            if (featuredData?.fileId) {
+            if (featuredData?.uploadId) {
+                console.log('Attempting to delete featured video:', {
+                    uploadId: featuredData.uploadId,
+                    fileId: featuredData.fileId,
+                })
                 try {
-                    await apiDeleteMedia(featuredData.fileId)
-                } catch (error) {
+                    await apiDeleteMedia(user?.userId ?? '', featuredData.uploadId)
+                    if (featuredData.uploadId) {
+                        const key = `featured_${featuredData.uploadId}`
+                        clearMediaItem(key)
+                    }
+
+                    if (featuredData.originalFileName) {
+                        const key = `${featuredData.originalFileName}-${featuredData.size || 0}`
+                        clearMediaItem(key)
+                    }
+
+                    toast.push(
+                        <Notification
+                            type="success"
+                            title="Success"
+                            duration={2000}
+                        >
+                            Featured video deleted successfully!
+                        </Notification>,
+                        { placement: 'top-center' },
+                    )
+                } catch (error: any) {
                     console.error('Error deleting featured video:', error)
+                    toast.push(
+                        <Notification
+                            type="danger"
+                            title="Delete Failed"
+                            duration={3000}
+                        >
+                            Failed to delete featured video:{' '}
+                            {error?.response?.data?.message ||
+                                error?.message ||
+                                'Please try again'}
+                        </Notification>,
+                        { placement: 'top-center' },
+                    )
                 }
             }
             setFeaturedData(null)
+            setDeletedItem(featuredData)
             setValue('featuredVideo', undefined)
+            // setUploadKey((prev) => prev + 1)
             return
         }
 
         const file = files[0]
-        if (!(file instanceof File)) {
-            // It's existing media
+        if (!(file instanceof File) && file.fileURL) {
             setFeaturedData(file)
+            setValue('featuredVideo', file.fileURL)
             return
+        }
+        if (isEditMode && featuredData?.id) {
+            try {
+                await apiDeleteMedia(user?.id,featuredData.uploadId)
+            } catch (error) {
+                console.error('Failed to delete old featured video', error)
+            }
         }
 
         setUploadingFeatured(true)
         const res = await uploadFiles([file])
+
         if (res && res.length > 0) {
-            setFeaturedData(res[0])
+            // Don't preserve old ID for new uploads
+            setFeaturedData({
+                ...res[0],
+                ...(isEditMode && deletedItem?.id
+                    ? { id: deletedItem.id }
+                    : {}),
+                // id will be undefined for new uploads, which is correct
+            })
             setValue('featuredVideo', res[0].fileURL)
+            if (res[0].uploadId) {
+                addMedia(`featured_${res[0].uploadId}`, res[0])
+            }
         }
         setUploadingFeatured(false)
     }
 
     const handleGalleryVideosUpload = async (files: (File | any)[]) => {
-        // Find removed files to call delete API
-        const removedFiles = videoData.filter(v => !files.some(f =>
-            (f instanceof File ? f === v.file : (f.fileId === v.file.fileId || f.fileURL === v.file.fileURL))
-        ))
+        // Detect removed existing videos
+        const removedItems = videoData.filter(
+            (item) =>
+                !files.some(
+                    (f) =>
+                        !(f instanceof File) &&
+                        (f.uploadId === item.res?.uploadId ||
+                            f.fileId === item.res?.fileId),
+                ),
+        )
 
-        for (const removed of removedFiles) {
-            const fileId = removed.res?.fileId || removed.file?.fileId
-            if (fileId) {
+        // Delete removed videos
+        for (const removed of removedItems) {
+            console.log('Deleting removed video:', removed)
+            const uploadId = removed.res?.uploadId
+            const userId = removed.res?.userId
+            if (uploadId) {
                 try {
-                    await apiDeleteMedia(fileId)
+                    await apiDeleteMedia(userId, uploadId)
                 } catch (error) {
-                    console.error('Error deleting gallery video:', error)
+                    console.error('Failed to delete gallery video', error)
                 }
             }
         }
 
-        const existingEntries = videoData.filter(v => files.includes(v.file))
-        const newFiles = files.filter(f => f instanceof File) as File[]
+        // Keep existing ones
+        const existingEntries = videoData.filter((item) =>
+            files.some(
+                (f) =>
+                    !(f instanceof File) && f.uploadId === item.res?.uploadId,
+            ),
+        )
+
+        // Upload new files
+        const newFiles = files.filter((f) => f instanceof File) as File[]
 
         if (newFiles.length > 0) {
             setUploadingVideos(true)
             const res = await uploadFiles(newFiles)
-            const newData = newFiles.map((file, i) => ({ file, res: res[i] }))
+
+            const newData = newFiles.map((file, i) => ({
+                file,
+                res: res[i],
+                // No id field for new uploads
+            }))
+
             setVideoData([...existingEntries, ...newData])
             setUploadingVideos(false)
         } else {
             setVideoData(existingEntries)
         }
     }
+const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
+    console.log(removedFiles, 'removedFiles')
+  // Normalize to array
+  const filesToRemove = Array.isArray(removedFiles) ? removedFiles : [removedFiles]
 
+  for (const removedFile of filesToRemove) {
+    const itemToRemove = videoData.find(
+      (item) =>
+        (removedFile.uploadId && removedFile.uploadId === item.res?.uploadId) ||
+        (removedFile.fileId && removedFile.fileId === item.res?.fileId)
+    )
+    console.log(itemToRemove, 'itemToRemove')
+
+    if (itemToRemove?.res?.uploadId) {
+      try {
+        await apiDeleteMedia(itemToRemove.res.userId, itemToRemove.res.uploadId)
+        setVideoData((prev) =>
+          prev.filter((item) => item.res?.uploadId !== itemToRemove.res?.uploadId)
+        )
+        toast.push(
+          <Notification type="success" title="Deleted" duration={2000}>
+            Video removed successfully.
+          </Notification>,
+          { placement: 'top-center' }
+        )
+      } catch (error) {
+        console.error('Failed to delete gallery video', error)
+        toast.push(
+          <Notification type="danger" title="Error" duration={3000}>
+            Failed to delete video.
+          </Notification>,
+          { placement: 'top-center' }
+        )
+      }
+    }
+  }
+}
     const onSubmit = async (data: any) => {
-        setIsSubmitting(true)
+
         try {
+            setIsSubmitting(true)
+
             const mediaList = [
+                // Featured video
                 ...(featuredData
                     ? [
-                        {
-                            mimeType: featuredData.mimeType || 'video/mp4',
-                            fileURL: featuredData.fileURL,
-                            fileId: featuredData.fileId,
-                            type: MediaType.VIDEO,
-                            category: MediaCategory.FEATURED,
-                            videoTitle:
-                                data.featuredVideoTitle || 'Featured Video',
-                            videoDescription: data.favSaying || '',
-                            isMainVideo: true,
-                            isActive: true,
-                            sortOrder: 0,
-                        },
-                    ]
+                          {
+                          
+                              uploadId: featuredData.uploadId,
+                              mimeType: featuredData.mimeType || 'video/mp4',
+                              fileURL: featuredData.fileURL,
+                              fileId: featuredData.fileId,
+                              type: MediaType.VIDEO,
+                              category: MediaCategory.FEATURED,
+                              videoTitle:
+                                  data.featuredVideoTitle || 'Featured Video',
+                              videoDescription: data.favSaying || '',
+                              isMainVideo: true,
+                              isActive: true,
+                              sortOrder: 0,
+                          },
+                      ]
                     : []),
-                ...videoData
-                    .filter((item) => !!item.res?.fileURL || !!item.file?.fileURL)
-                    .map((item, index: number) => ({
-                        mimeType:
-                            item.res?.mimeType || (item.file instanceof File ? item.file.type : item.file.mimeType) || 'video/mp4',
-                        fileURL: item.res?.fileURL || item.file?.fileURL,
-                        fileId: item.res?.fileId || item.file?.fileId,
-                        type: MediaType.VIDEO,
-                        category: MediaCategory.GALLERY,
-                        videoTitle: data.galleryVideoTitle || 'Gallery Video',
-                        videoDescription: '',
-                        isMainVideo: false,
-                        isActive: true,
-                        sortOrder: (featuredData ? 1 : 0) + index,
-                    })),
+                // Gallery videos
+                ...videoData.map((item, index: number) => {
+                        return {
+                         
+                            uploadId: item.res?.uploadId || item.file?.uploadId,
+                            mimeType:
+                                item.res?.mimeType ||
+                                (item.file instanceof File
+                                    ? item.file.type
+                                    : item.file.mimeType) ||
+                                'video/mp4',
+                            fileURL: item.res?.fileURL || item.file?.fileURL,
+                            fileId: item.res?.fileId || item.file?.fileId,
+                            type: MediaType.VIDEO,
+                            category: MediaCategory.GALLERY,
+                            videoTitle:
+                                data.galleryVideoTitle || 'Gallery Video',
+                            videoDescription: '',
+                            isMainVideo: false,
+                            isActive: true,
+                            sortOrder: (featuredData ? 1 : 0) + index,
+                        }
+                    }),
             ]
 
             if (mediaList.length === 0 && !isEditMode) {
@@ -384,42 +561,57 @@ export default function VideoOnlyMemorial() {
                     ? dayjs(data.personDeathDate).toISOString()
                     : null,
                 profilePictureId:
-                    profileData?.fileId ||
-                    (isEditMode ? existingMemorialData?.profilePictureId : null),
+                    profileData?.uploadId ||
+                    (isEditMode
+                        ? existingMemorialData?.profilePictureId
+                        : null),
                 pageURL: `${window.location.origin}/memorial/${data.personName
                     .toLowerCase()
                     .replace(/\s+/g, '-')}`,
                 personProfilePicture:
                     profileData?.fileURL || profileImage || '',
                 favQuote: data.favQuote,
+                favSaying: data.favSaying,
                 publishStatus: PublishStatus.DRAFT,
                 userMedia: mediaList,
             }
+
+            console.log('Payload:', JSON.stringify(payload, null, 2))
 
             if (isEditMode && memorialId && existingMemorialData) {
                 const {
                     id,
                     creatorId,
                     landingMode,
-                    favoriteSayings,
                     qrCode,
-                    favSayings,
+                    photos,
+                    videos,
                     ...restExistingData
                 } = existingMemorialData
 
                 const updatePayload = {
                     ...restExistingData,
                     ...payload,
-                    userMedia: [
-                        ...(existingMemorialData.userMedia || []).filter(
-                            (m: any) =>
-                                !mediaList.some(
-                                    (nm) => m.category === nm.category,
-                                ),
-                        ),
-                        ...payload.userMedia,
-                    ],
                 }
+
+                // Remove unwanted properties from updatePayload
+                delete updatePayload.photos
+                delete updatePayload.videos
+                delete updatePayload.creatorId
+                delete updatePayload.landingMode
+                delete updatePayload.qrCode
+                delete updatePayload.eventDuration
+                delete updatePayload.eventStart
+                delete updatePayload.lifeStoryText
+                delete updatePayload.lifeStoryImageId
+                delete updatePayload.lifeStoryImageURL
+                delete updatePayload.featuredPhotoId
+                delete updatePayload.featuredPhotoURL
+
+                console.log(
+                    'Update Payload:',
+                    JSON.stringify(updatePayload, null, 2),
+                )
 
                 await apiUpdateMemorial(memorialId, updatePayload)
                 toast.push(
@@ -551,9 +743,11 @@ export default function VideoOnlyMemorial() {
                                     <CommonInput
                                         name="personName"
                                         control={control}
-                                        placeholder='Full Name'
+                                        placeholder="Full Name"
                                         invalid={Boolean(errors.personName)}
-                                        errorMessage={errors.personName?.message}
+                                        errorMessage={
+                                            errors.personName?.message
+                                        }
                                     />
                                     <CommonSelect
                                         name="personGender"
@@ -561,7 +755,9 @@ export default function VideoOnlyMemorial() {
                                         options={genderOptions}
                                         placeholder="Gender"
                                         invalid={Boolean(errors.personGender)}
-                                        errorMessage={errors.personGender?.message}
+                                        errorMessage={
+                                            errors.personGender?.message
+                                        }
                                     />
                                 </div>
 
@@ -570,8 +766,12 @@ export default function VideoOnlyMemorial() {
                                         name="personBirthDate"
                                         control={control}
                                         placeholder="Date of Birth"
-                                        invalid={Boolean(errors.personBirthDate)}
-                                        errorMessage={errors.personBirthDate?.message}
+                                        invalid={Boolean(
+                                            errors.personBirthDate,
+                                        )}
+                                        errorMessage={
+                                            errors.personBirthDate?.message
+                                        }
                                         inputSuffix={
                                             <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
                                         }
@@ -580,8 +780,12 @@ export default function VideoOnlyMemorial() {
                                         name="personDeathDate"
                                         control={control}
                                         placeholder="Date of Death"
-                                        invalid={Boolean(errors.personDeathDate)}
-                                        errorMessage={errors.personDeathDate?.message}
+                                        invalid={Boolean(
+                                            errors.personDeathDate,
+                                        )}
+                                        errorMessage={
+                                            errors.personDeathDate?.message
+                                        }
                                         inputSuffix={
                                             <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
                                         }
@@ -612,15 +816,38 @@ export default function VideoOnlyMemorial() {
                         className="mb-8"
                     >
                         <Upload
+                            key={`featured-${uploadKey}`}
                             accept="video/*"
                             uploadLimit={1}
                             onChange={handleFeaturedVideoUpload}
                             onFileRemove={() => handleFeaturedVideoUpload([])}
                             uploading={uploadingFeatured}
-                            defaultFiles={featuredData ? [featuredData] : []}
+                            defaultFiles={
+                                featuredData
+                                    ? [
+                                          {
+                                              name:
+                                                  featuredData.videoTitle ||
+                                                  'Featured Video',
+                                              size: featuredData.size || 0,
+                                              type:
+                                                  featuredData.mimeType ||
+                                                  'video/mp4',
+                                              fileURL: featuredData.fileURL,
+                                              mimeType:
+                                                  featuredData.mimeType ||
+                                                  'video/mp4',
+                                              fileId: featuredData.fileId,
+                                              uploadId: featuredData.uploadId,
+                                          },
+                                      ]
+                                    : []
+                            }
                         />
                         {errors.featuredVideo && (
-                            <p className="text-red-500 text-sm mt-2">{(errors.featuredVideo as any).message}</p>
+                            <p className="text-red-500 text-sm mt-2">
+                                {(errors.featuredVideo as any).message}
+                            </p>
                         )}
                         <div className="mt-4">
                             <CommonInput
@@ -629,7 +856,9 @@ export default function VideoOnlyMemorial() {
                                 label="Video Title"
                                 placeholder="Enter title here..."
                                 invalid={Boolean(errors.featuredVideoTitle)}
-                                errorMessage={errors.featuredVideoTitle?.message}
+                                errorMessage={
+                                    errors.featuredVideoTitle?.message
+                                }
                             />
                         </div>
                         <div className="mt-4">
@@ -648,18 +877,38 @@ export default function VideoOnlyMemorial() {
                     <FormSection
                         title={
                             <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
-                                Upload Videos (Optional)
+                                Upload Video (Optional)
                             </span>
                         }
                         className="mb-8"
                     >
                         <Upload
+                            key={`gallery-${uploadKey}`}
                             accept="video/*"
                             uploadLimit={3}
                             onChange={handleGalleryVideosUpload}
-                            onFileRemove={handleGalleryVideosUpload}
+                            onFileRemove={(updatedFiles) => handleGalleryVideosUpload(updatedFiles)}
                             uploading={uploadingVideos}
-                            defaultFiles={videoData.map(v => v.file)}
+                            defaultFiles={videoData.map((item) => ({
+                                name:
+                                    item.res?.videoTitle ||
+                                    item.file?.name ||
+                                    'Gallery Video',
+                                size: item.res?.size || item.file?.size || 0,
+                                type:
+                                    item.res?.mimeType ||
+                                    item.file?.type ||
+                                    'video/mp4',
+                                fileURL:
+                                    item.res?.fileURL || item.file?.fileURL,
+                                mimeType:
+                                    item.res?.mimeType ||
+                                    item.file?.mimeType ||
+                                    'video/mp4',
+                                fileId: item.res?.fileId || item.file?.fileId,
+                                uploadId:
+                                    item.res?.uploadId || item.file?.uploadId,
+                            }))}
                         />
                         <div className="mt-4">
                             <CommonInput
@@ -692,8 +941,8 @@ export default function VideoOnlyMemorial() {
                             {isSubmitting
                                 ? 'Saving...'
                                 : isEditMode
-                                    ? 'Update & Finish'
-                                    : 'Save & Finish'}
+                                  ? 'Update & Finish'
+                                  : 'Save & Finish'}
                         </button>
                     </div>
                 </div>
