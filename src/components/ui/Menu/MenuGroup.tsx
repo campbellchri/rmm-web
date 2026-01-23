@@ -20,7 +20,7 @@ const MenuGroup = (props: MenuGroupProps) => {
     return (
         <div className={menuGroupClass}>
             {label && !sideCollapsed && (
-                <div className={classNames('menu-title')}>{label}</div>
+                <div className={classNames('menu-title text-white')}>{label}</div>
             )}
             <GroupContextProvider value={null}>
                 <ul>{children}</ul>
