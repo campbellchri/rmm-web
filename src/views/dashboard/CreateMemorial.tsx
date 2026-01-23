@@ -16,6 +16,15 @@ interface MemorialMode {
     isActive: boolean
 }
 
+interface StorageDetail {
+    usedGB: string
+    limitGB: string
+}
+
+interface DashboardDetail {
+    storageDetail: StorageDetail
+}
+
 const MODE_ORDER: Record<LandingModeType, number> = {
     'full-mode': 1,
     'video-only-mode': 2,
@@ -33,6 +42,12 @@ const CreateMemorial = () => {
     const [modes, setModes] = useState<MemorialMode[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [selectedMode, setSelectedMode] = useState<LandingModeType | ''>('')
+    const [storageData, setStorageData] = useState<any>(null)
+
+    const parseGB = (val: string | undefined) => {
+        if (!val) return 0
+        return parseFloat(val.replace(' GB', ''))
+    }
 
     useEffect(() => {
         const fetchModes = async () => {
@@ -61,7 +76,18 @@ const CreateMemorial = () => {
         }
 
         fetchModes()
+        fetchStorageData()
     }, [])
+
+    const fetchStorageData = async () => {
+        try {
+            const { apiGetDashboardDetail } = await import('@/services/axios/MemorialModeService')
+            const res = (await apiGetDashboardDetail()) as DashboardDetail
+            setStorageData(res?.storageDetail)
+        } catch (error) {
+            console.error('Failed to fetch storage data', error)
+        }
+    }
 
     return (
         <div>
@@ -97,8 +123,8 @@ const CreateMemorial = () => {
                             </div>
 
                             <ProgressBar
-                                used={0.9}
-                                total={5}
+                                used={parseGB(storageData?.usedGB)}
+                                total={parseGB(storageData?.limitGB)}
                                 height={12}
                                 showValues={true}
                                 showTotal={true}
