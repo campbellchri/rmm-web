@@ -34,11 +34,15 @@ export default function VideoMemorial() {
             console.error('Error fetching memorial details:', error)
         }
     }
-    const handleCopyUrl = () => {
-        navigator.clipboard.writeText(memorialDetails?.pageURL)
-        setCopiedUrl(true)
-        setTimeout(() => setCopiedUrl(false), 2000)
-    }
+            const handleCopyUrl = () => {
+            if (!memorialDetails?.slug) return
+
+            const url = `${window.location.origin}/memorials/public/${memorialDetails.slug}`
+            navigator.clipboard.writeText(url)
+
+            setCopiedUrl(true)
+            setTimeout(() => setCopiedUrl(false), 2000)
+        }
 
     const handlePlayVideo = (videoId: string) => {
         setActiveVideo(videoId)
@@ -359,7 +363,11 @@ export default function VideoMemorial() {
                                 <div className="flex">
                                     <input
                                         type="text"
-                                        value={memorialDetails?.pageURL}
+                                            value={
+                                            memorialDetails?.slug
+                                                ? `${window.location.origin}/memorials/public/${memorialDetails.slug}`
+                                                : ''
+                                        }
                                         readOnly
                                         className="flex-1 px-3 py-2 bg-transparent border border-[#D1D5DB] rounded-l-md font-poppins text-sm text-[#ffffff] focus:outline-none focus:ring-2 focus:ring-[#C7A30D]"
                                     />

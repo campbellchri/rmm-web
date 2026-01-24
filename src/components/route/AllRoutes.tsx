@@ -23,57 +23,106 @@ const AllRoutes = (props: AllRoutesProps) => {
     const { user } = useAuth()
 
     return (
+        // <Routes>
+        //     <Route path="/" element={<PublicRoute />}>
+        //         <Route index element={<Index />} />
+        //         {publicRoutes.map((route) => (
+        //             <Route
+        //                 key={route.key}
+        //                 path={route.path}
+        //                 element={
+        //                     <AppRoute
+        //                         routeKey={route.key}
+        //                         component={route.component}
+        //                         {...route.meta}
+        //                     />
+        //                 }
+        //             />
+        //         ))}
+        //     </Route>
+
+        //     <Route path="/" element={<ProtectedRoute />}>
+        //         <Route
+        //             path="/"
+        //             element={<Navigate replace to={authenticatedEntryPath} />}
+        //         />
+        //         {protectedRoutes.map((route, index) => (
+        //             <Route
+        //                 key={route.key + index}
+        //                 path={route.path}
+        //                 element={
+        //                     <AuthorityGuard
+        //                         userAuthority={user.authority}
+        //                         authority={route.authority}
+        //                     >
+        //                         <PageContainer {...props} {...route.meta}>
+        //                             <AppRoute
+        //                                 routeKey={route.key}
+        //                                 component={route.component}
+        //                                 {...route.meta}
+        //                             />
+        //                         </PageContainer>
+        //                     </AuthorityGuard>
+        //                 }
+        //             />
+        //         ))}
+        //     </Route>
+
+        //     <Route path="*" element={<Navigate replace to="/" />} />
+        // </Routes>
         <Routes>
-            {/* ----- Public Routes ----- */}
-            <Route path="/" element={<PublicRoute />}>
-                {/* Default public home */}
-                <Route index element={<Index />} />
-                {publicRoutes.map((route) => (
-                    <Route
-                        key={route.key}
-                        path={route.path}
-                        element={
+    {/* ---- Public routes (NO auth) ---- */}
+    <Route element={<PublicRoute />}>
+        <Route path="/" element={<Index />} />
+
+        {publicRoutes.map((route) => (
+            <Route
+                key={route.key}
+                path={route.path}
+                element={
+                    <AppRoute
+                        routeKey={route.key}
+                        component={route.component}
+                        {...route.meta}
+                    />
+                }
+            />
+        ))}
+    </Route>
+
+    {/* ---- Protected routes ---- */}
+    <Route element={<ProtectedRoute />}>
+        <Route
+            path="/"
+            element={<Navigate replace to={authenticatedEntryPath} />}
+        />
+
+        {protectedRoutes.map((route, index) => (
+            <Route
+                key={route.key + index}
+                path={route.path}
+                element={
+                    <AuthorityGuard
+                        userAuthority={user.authority}
+                        authority={route.authority}
+                    >
+                        <PageContainer {...props} {...route.meta}>
                             <AppRoute
                                 routeKey={route.key}
                                 component={route.component}
                                 {...route.meta}
                             />
-                        }
-                    />
-                ))}
-            </Route>
+                        </PageContainer>
+                    </AuthorityGuard>
+                }
+            />
+        ))}
+    </Route>
 
-            {/* ----- Protected Routes ----- */}
-            <Route path="/" element={<ProtectedRoute />}>
-                <Route
-                    path="/"
-                    element={<Navigate replace to={authenticatedEntryPath} />}
-                />
-                {protectedRoutes.map((route, index) => (
-                    <Route
-                        key={route.key + index}
-                        path={route.path}
-                        element={
-                            <AuthorityGuard
-                                userAuthority={user.authority}
-                                authority={route.authority}
-                            >
-                                <PageContainer {...props} {...route.meta}>
-                                    <AppRoute
-                                        routeKey={route.key}
-                                        component={route.component}
-                                        {...route.meta}
-                                    />
-                                </PageContainer>
-                            </AuthorityGuard>
-                        }
-                    />
-                ))}
-            </Route>
+    {/* Fallback */}
+    <Route path="*" element={<Navigate replace to="/" />} />
+</Routes>
 
-            {/* ----- Fallback ----- */}
-            <Route path="*" element={<Navigate replace to="/" />} />
-        </Routes>
     )
 }
 

@@ -42,8 +42,12 @@ export default function Memorial() {
         }
     }
 
-    const handleCopyUrl = () => {
-        navigator.clipboard.writeText(memorialDetails?.pageURL)
+        const handleCopyUrl = () => {
+        if (!memorialDetails?.slug) return
+
+        const url = `${window.location.origin}/memorials/public/${memorialDetails.slug}`
+        navigator.clipboard.writeText(url)
+
         setCopiedUrl(true)
         setTimeout(() => setCopiedUrl(false), 2000)
     }
@@ -352,7 +356,11 @@ export default function Memorial() {
                                         <CommonInput
                                             name="memorialUrl"
                                             control={control}
-                                            value={memorialDetails?.pageURL}
+                                             value={
+                                                memorialDetails?.slug
+                                                    ? `${window.location.origin}/memorials/public/${memorialDetails.slug}`
+                                                    : ''
+                                            }
                                             readOnly
                                             className="w-full text-[#878787] bg-[#383C56] border-[#383C56] rounded-l-md rounded-r-none font-poppins text-sm focus:!ring-[#C7A30D] focus:!border-[#C7A30D] h-auto py-2"
                                             containerClassName="flex-1 mb-0"
