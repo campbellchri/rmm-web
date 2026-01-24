@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { useForm } from 'react-hook-form'
 import CommonInput from '@/components/shared/CommonInput'
-import { apiGetMemorialById } from '@/services/axios/MemorialModeService'
 import { useParams } from 'react-router-dom'
 import { Play, Facebook, Twitter, Copy, QrCode } from 'lucide-react'
 
@@ -14,7 +13,6 @@ export default function FullMemorialPublic({ memorial }: { memorial: any }) {
     })
     const qrRef = useRef<HTMLCanvasElement>(null)
     const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
-    const { slug } = useParams<{ slug: string }>()
 
  
     const handleCopyUrl = () => {
@@ -44,7 +42,7 @@ export default function FullMemorialPublic({ memorial }: { memorial: any }) {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-6 py-10 space-y-16">
+        <div className=" px-6 py-10 space-y-16 bg-[#25293C]">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
                 <div className="flex flex-col sm:flex-row sm:items-end gap-6 sm:gap-8">
