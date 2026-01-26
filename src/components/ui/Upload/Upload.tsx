@@ -194,7 +194,9 @@ const previewFiles = isPlusIconVisible
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        removeFile(index)
+                                        const updatedList = files.filter((_, i) => i !== index)
+                                        setFiles(updatedList)
+                                        onChange?.(updatedList, updatedList)
                                     }}
                                     className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
                                 >
