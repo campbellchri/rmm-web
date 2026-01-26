@@ -27,7 +27,6 @@ import { useMediaStore } from '@/store/mediaStore'
 import useAuth from '@/auth/useAuth'
 import SingleImageUpload from '@/components/ui/SingleImageUpload/SingleImageUpload'
 
-// Form Section Component
 const FormSection = ({
     title,
     children,
@@ -49,7 +48,6 @@ const FormSection = ({
         </div>
     )
 }
-
 
 const validationSchema = z.object({
     personName: z.string().min(1, { message: 'Full Name is required' }),
@@ -304,13 +302,10 @@ export default function ClassicTemplateMode() {
     const handleFeaturedPhotoUpload = async (files: (File | any)[] | null) => {
 
         if (!files || files.length === 0) {
-            // Handle deletion of existing photo
             if (featuredData?.fileId) {
                 try {
-                    // Use apiDeleteGCPFile for both edit and creation modes
                     await apiDeleteGCPFile(featuredData.fileId)
 
-                    // Clear from media cache
                     if (featuredData.fileId) {
                         const key = `featured_${featuredData.fileId}`
                         clearMediaItem(key)
@@ -349,7 +344,6 @@ export default function ClassicTemplateMode() {
                 }
             }
 
-            // Clear state regardless of whether deletion API call succeeded
             setFeaturedData(null)
             setValue('featuredPhoto', undefined)
             return
@@ -357,14 +351,12 @@ export default function ClassicTemplateMode() {
 
         const file = files[0]
 
-        // Handle existing media (not a new File)
         if (!(file instanceof File) && file.fileURL) {
             setFeaturedData(file)
             setValue('featuredPhoto', file.fileURL)
             return
         }
 
-        // Delete old photo before uploading new one (both edit and creation mode)
         if (featuredData?.uploadId) {
             try {
                 await apiDeleteGCPFile(featuredData.uploadId)
@@ -373,7 +365,6 @@ export default function ClassicTemplateMode() {
             }
         }
 
-        // Upload new photo
         setUploadingFeatured(true)
         const res = await uploadFiles([file])
 
@@ -381,7 +372,6 @@ export default function ClassicTemplateMode() {
             setFeaturedData(res[0])
             setValue('featuredPhoto', res[0].fileURL)
 
-            // Add to media cache
             if (res[0].uploadId) {
                 addMedia(`featured_${res[0].uploadId}`, res[0])
             }
@@ -395,7 +385,6 @@ export default function ClassicTemplateMode() {
             if (lifeStoryData?.fileId) {
                 try {
                     await apiDeleteGCPFile(lifeStoryData.fileId)
-                    // Clear from media cache
                     if (lifeStoryData.fileId) {
                         const key = `lifeStory_${lifeStoryData?.fileId}`
                         clearMediaItem(key)
@@ -411,7 +400,6 @@ export default function ClassicTemplateMode() {
 
         const file = files[0]
         if (!(file instanceof File)) {
-            // It's existing media
             setLifeStoryData(file)
             setValue('lifeStoryImage', file.fileURL)
             return
@@ -455,7 +443,7 @@ export default function ClassicTemplateMode() {
         }
     }
 
-    // 5. Upload new files
+    // Upload new files
     let newlyUploaded: { file: File; res: any }[] = []
 
     if (incomingNewFiles.length > 0) {
@@ -468,7 +456,7 @@ export default function ClassicTemplateMode() {
         setUploadingPhotos(false)
     }
 
-    // 6. Merge ONCE
+    // Merge ONCE
     const finalPhotos = [...keptExisting, ...newlyUploaded]
 
     setPhotosData(finalPhotos)
@@ -642,7 +630,7 @@ export default function ClassicTemplateMode() {
             }
 
             await fetchMemorials(true)
-            clearMedia() // Clear persisted media responses after successful save
+            clearMedia() 
             navigate('/dashboard/memorial')
         } catch (error: any) {
             console.error('Error saving memorial:', error)
@@ -667,7 +655,6 @@ export default function ClassicTemplateMode() {
         <>
             <div className="min-h-screen">
                 <div className="max-w-7xl mx-auto ">
-                    {/* Header */}
                     <div className="flex justify-between flex-col md:flex-row gap-2 items-center mb-8">
                         <div className="flex items-center gap-4">
                             <button
@@ -791,7 +778,6 @@ export default function ClassicTemplateMode() {
                         </div>
                     </div>
 
-                    {/* Featured Photo */}
                     <FormSection
                         title={
                             <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
@@ -878,7 +864,6 @@ export default function ClassicTemplateMode() {
                         )}
                     </FormSection>
 
-                    {/* Favorite Sayings */}
                     <FormSection
                         title={
                             <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
@@ -905,7 +890,6 @@ export default function ClassicTemplateMode() {
                         </div>
                     </FormSection>
 
-                    {/* Life Story */}
                     <FormSection
                         title={
                             <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
@@ -953,7 +937,6 @@ export default function ClassicTemplateMode() {
                         </div>
                     </FormSection>
 
-                    {/* Footer Actions */}
                     <div className=" px-6 py-6 flex justify-between items-center rounded-lg shadow-sm">
                         <button
                             className="px-6 font-[500] md:text-base text-sm py-2.5 border text-[#4EB1C9] rounded-[76px] font-poppins"

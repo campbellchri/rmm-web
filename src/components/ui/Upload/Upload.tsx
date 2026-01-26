@@ -1,7 +1,6 @@
 import {
     useRef,
     useState,
-    useCallback,
     useEffect,
     ChangeEvent,
     MouseEvent,
@@ -121,7 +120,7 @@ const Upload = ({
         }
         e.stopPropagation()
     }
-    const MAX_PREVIEW = 2
+    const MAX_PREVIEW = 3
 const previewFiles = isPlusIconVisible
     ? files.slice(0, MAX_PREVIEW)
     : files
@@ -205,7 +204,7 @@ const previewFiles = isPlusIconVisible
                                {isPlusIconVisible &&
                                         index === MAX_PREVIEW - 1 &&
                                         files.length > MAX_PREVIEW && (
-                                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-lg font-bold">
+                                            <div className="absolute inset-0 flex items-center justify-center text-white text-lg font-bold">
                                                 +{files.length - MAX_PREVIEW}
                                             </div>
                                     )}

@@ -15,7 +15,6 @@ export default function EventMemorial() {
     const memorialId = activeMemorialId
     const navigate = useNavigate()
     const qrRef = useRef<HTMLCanvasElement>(null)
-    const baseUrl = import.meta.env.VITE_WEB_URL
 
     useEffect(() => {
         fetchMemorials()

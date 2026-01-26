@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Bell, ChevronDown, X, Upload as UploadIcon, ArrowLeft } from 'lucide-react'
+import { Upload as UploadIcon, ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { DatePicker, Input, Select, toast, Notification } from '@/components/ui'
 import { useForm, Controller } from 'react-hook-form'
@@ -11,7 +11,6 @@ import {
 import { useMemorialStore } from '@/store/memorialStore'
 import dayjs from 'dayjs'
 import Upload from '@/components/ui/Upload'
-import { Gender } from '@/constants/memorial.constant'
 
 export default function EditMemorial() {
     const navigate = useNavigate()
@@ -56,7 +55,7 @@ export default function EditMemorial() {
                     // Populate form
                     reset({
                         personName: res.personName || '',
-                        personGender: res.gender || 'Male', // Adjust based on API response field
+                        personGender: res.gender || 'Male', 
                         personBirthDate: res.personBirthDate
                             ? new Date(res.personBirthDate)
                             : null,
@@ -65,7 +64,7 @@ export default function EditMemorial() {
                             : null,
                         favQuote: res.favQuote || '',
                         favoriteSaying: res.favSaying || '',
-                        quoteBy: res.favoriteSayings?.[0]?.authorName || '', // Assuming structure
+                        quoteBy: res.favoriteSayings?.[0]?.authorName || '', 
                         videoTitle:
                             res.userMedia?.find(
                                 (m: any) => m.type === 'video',
@@ -73,7 +72,6 @@ export default function EditMemorial() {
                         lifeStory: res.lifeStoryText || '',
                     })
 
-                    // Handle existing media (basic implementation)
                     if (res.personProfilePicture) {
                         setProfileImage(res.personProfilePicture)
                     }

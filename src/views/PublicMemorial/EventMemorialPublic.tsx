@@ -1,4 +1,3 @@
-// EventMemorialPublic.tsx
 import { useState, useRef } from "react"
 import { QRCodeCanvas } from "qrcode.react"
 import { Play, Copy, Facebook, Twitter, QrCode } from "lucide-react"
@@ -39,7 +38,6 @@ export default function EventMemorialPublic({ memorial }: EventMemorialProps) {
 
   return (
     <div className="min-h-screen bg-[#1B1C2A] text-white">
-      {/* Top Section */}
       <div className="py-16 relative">
         {memorial.landingMode && (
           <div className="absolute top-3 w-full px-6 flex justify-between items-center">
@@ -67,7 +65,6 @@ export default function EventMemorialPublic({ memorial }: EventMemorialProps) {
         </div>
       </div>
 
-      {/* Video Section */}
       <div className="py-12">
         <div className="max-w-7xl mx-auto px-6">
           <div className="mb-8">
@@ -98,7 +95,6 @@ export default function EventMemorialPublic({ memorial }: EventMemorialProps) {
               )}
             </div>
 
-            {/* Event Date */}
             {memorial.eventStart && (
               <div className="text-center mt-8 space-y-2">
                 <p className="DMSerif md:text-[40px] text-2xl leading-tight">
@@ -116,7 +112,6 @@ export default function EventMemorialPublic({ memorial }: EventMemorialProps) {
         </div>
       </div>
 
-      {/* Divider */}
       <div className="flex items-center justify-center gap-6 py-8">
         <div className="w-[200px] h-0.5 bg-gradient-to-r from-transparent via-[#B99F6B] to-transparent"></div>
         <div className="w-8 h-8 text-[#C7A30D]">
@@ -130,7 +125,6 @@ export default function EventMemorialPublic({ memorial }: EventMemorialProps) {
         <div className="w-[200px] h-0.5 bg-gradient-to-r from-transparent via-[#B99F6B] to-transparent"></div>
       </div>
 
-      {/* QR Code & Share */}
       <section className="bg-[#2F3349] rounded-lg p-6 shadow-sm max-w-4xl mx-auto">
         <p className="font-poppins text-lg mb-4">Share Memorial Page</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

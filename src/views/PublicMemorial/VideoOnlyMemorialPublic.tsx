@@ -46,7 +46,6 @@ export default function VideoOnlyMemorialPublic({ memorial }: { memorial: any })
     return (
         <React.Fragment>
             <div className='bg-[#25293c]'>
-                {/* HERO */}
                 <div className="relative w-full bg-cover bg-center">
                     <div className="relative max-w-7xl mx-auto px-6 py-12">
                         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
@@ -93,7 +92,6 @@ export default function VideoOnlyMemorialPublic({ memorial }: { memorial: any })
                     </div>
                 </div>
 
-                {/* FEATURED VIDEO */}
                 <div className="py-12">
                     <div className="max-w-4xl mx-auto px-6">
                         <div className="border-2 border-[#C7A30D] bg-white/30 p-3.5 rounded-lg">
@@ -134,7 +132,6 @@ export default function VideoOnlyMemorialPublic({ memorial }: { memorial: any })
                     </div>
                 </div>
 
-                {/* VIDEO GALLERY */}
                 <div className="py-8">
                     <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {memorial?.videos?.map((item: any) => (
@@ -173,7 +170,6 @@ export default function VideoOnlyMemorialPublic({ memorial }: { memorial: any })
                     </div>
                 </div>
 
-                {/* SHARE */}
                 <section className="bg-[#2F3349] rounded-lg p-6 shadow-sm max-w-7xl mx-auto mb-16">
                     <p className="font-poppins text-lg text-white mb-4">Share Memorial Page</p>
 

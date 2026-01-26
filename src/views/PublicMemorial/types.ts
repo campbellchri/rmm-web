@@ -1,4 +1,3 @@
-// types.ts
 export interface UserMedia {
   id: string
   type: 'photo' | 'video'
@@ -11,7 +10,7 @@ export interface LandingMode {
   id: string
   title: string
   description: string
-  landingModeType: 'full-mode' | 'event-mode' | 'classic-mode'
+  landingModeType: 'full-mode' | 'event-mode' | 'video-only-mode'
   iconURL: string
 }
 

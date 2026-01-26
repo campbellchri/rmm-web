@@ -1,13 +1,11 @@
-import { useEffect, useState, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { useForm } from 'react-hook-form'
 import CommonInput from '@/components/shared/CommonInput'
-import { useParams } from 'react-router-dom'
 import { Play, Facebook, Twitter, Copy, QrCode } from 'lucide-react'
 
 export default function FullMemorialPublic({ memorial }: { memorial: any }) {
     const [copiedUrl, setCopiedUrl] = useState(false)
-    // const [memorial, setmemorial] = useState<any>(null)
     const { control, setValue } = useForm({
         defaultValues: { memorialUrl: '' },
     })
@@ -43,7 +41,6 @@ export default function FullMemorialPublic({ memorial }: { memorial: any }) {
 
     return (
         <div className=" px-6 py-10 space-y-16 bg-[#25293C]">
-            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
                 <div className="flex flex-col sm:flex-row sm:items-end gap-6 sm:gap-8">
                     <div className="flex justify-center sm:justify-start">
@@ -85,7 +82,6 @@ export default function FullMemorialPublic({ memorial }: { memorial: any }) {
                 )}
             </div>
 
-            {/* Featured Experience */}
             {memorial?.featuredPhotoURL && (
                 <section className="space-y-6">
                     <p className="DMSerif md:text-[28px] text-lg text-[#ffffff]">
@@ -109,7 +105,6 @@ export default function FullMemorialPublic({ memorial }: { memorial: any }) {
                 </section>
             )}
 
-            {/* Videos */}
             {memorial?.videos?.length > 0 && (
                 <section className="space-y-6">
                     <p className="DMSerif md:text-2xl text-lg text-[#ffffff]">Videos</p>
@@ -155,7 +150,6 @@ export default function FullMemorialPublic({ memorial }: { memorial: any }) {
                 </section>
             )}
 
-            {/* Photos */}
             {memorial?.photos?.length > 0 && (
                 <section className="space-y-6">
                     <p className="DMSerif md:text-2xl text-lg text-[#ffffff]">Photos</p>
@@ -173,7 +167,6 @@ export default function FullMemorialPublic({ memorial }: { memorial: any }) {
                 </section>
             )}
 
-            {/* Life Story */}
             {memorial?.lifeStoryText && (
                 <section className="space-y-6">
                     <p className="DMSerif md:text-2xl text-lg text-[#ffffff]">Life Story</p>
@@ -196,7 +189,6 @@ export default function FullMemorialPublic({ memorial }: { memorial: any }) {
                 </section>
             )}
 
-            {/* Share Section */}
             <section className="bg-[#2F3349] rounded-lg p-6 shadow-sm">
                 <p className="font-poppins text-lg text-[#ffffff] mb-4">Share Memorial Page</p>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

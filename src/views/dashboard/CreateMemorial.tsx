@@ -134,7 +134,6 @@ const CreateMemorial = () => {
                         </div>
                     </div>
 
-                    {/* Landing Mode Section */}
                     <div className="space-y-6">
                         <div className="space-y-2">
                             <p className="md:text-xl text-lg DMSerif font-[400] text-white">
@@ -146,7 +145,6 @@ const CreateMemorial = () => {
                             </p>
                         </div>
 
-                        {/* Mode Cards */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
                             {isLoading
                                 ? Array.from({ length: 3 }).map((_, index) => (
@@ -205,7 +203,6 @@ const CreateMemorial = () => {
                                                 )
                                             }
                                         >
-                                            {/* Selection Indicator */}
                                             <div className="absolute top-6 right-6">
                                                 {isSelected ? (
                                                     <div className="w-6 h-6 bg-[#C7A30D] rounded-full flex items-center justify-center">
@@ -219,9 +216,7 @@ const CreateMemorial = () => {
                                                 )}
                                             </div>
 
-                                            {/* Content */}
                                             <div className="space-y-6">
-                                                {/* Icon */}
                                                 <div className="flex justify-center pt-4">
                                                     {Icon && (
                                                         <Icon
@@ -236,14 +231,12 @@ const CreateMemorial = () => {
                                                     )}
                                                 </div>
 
-                                                {/* Title */}
                                                 <div className="text-center">
                                                     <p className="md:text-lg text-base DMSerif text-white capitalize">
                                                         {mode.title}
                                                     </p>
                                                 </div>
 
-                                                {/* Description */}
                                                 <div className="text-center">
                                                     <p className="md:text-base text-sm font-poppins text-[#ffffff] leading-relaxed">
                                                         {mode.description}
@@ -256,7 +249,6 @@ const CreateMemorial = () => {
                         </div>
                     </div>
 
-                    {/* Footer Actions */}
                     <div className="p-8 rounded-lg">
                         <div className="flex justify-end items-center">
                             <button
