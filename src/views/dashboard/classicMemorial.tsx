@@ -2,10 +2,10 @@ import { Key, useEffect, useState, useRef } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { useForm } from 'react-hook-form'
 import CommonInput from '@/components/shared/CommonInput'
-import { apiSetFeaturedMemorial, apiGetMemorialById } from '@/services/axios/MemorialModeService'
+import { apiSetFeaturedMemorial, apiGetMemorialById, apiDeleteMemorial } from '@/services/axios/MemorialModeService'
 import { useMemorialStore } from '@/store/memorialStore'
 import { toast, Notification } from '@/components/ui'
-import { Play, Facebook, Twitter, Copy, QrCode, ArrowLeft } from 'lucide-react'
+import { Play, Facebook, Twitter, Copy, QrCode, ArrowLeft, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export default function Memorial() {
@@ -16,6 +16,7 @@ export default function Memorial() {
     const navigate = useNavigate()
     const qrRef = useRef<HTMLCanvasElement>(null)
     const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
 
 
     const { control, setValue } = useForm({
@@ -69,6 +70,53 @@ export default function Memorial() {
         setActiveVideoId(videoId)
     }
 
+    const handleDeleteMemorial = async () => {
+        const confirmed = window.confirm(
+            'Are you sure you want to delete this memorial? This action cannot be undone.'
+        )
+        if (!confirmed) return
+
+        try {
+            setIsDeleting(true)
+            if (!memorialId) {
+                toast.push(
+                    <Notification type="danger" title="Error" duration={2000}>
+                        Memorial ID not found.
+                    </Notification>,
+                    { placement: 'top-center' }
+                )
+                return
+            }
+            await apiDeleteMemorial(memorialId)
+            toast.push(
+                <Notification
+                    type="success"
+                    title="Success"
+                    duration={2000}
+                >
+                    Memorial deleted successfully!
+                </Notification>,
+                { placement: 'top-center' }
+            )
+            await fetchMemorials()
+            navigate('/dashboard')
+        } catch (error) {
+            console.error('Error deleting memorial:', error)
+            toast.push(
+                <Notification
+                    type="danger"
+                    title="Error"
+                    duration={2000}
+                >
+                    Failed to delete memorial.
+                </Notification>,
+                { placement: 'top-center' }
+            )
+        } finally {
+            setIsDeleting(false)
+        }
+    }
+
 
 
     return (
@@ -83,50 +131,60 @@ export default function Memorial() {
                         <ArrowLeft />
                     </button>
                 </div>
-                <button
-                    onClick={async () => {
-                        try {
-                            if (!memorialId) {
+                <div className="flex gap-3">
+                    <button
+                        onClick={async () => {
+                            try {
+                                if (!memorialId) {
+                                    toast.push(
+                                        <Notification type="danger" title="Error" duration={2000}>
+                                            Memorial ID not found.
+                                        </Notification>,
+                                        { placement: 'top-center' }
+                                    )
+                                    return
+                                }
+                                await apiSetFeaturedMemorial({ memorialId })
                                 toast.push(
-                                    <Notification type="danger" title="Error" duration={2000}>
-                                        Memorial ID not found.
+                                    <Notification
+                                        type="success"
+                                        title="Success"
+                                        duration={2000}
+                                    >
+                                        Memorial set as featured successfully!
                                     </Notification>,
                                     { placement: 'top-center' }
                                 )
-                                return
+                            } catch (error) {
+                                console.error(
+                                    'Error setting featured memorial:',
+                                    error
+                                )
+                                toast.push(
+                                    <Notification
+                                        type="danger"
+                                        title="Error"
+                                        duration={2000}
+                                    >
+                                        Failed to set memorial as featured.
+                                    </Notification>,
+                                    { placement: 'top-center' }
+                                )
                             }
-                            await apiSetFeaturedMemorial({ memorialId })
-                            toast.push(
-                                <Notification
-                                    type="success"
-                                    title="Success"
-                                    duration={2000}
-                                >
-                                    Memorial set as featured successfully!
-                                </Notification>,
-                                { placement: 'top-center' }
-                            )
-                        } catch (error) {
-                            console.error(
-                                'Error setting featured memorial:',
-                                error
-                            )
-                            toast.push(
-                                <Notification
-                                    type="danger"
-                                    title="Error"
-                                    duration={2000}
-                                >
-                                    Failed to set memorial as featured.
-                                </Notification>,
-                                { placement: 'top-center' }
-                            )
-                        }
-                    }}
-                    className="md:px-6 px-3 md:py-2.5 py-1 border border-[#FFB84C] text-[#FFB84C] rounded-md font-poppins text-base hover:bg-[#FFB84C]/10 transition-colors"
-                >
-                    Set As Featured
-                </button>
+                        }}
+                        className="md:px-6 px-3 md:py-2.5 py-1 border border-[#FFB84C] text-[#FFB84C] rounded-md font-poppins text-base hover:bg-[#FFB84C]/10 transition-colors"
+                    >
+                        Set As Featured
+                    </button>
+                    <button
+                        onClick={handleDeleteMemorial}
+                        disabled={isDeleting}
+                        className="md:px-6 px-3 md:py-2.5 py-1 border border-red-500 text-red-500 rounded-md font-poppins text-base hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        {isDeleting ? 'Deleting...' : 'Delete Memorial'}
+                    </button>
+                </div>
             </div>
             <div
                 className="relative w-full bg-cover bg-center"

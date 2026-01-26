@@ -9,6 +9,8 @@ import appConfig from '@/configs/app.config'
 import { useThemeStore } from '@/store/themeStore'
 import { useRouteKeyStore } from '@/store/routeKeyStore'
 import { useSessionUser } from '@/store/authStore'
+import { useAuth } from '@/auth'
+import { LogOut } from 'lucide-react'
 
 const VerticalMenuContent = lazy(
     () => import('@/components/template/VerticalMenuContent'),
@@ -43,6 +45,11 @@ const MobileNav = ({
     const currentRouteKey = useRouteKeyStore((state) => state.currentRouteKey)
 
     const userAuthority = useSessionUser((state) => state.user.authority)
+    const { signOut } = useAuth()
+
+    const handleLogout = async () => {
+        await signOut()
+    }
 
     return (
         <>
@@ -57,6 +64,16 @@ const MobileNav = ({
                 placement={direction === DIR_RTL ? 'right' : 'left'}
                 onClose={handleDrawerClose}
                 onRequestClose={handleDrawerClose}
+                footer={
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 rounded-md transition-colors font-poppins text-sm"
+                    >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                    </button>
+                }
+                footerClass="bg-[#2f3349] border-t border-[#383C56] p-4"
             >
                 <Suspense fallback={<></>}>
                     {isOpen && (

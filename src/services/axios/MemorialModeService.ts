@@ -74,3 +74,10 @@ export async function apiGetPublicMemorial<T>(slug: string) {
         method: 'get',
     })
 }
+
+export async function apiDeleteMemorial<T>(id: string) {
+    return ApiService.fetchDataWithAxios<T>({
+        url: `/memorials/${id}`,
+        method: 'delete',
+    })
+}
