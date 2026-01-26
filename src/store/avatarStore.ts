@@ -7,12 +7,24 @@ type AvatarState = {
     photoURL: string | null
 }
 
+// type AvatarAction = {
+//     setAvatar: (avatar: string) => void
+//     setPhotoId: (photoId: string | null) => void
+//     setPhotoURL: (photoURL: string | null) => void
+//     clearAvatar: () => void
+// }
 type AvatarAction = {
     setAvatar: (avatar: string) => void
     setPhotoId: (photoId: string | null) => void
     setPhotoURL: (photoURL: string | null) => void
+    setAvatarData: (data: {
+        avatar: string
+        photoId: string | null
+        photoURL: string | null
+    }) => void
     clearAvatar: () => void
 }
+
 
 const initialState: AvatarState = {
     avatar: '',
@@ -24,9 +36,17 @@ export const useAvatarStore = create<AvatarState & AvatarAction>()(
     persist(
         (set) => ({
             ...initialState,
+
             setAvatar: (avatar) => set({ avatar }),
             setPhotoId: (photoId) => set({ photoId }),
             setPhotoURL: (photoURL) => set({ photoURL }),
+            setAvatarData: ({ avatar, photoId, photoURL }) =>
+                set({
+                    avatar,
+                    photoId,
+                    photoURL,
+                }),
+
             clearAvatar: () => set(initialState),
         }),
         {
@@ -35,3 +55,4 @@ export const useAvatarStore = create<AvatarState & AvatarAction>()(
         },
     ),
 )
+

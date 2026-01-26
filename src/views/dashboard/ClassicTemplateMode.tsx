@@ -300,14 +300,14 @@ export default function ClassicTemplateMode() {
     }
 
     const handleFeaturedPhotoUpload = async (files: (File | any)[] | null) => {
-
+console.log(featuredData, 'featuredData?.fileId')
         if (!files || files.length === 0) {
-            if (featuredData?.fileId) {
+            if (featuredData?.uploadId) {
                 try {
-                    await apiDeleteGCPFile(featuredData.fileId)
+                    await apiDeleteGCPFile(featuredData.uploadId)
 
-                    if (featuredData.fileId) {
-                        const key = `featured_${featuredData.fileId}`
+                    if (featuredData.uploadId) {
+                        const key = `featured_${featuredData.uploadId}`
                         clearMediaItem(key)
                     }
 
@@ -464,45 +464,219 @@ export default function ClassicTemplateMode() {
 }
 
 
-    const handleGalleryVideosUpload = async (files: (File | any)[]) => {
-        const existingEntries = videoData.filter(v =>
-            files.some(f => f.uploadId === v.file.uploadId)
-        )
+    // const handleGalleryVideosUpload = async (files: (File | any)[]) => {
+    //     const existingEntries = videoData.filter(v =>
+    //         files.some(f => f.uploadId === v.file.uploadId)
+    //     )
 
-        const removedItems = videoData.filter(v =>
-            !files.some(f => f.uploadId === v.file.uploadId)
-        )
+    //     const removedItems = videoData.filter(v =>
+    //         !files.some(f => f.uploadId === v.file.uploadId)
+    //     )
 
-        for (const item of removedItems) {
-            if (item.res?.uploadId) {
-                try {
-                    if (isEditMode) {
-                        await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
-                    } else {
-                        await apiDeleteGCPFile(item.res.uploadId)
+    //     for (const item of removedItems) {
+    //         if (item.res?.uploadId) {
+    //             try {
+    //                 if (isEditMode) {
+    //                     await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
+    //                 } else {
+    //                     await apiDeleteGCPFile(item.res.uploadId)
+    //                 }
+    //             } catch (error) {
+    //                 console.error('Error deleting video:', error)
+    //             }
+    //         }
+    //     }
+
+    //     const newFiles = files.filter(f => f instanceof File) as File[]
+
+    //     if (newFiles.length > 0) {
+    //         setUploadingVideos(true)
+    //         const res = await uploadFiles(newFiles)
+    //         const newData = newFiles.map((file, i) => ({ file, res: res[i] }))
+    //         const updatedVideos = [...existingEntries, ...newData]
+    //         setVideoData(updatedVideos)
+    //         setValue('videoUploaded', updatedVideos.map(v => v.res || v.file))
+    //         setUploadingVideos(false)
+    //     } else {
+    //         setVideoData(existingEntries)
+    //         setValue('videoUploaded', existingEntries.map(v => v.res || v.file))
+    //     }
+    // }
+// const handleGalleryVideosUpload = async (files: (File | any)[]) => {
+//     // Filter to get only actual new File objects that need uploading
+//     const newFilesToUpload = files.filter(f => f instanceof File) as File[]
+    
+//     // If there are no new files to upload, this is just a removal operation
+//     if (newFilesToUpload.length === 0) {
+//         // Update state to reflect removed files
+//         const updatedData = files.map(f => {
+//             // Find the corresponding entry in videoData
+//             const existing = videoData.find(v => 
+//                 (f.uploadId && v.res?.uploadId === f.uploadId) ||
+//                 (f.fileURL && v.res?.fileURL === f.fileURL)
+//             )
+//             return existing
+//         }).filter(Boolean) as { file: any; res: any }[]
+
+//         // Find and delete removed items
+//         const removedItems = videoData.filter(v =>
+//             !files.some(f => 
+//                 (f.uploadId && f.uploadId === v.res?.uploadId) ||
+//                 (f.fileURL && f.fileURL === v.res?.fileURL)
+//             )
+//         )
+
+//         for (const item of removedItems) {
+//             if (item.res?.uploadId) {
+//                 try {
+//                     if (isEditMode) {
+//                         await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
+//                     } else {
+//                         await apiDeleteGCPFile(item.res.uploadId)
+//                     }
+//                     console.log('Video deleted:', item.res.uploadId)
+//                 } catch (err) {
+//                     console.error('Error deleting video:', err)
+//                 }
+//             }
+//         }
+
+//         setVideoData(updatedData)
+//         setValue('videoUploaded', updatedData.map(v => v.res))
+//         return
+//     }
+
+//     // Upload new files
+//     setUploadingVideos(true)
+//     try {
+//         const res = await uploadFiles(newFilesToUpload)
+//         const newlyUploaded = newFilesToUpload.map((file, i) => ({
+//             file: mapMediaToUploadFile(res[i]),
+//             res: res[i],
+//         }))
+
+//         // Merge with existing data
+//         const finalVideos = [...videoData, ...newlyUploaded]
+//         setVideoData(finalVideos)
+//         setValue('videoUploaded', finalVideos.map(v => v.res))
+//     } catch (error) {
+//         console.error('Error uploading videos:', error)
+//     } finally {
+//         setUploadingVideos(false)
+//     }
+// }
+
+const handleGalleryVideosUpload = async (files: (File | any)[]) => {
+    console.log('=== handleGalleryVideosUpload called ===')
+    console.log('Incoming files:', files)
+    console.log('Current videoData:', videoData)
+    
+    // Separate already-uploaded files from new File instances
+    const existingUploaded = files.filter(f => !(f instanceof File) && (f.uploadId || f.fileURL))
+    const newFilesToUpload = files.filter(f => {
+        // Check if this File was already uploaded by comparing with videoData
+        if (f instanceof File) {
+            const alreadyUploaded = videoData.some(v => 
+                v.file?.originalFileName === f.name && v.file?.size === f.size
+            )
+            return !alreadyUploaded
+        }
+        return false
+    }) as File[]
+    
+    console.log('Existing uploaded:', existingUploaded.length)
+    console.log('New files to upload:', newFilesToUpload.length, newFilesToUpload)
+    
+    // If there are no new files to upload
+    if (newFilesToUpload.length === 0) {
+        // Check if this is a removal operation
+        if (existingUploaded.length < videoData.length) {
+            console.log('Handling removal operation')
+            
+            // Update state to reflect removed files
+            const updatedData = existingUploaded.map(f => {
+                const existing = videoData.find(v => 
+                    (f.uploadId && v.res?.uploadId === f.uploadId) ||
+                    (f.fileURL && v.res?.fileURL === f.fileURL)
+                )
+                return existing
+            }).filter(Boolean) as { file: any; res: any }[]
+
+            // Find and delete removed items
+            const removedItems = videoData.filter(v =>
+                !existingUploaded.some(f => 
+                    (f.uploadId && f.uploadId === v.res?.uploadId) ||
+                    (f.fileURL && f.fileURL === v.res?.fileURL)
+                )
+            )
+
+            console.log('Removed items:', removedItems.length)
+
+            for (const item of removedItems) {
+                if (item.res?.uploadId) {
+                    try {
+                        if (isEditMode) {
+                            await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
+                        } else {
+                            await apiDeleteGCPFile(item.res.uploadId)
+                        }
+                        console.log('Video deleted:', item.res.uploadId)
+                    } catch (err) {
+                        console.error('Error deleting video:', err)
                     }
-                } catch (error) {
-                    console.error('Error deleting video:', error)
                 }
             }
-        }
 
-        const newFiles = files.filter(f => f instanceof File) as File[]
-
-        if (newFiles.length > 0) {
-            setUploadingVideos(true)
-            const res = await uploadFiles(newFiles)
-            const newData = newFiles.map((file, i) => ({ file, res: res[i] }))
-            const updatedVideos = [...existingEntries, ...newData]
-            setVideoData(updatedVideos)
-            setValue('videoUploaded', updatedVideos.map(v => v.res || v.file))
-            setUploadingVideos(false)
+            setVideoData(updatedData)
+            setValue('videoUploaded', updatedData.map(v => v.res))
         } else {
-            setVideoData(existingEntries)
-            setValue('videoUploaded', existingEntries.map(v => v.res || v.file))
+            // No changes, just return
+            console.log('No changes detected')
         }
+        return
     }
 
+    // Upload new files
+    console.log('Starting upload for', newFilesToUpload.length, 'files')
+    setUploadingVideos(true)
+    try {
+        const res = await uploadFiles(newFilesToUpload)
+        console.log('Upload completed. Response:', res)
+        
+        const newlyUploaded = newFilesToUpload.map((file, i) => ({
+            file: mapMediaToUploadFile(res[i]),
+            res: res[i],
+        }))
+
+        console.log('Newly uploaded data:', newlyUploaded)
+
+        // Merge with existing data
+        const finalVideos = [...videoData, ...newlyUploaded]
+        
+        console.log('Final videos count:', finalVideos.length)
+        
+        setVideoData(finalVideos)
+        setValue('videoUploaded', finalVideos.map(v => v.res))
+        
+        toast.push(
+            <Notification type="success" title="Success" duration={2000}>
+                Video(s) uploaded successfully!
+            </Notification>,
+            { placement: 'top-center' }
+        )
+    } catch (error) {
+        console.error('Error uploading videos:', error)
+        toast.push(
+            <Notification type="danger" title="Upload Failed" duration={3000}>
+                Failed to upload video(s). Please try again.
+            </Notification>,
+            { placement: 'top-center' }
+        )
+    } finally {
+        setUploadingVideos(false)
+        console.log('=== End handleGalleryVideosUpload ===')
+    }
+}
     const onSubmit = async (data: any) => {
         setIsSubmitting(true)
         try {
@@ -812,7 +986,7 @@ export default function ClassicTemplateMode() {
                     <FormSection
                         title={
                             <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
-                                Upload Video
+                                Upload Videos
                             </span>
                         }
                         className="mb-8"
@@ -820,10 +994,12 @@ export default function ClassicTemplateMode() {
 
                         <Upload
                             accept="video/*"
-                            uploadLimit={1}
+                            multiple
                             onChange={handleGalleryVideosUpload}
+                            onFileRemove={handleGalleryVideosUpload}
                             uploading={uploadingVideos}
                             defaultFiles={videoData.map(v => v.file)}
+                            isPlusIconVisible={videoData.length > 0 ? true : false}
                         />
 
                         {errors.videoUploaded && (

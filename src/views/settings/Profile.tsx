@@ -28,7 +28,7 @@ export default function Profile() {
     } = useProfileStore()
 
     const setUser = useSessionUser((state) => state.setUser)
-    const { setAvatar, setPhotoId, setPhotoURL } = useAvatarStore()
+    const { setAvatarData, clearAvatar, setPhotoId, setPhotoURL } = useAvatarStore()
 
     const [isUploading, setIsUploading] = useState(false)
     const [isRemoving, setIsRemoving] = useState(false)
@@ -61,9 +61,12 @@ export default function Profile() {
                     updateProfileField('photoURL', uploadedImage.fileURL)
                     updateProfileField('photoId', uploadedImage.uploadId)
                     setUser({ avatar: uploadedImage.fileURL })
-                    setPhotoURL(uploadedImage.fileURL)
-                    setPhotoId(uploadedImage.uploadId)
-                    setAvatar(uploadedImage.fileURL)
+                    setAvatarData({
+                        avatar: uploadedImage.fileURL,
+                        photoURL: uploadedImage.fileURL,
+                        photoId: uploadedImage.uploadId,
+                    })
+
                 }
             } catch (error) {
                 console.error('Failed to upload image', error)
@@ -86,8 +89,7 @@ export default function Profile() {
             )
             updateProfileField('photoId', null)
             setUser({ avatar: '' })
-            setPhotoURL(null)
-            setPhotoId(null)
+            clearAvatar()
             return
         }
 
@@ -100,8 +102,7 @@ export default function Profile() {
             )
             updateProfileField('photoId', null)
             setUser({ avatar: '' })
-            setPhotoURL(null)
-            setPhotoId(null)
+            clearAvatar()
             toast.push(
                 <Notification title="Image Removed" type="success">
                     Profile image has been removed.
@@ -188,8 +189,19 @@ export default function Profile() {
         }
     }, [])
 
-    const profilePic = profile?.photoURL || 'https://api.builder.io/api/v1/image/assets/TEMP/83dc85ca9155608ff3d7e17a997653fd5f9ed739?width=248'
+    useEffect(() => {
+    if (profile?.photoURL) {
+        setAvatarData({
+            avatar: profile.photoURL,
+            photoURL: profile.photoURL,
+            photoId: profile.photoId,
+        })
+    }
+}, [profile?.photoURL])
 
+
+    const profilePic = profile?.photoURL || 'https://api.builder.io/api/v1/image/assets/TEMP/83dc85ca9155608ff3d7e17a997653fd5f9ed739?width=248'
+console.log(profile?.photoURL, 'profilePic')
     useEffect(() => {
         const countryValue = profile?.country || profile?.callingCode || 'US'
         const country = options.find((c) => c.value === countryValue)
