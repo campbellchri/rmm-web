@@ -74,7 +74,7 @@ const SignUpForm = (props: SignUpFormProps) => {
             >
                 {/* User name */}
                 <FormItem
-                    label="User name"
+                    label="Username"
                     invalid={Boolean(errors.name)}
                     errorMessage={errors.name?.message}
                 >

@@ -861,7 +861,7 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                                 }
                             />
                         </div>
-                        <div className="mt-4">
+                        {/* <div className="mt-4">
                             <CommonInput
                                 name="favSaying"
                                 control={control}
@@ -870,7 +870,7 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                                 invalid={Boolean(errors.favSaying)}
                                 errorMessage={errors.favSaying?.message}
                             />
-                        </div>
+                        </div> */}
                     </FormSection>
 
                     {/* Upload Video */}

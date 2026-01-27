@@ -258,7 +258,11 @@ const CreateMemorial = () => {
                                     )
                                 }
                                 disabled={!selectedMode}
-                                className="bg-[#C7A30D] text-black font-poppins text-base px-6 py-2.5 rounded-md hover:bg-[#B8940C] transition-colors disabled:opacity-50"
+                                className="bg-[#C7A30D] text-black font-poppins text-base px-6 py-2.5 hover:bg-[#B8940C] transition-colors rounded-[1000px]"
+                                style={{
+                                    background:
+                                        'linear-gradient(96.23deg, #ECA024 5.01%, #F9C94F 50.03%, #EAA32A 95.05%)',
+                                }}
                             >
                                 Save & Continue
                             </button>

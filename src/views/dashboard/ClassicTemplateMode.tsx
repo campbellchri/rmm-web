@@ -63,6 +63,7 @@ const validationSchema = z.object({
     videoTitle: z.string().min(1, { message: 'Video Title is required' }),
     lifeStoryText: z.string().min(1, { message: 'Life Story is required' }),
     favQuote: z.string().optional(),
+    featuredPhotoFavoriteSaying: z.string().optional(),
     favoriteSaying: z.string().optional(),
     quoteBy: z.string().optional(),
     featuredPhoto: z.any().refine((val) => !!val, { message: 'Featured Photo is required' }),
@@ -115,6 +116,7 @@ export default function ClassicTemplateMode() {
             personDeathDate: undefined,
             favQuote: '',
             videoTitle: '',
+            featuredPhotoFavoriteSaying: '',
             favoriteSaying: '',
             quoteBy: '',
             lifeStoryText: '',
@@ -166,6 +168,7 @@ export default function ClassicTemplateMode() {
                                 ? new Date(memorialRes.personDeathDate)
                                 : undefined,
                             favQuote: memorialRes.favQuote || '',
+                            featuredPhotoFavoriteSaying: memorialRes.featuredPhotoFavoriteSaying || '',
                             favoriteSaying:
                                 memorialRes.favoriteSayings?.[0]?.content || '',
                             quoteBy:
@@ -580,6 +583,7 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                 pageURL: `${window.location.origin}/memorial/${data.personName.toLowerCase().replace(/\s+/g, '-')}`,
                 featuredPhotoId: featuredData?.uploadId || null,
                 featuredPhotoURL: featuredData?.fileURL || null,
+                // featuredPhotoFavoriteSaying: data.featuredPhotoFavoriteSaying,
                 lifeStoryText: data.lifeStoryText,
                 lifeStoryImageId: lifeStoryData?.uploadId || null,
                 lifeStoryImageURL: lifeStoryData?.fileURL || null,
@@ -864,6 +868,14 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                         {errors.featuredPhoto && (
                             <p className="text-red-500 text-sm mt-2">{(errors.featuredPhoto as any).message}</p>
                         )}
+                         <div className="my-4">
+                            <CommonInput
+                                name="featuredPhotoFavoriteSaying"
+                                control={control}
+                                label="Favorite Sayings (Optional)"
+                                placeholder="Enter sayings here..."
+                            />
+                        </div>
                     </FormSection>
 
                     <FormSection

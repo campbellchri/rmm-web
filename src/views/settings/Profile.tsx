@@ -438,7 +438,7 @@ console.log(profile?.photoURL, 'profilePic')
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="bg-[#C7A30D] text-white font-poppins font-bold text-sm px-5 py-3.5 rounded-xl hover:bg-[#B8940C] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-[#FFB84C] text-[#222D38] font-poppins font-[500] text-[15px] px-5 py-3.5 rounded-[12px]"
                     >
                         {isSaving ? 'Saving...' : 'Save'}
                     </button>
