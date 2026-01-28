@@ -845,7 +845,7 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                             }
                         />
                         {errors.featuredVideo && (
-                            <p className="text-red-500 text-sm mt-2">
+                            <p className="text-[#e26253] text-sm mt-2">
                                 {(errors.featuredVideo as any).message}
                             </p>
                         )}

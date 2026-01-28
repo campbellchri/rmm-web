@@ -507,7 +507,7 @@ export default function EventMode() {
                                                             className={`text-white bg-[#383C56] border-none ${errors.eventStartTime ? 'border-red-500' : ''}`}
                                                         />
                                                         {errors.eventStartTime && (
-                                                            <p className="text-red-500 text-sm mt-1">{(errors.eventStartTime as any).message}</p>
+                                                            <p className="text-[#e26253] text-sm mt-1">{(errors.eventStartTime as any).message}</p>
                                                         )}
                                                     </div>
                                                 )}
@@ -554,7 +554,7 @@ export default function EventMode() {
                                     defaultFiles={videoData ? [videoData] : []}
                                 />
                                 {errors.eventVideo && (
-                                    <p className="text-red-500 text-sm mt-2">{(errors.eventVideo as any).message}</p>
+                                    <p className="text-[#e26253] text-sm mt-2">{(errors.eventVideo as any).message}</p>
                                 )}
                             </div>
 

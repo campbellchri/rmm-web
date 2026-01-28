@@ -141,50 +141,6 @@ export default function Memorial() {
                 </div>
                 <div className="flex gap-3">
                     <button
-                        onClick={async () => {
-                            try {
-                                if (!memorialId) {
-                                    toast.push(
-                                        <Notification type="danger" title="Error" duration={2000}>
-                                            Memorial ID not found.
-                                        </Notification>,
-                                        { placement: 'top-center' }
-                                    )
-                                    return
-                                }
-                                await apiSetFeaturedMemorial({ memorialId })
-                                toast.push(
-                                    <Notification
-                                        type="success"
-                                        title="Success"
-                                        duration={2000}
-                                    >
-                                        Memorial set as featured successfully!
-                                    </Notification>,
-                                    { placement: 'top-center' }
-                                )
-                            } catch (error) {
-                                console.error(
-                                    'Error setting featured memorial:',
-                                    error
-                                )
-                                toast.push(
-                                    <Notification
-                                        type="danger"
-                                        title="Error"
-                                        duration={2000}
-                                    >
-                                        Failed to set memorial as featured.
-                                    </Notification>,
-                                    { placement: 'top-center' }
-                                )
-                            }
-                        }}
-                        className="md:px-6 px-3 md:py-2.5 py-1 border border-[#FFB84C] text-[#FFB84C] rounded-md font-poppins text-base hover:bg-[#FFB84C]/10 transition-colors"
-                    >
-                        Set As Featured
-                    </button>
-                    <button
                        onClick={() => setShowDeleteModal(true)}
                         disabled={isDeleting}
                         className="md:px-6 px-3 md:py-2.5 py-1 border border-red-500 text-red-500 rounded-md font-poppins text-base hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
@@ -242,7 +198,51 @@ export default function Memorial() {
                                 <p className="font-poppins text-base md:text-[19px] text-[#ffffff] leading-relaxed mb-4 sm:mb-6 text-center md:text-left">
                                     {memorialDetails?.favQuote}
                                 </p>
-                                <div className="flex justify-center  lg:justify-end">
+                                <div className="flex justify-center gap-3 lg:justify-end">
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                if (!memorialId) {
+                                                    toast.push(
+                                                        <Notification type="danger" title="Error" duration={2000}>
+                                                            Memorial ID not found.
+                                                        </Notification>,
+                                                        { placement: 'top-center' }
+                                                    )
+                                                    return
+                                                }
+                                                await apiSetFeaturedMemorial({ memorialId })
+                                                toast.push(
+                                                    <Notification
+                                                        type="success"
+                                                        title="Success"
+                                                        duration={2000}
+                                                    >
+                                                        Memorial set as featured successfully!
+                                                    </Notification>,
+                                                    { placement: 'top-center' }
+                                                )
+                                            } catch (error) {
+                                                console.error(
+                                                    'Error setting featured memorial:',
+                                                    error
+                                                )
+                                                toast.push(
+                                                    <Notification
+                                                        type="danger"
+                                                        title="Error"
+                                                        duration={2000}
+                                                    >
+                                                        Failed to set memorial as featured.
+                                                    </Notification>,
+                                                    { placement: 'top-center' }
+                                                )
+                                            }
+                                        }}
+                                        className="md:px-6 px-3 md:py-2.5 py-1 border border-[#FFFFFF] text-[#FFFFFF] rounded-[46px] font-poppins text-[16px] font-[500] hover:bg-[#FFFFFF]/10 transition-colors"
+                                    >
+                                        Set As Featured
+                                    </button>
                                     <button
                                         onClick={() =>
                                             navigate(
@@ -255,7 +255,7 @@ export default function Memorial() {
                                                 },
                                             )
                                         }
-                                        className="text-black font-poppins text-sm md:text-base px-4 sm:px-6 py-2 sm:py-2.5 rounded-[1000px] transition-colors"
+                                        className="text-[#222D38] font-[500] text-[16px] font-poppins px-4 sm:px-6 py-2 sm:py-2.5 rounded-[1000px] transition-colors"
                                         style={{
                                             background:
                                                 'linear-gradient(96.23deg, #ECA024 5.01%, #F9C94F 50.03%, #EAA32A 95.05%)',

@@ -133,7 +133,7 @@ export default function EventMemorial() {
                             <ArrowLeft />
                         </button>
                         <div className="flex gap-3">
-                            <button
+                            {/* <button
                                 onClick={async () => {
                                     try {
                                         if (!memorialId) {
@@ -176,7 +176,7 @@ export default function EventMemorial() {
                                 className="md:px-6 px-3 md:py-2.5 py-1 border border-[#FFB84C] text-[#FFB84C] rounded-md font-poppins text-base hover:bg-[#FFB84C]/10 transition-colors"
                             >
                                 Set As Featured
-                            </button>
+                            </button> */}
                             <button
                                 onClick={() => setShowDeleteModal(true)}
                                 disabled={isDeleting}

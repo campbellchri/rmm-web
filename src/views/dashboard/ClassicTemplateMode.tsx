@@ -523,23 +523,18 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
     }
 
     // Upload new files
-    console.log('Starting upload for', newFilesToUpload.length, 'files')
     setUploadingVideos(true)
     try {
         const res = await uploadFiles(newFilesToUpload)
-        console.log('Upload completed. Response:', res)
         
         const newlyUploaded = newFilesToUpload.map((file, i) => ({
             file: mapMediaToUploadFile(res[i]),
             res: res[i],
         }))
 
-        console.log('Newly uploaded data:', newlyUploaded)
-
         // Merge with existing data
         const finalVideos = [...videoData, ...newlyUploaded]
         
-        console.log('Final videos count:', finalVideos.length)
         
         setVideoData(finalVideos)
         setValue('videoUploaded', finalVideos.map(v => v.res))
@@ -871,7 +866,7 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                         />
 
                         {errors.featuredPhoto && (
-                            <p className="text-red-500 text-sm mt-2">{(errors.featuredPhoto as any).message}</p>
+                            <p className="text-[#e26253] text-sm mt-2">{(errors.featuredPhoto as any).message}</p>
                         )}
                          <div className="my-4">
                             <CommonInput
@@ -903,7 +898,7 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                         />
 
                         {errors.videoUploaded && (
-                            <p className="text-red-500 text-sm mt-2">{(errors.videoUploaded as any).message}</p>
+                            <p className="text-[#e26253] text-sm mt-2">{(errors.videoUploaded as any).message}</p>
                         )}
                         <div className="mt-4">
                             <CommonInput
@@ -936,7 +931,7 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                         />
 
                         {errors.photoUploaded && (
-                            <p className="text-red-500 text-sm mt-2">{(errors.photoUploaded as any).message}</p>
+                            <p className="text-[#e26253] text-sm mt-2">{(errors.photoUploaded as any).message}</p>
                         )}
                     </FormSection>
 
@@ -994,7 +989,7 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                                     defaultFile={lifeStoryData}
                                 />
                                 {errors.lifeStoryImage && (
-                                    <p className="text-red-500 text-sm mt-2">{(errors.lifeStoryImage as any).message}</p>
+                                    <p className="text-[#e26253] text-sm mt-2">{(errors.lifeStoryImage as any).message}</p>
                                 )}
                             </div>
                             <div>
