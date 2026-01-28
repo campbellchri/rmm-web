@@ -162,7 +162,7 @@ const previewFiles = isPlusIconVisible
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full h-[100px]">
                     {previewFiles.map((file, index) => {
                         const isExisting = !(file instanceof File)
                         const fileURL = isExisting ? file.fileURL : URL.createObjectURL(file)
@@ -179,7 +179,7 @@ const previewFiles = isPlusIconVisible
                                     <img
                                         src={fileURL}
                                         alt={isExisting ? 'Existing media' : file.name}
-                                        className="max-w-full max-h-40 object-cover mx-auto"
+                                        className="max-w-full h-full object-cover mx-auto"
                                     />
                                 )}
 
@@ -187,7 +187,7 @@ const previewFiles = isPlusIconVisible
                                     <video
                                         src={fileURL}
                                         controls
-                                        className="max-w-full max-h-40 object-cover mx-auto"
+                                        className="max-w-full h-full object-cover mx-auto"
                                     />
                                 )}
 

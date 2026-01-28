@@ -935,63 +935,64 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                             />
                         </div>
                     </FormSection>
+                        <div className='flex gap-4'>
+                            <FormSection
+                                title={
+                                    <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
+                                        Memorial Video Gallery
+                                    </span>
+                                }
+                                className="mb-8 w-[50%]"
+                            >
 
-                    <FormSection
-                        title={
-                            <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
-                                Upload Videos
-                            </span>
-                        }
-                        className="mb-8"
-                    >
+                                <Upload
+                                    accept="video/*"
+                                    multiple
+                                    onChange={handleGalleryVideosUpload}
+                                    onFileRemove={handleGalleryVideosUpload}
+                                    uploading={uploadingVideos}
+                                    defaultFiles={videoData.map(v => v.file)}
+                                    isPlusIconVisible={videoData.length > 0 ? true : false}
+                                />
 
-                        <Upload
-                            accept="video/*"
-                            multiple
-                            onChange={handleGalleryVideosUpload}
-                            onFileRemove={handleGalleryVideosUpload}
-                            uploading={uploadingVideos}
-                            defaultFiles={videoData.map(v => v.file)}
-                            isPlusIconVisible={videoData.length > 0 ? true : false}
-                        />
+                                {errors.videoUploaded && (
+                                    <p className="text-[#e26253] text-sm mt-2">{(errors.videoUploaded as any).message}</p>
+                                )}
+                                <div className="mt-4">
+                                    <CommonInput
+                                        name="videoTitle"
+                                        control={control}
+                                        label="Video Title"
+                                        placeholder="Enter Video Title"
+                                        invalid={Boolean(errors.videoTitle)}
+                                        errorMessage={errors.videoTitle?.message}
+                                    />
+                                </div>
+                            </FormSection>
+                            <FormSection
+                                title={
+                                    <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
+                                        Photo Gallery
+                                    </span>
+                                }
+                                className="mb-8 w-[50%]"
+                            >
+                                
+                                <Upload
+                                key={isEditMode ? memorialId : 'create-photos'}
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleGalleryPhotosUpload}
+                                    uploading={uploadingPhotos}
+                                    defaultFiles={photosData.map(p => p.file)}
+                                    isPlusIconVisible={photosData.length > 0 ? true : false}
+                                />
 
-                        {errors.videoUploaded && (
-                            <p className="text-[#e26253] text-sm mt-2">{(errors.videoUploaded as any).message}</p>
-                        )}
-                        <div className="mt-4">
-                            <CommonInput
-                                name="videoTitle"
-                                control={control}
-                                label="Video Title"
-                                placeholder="Enter Video Title"
-                                invalid={Boolean(errors.videoTitle)}
-                                errorMessage={errors.videoTitle?.message}
-                            />
+                                {errors.photoUploaded && (
+                                    <p className="text-[#e26253] text-sm mt-2">{(errors.photoUploaded as any).message}</p>
+                                )}
+                            </FormSection>
                         </div>
-                    </FormSection>
-                    <FormSection
-                        title={
-                            <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
-                                Upload Photos
-                            </span>
-                        }
-                        className="mb-8"
-                    >
-                        
-                        <Upload
-                        key={isEditMode ? memorialId : 'create-photos'}
-                            accept="image/*"
-                            multiple
-                            onChange={handleGalleryPhotosUpload}
-                            uploading={uploadingPhotos}
-                            defaultFiles={photosData.map(p => p.file)}
-                            isPlusIconVisible={photosData.length > 0 ? true : false}
-                        />
-
-                        {errors.photoUploaded && (
-                            <p className="text-[#e26253] text-sm mt-2">{(errors.photoUploaded as any).message}</p>
-                        )}
-                    </FormSection>
 
                     <FormSection
                         title={

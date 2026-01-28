@@ -124,6 +124,7 @@ export default function EventMemorial() {
             setIsDeleting(false)
         }
     }
+    const LogoLink = '/img/others/Link.png'
 
     return (
         <>
@@ -138,80 +139,41 @@ export default function EventMemorial() {
             onConfirm={handleDeleteMemorial}
             />
 
-            <div className="min-h-screen">
+            <div className="min-h-screen bg-[url('/img/others/full_memorial_bg.png')] bg-cover bg-center w-full">
+           
                 <div className=" py-16 relative">
+                    <div className="flex-shrink-0 flex items-center justify-center ">
+                        <img
+                            src={LogoLink}
+                            alt="Remember Memorials Logo"
+                            className="h-32 sm:h-40 md:h-52 lg:h-70 w-auto mt-[-20px]"
+                        />
+                    </div>
                     <div className="absolute top-3 w-full px-6 flex justify-between items-center">
+                        
                         <button
                             onClick={() => navigate('/dashboard')}
                             className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
                         >
-                            <ArrowLeft />
+                            <ArrowLeft className='text-[#ffffff]' />
                         </button>
-                        <div className="flex gap-3">
-                            {/* <button
-                                onClick={async () => {
-                                    try {
-                                        if (!memorialId) {
-                                            toast.push(
-                                                <Notification type="danger" title="Error" duration={2000}>
-                                                    Memorial ID not found.
-                                                </Notification>,
-                                                { placement: 'top-center' }
-                                            )
-                                            return
-                                        }
-                                        await apiSetFeaturedMemorial({ memorialId })
-                                        toast.push(
-                                            <Notification
-                                                type="success"
-                                                title="Success"
-                                                duration={2000}
-                                            >
-                                                Memorial set as featured successfully!
-                                            </Notification>,
-                                            { placement: 'top-center' }
-                                        )
-                                    } catch (error) {
-                                        console.error(
-                                            'Error setting featured memorial:',
-                                            error
-                                        )
-                                        toast.push(
-                                            <Notification
-                                                type="danger"
-                                                title="Error"
-                                                duration={2000}
-                                            >
-                                                Failed to set memorial as featured.
-                                            </Notification>,
-                                            { placement: 'top-center' }
-                                        )
-                                    }
-                                }}
-                                className="md:px-6 px-3 md:py-2.5 py-1 border border-[#FFB84C] text-[#FFB84C] rounded-md font-poppins text-base hover:bg-[#FFB84C]/10 transition-colors"
-                            >
-                                Set As Featured
-                            </button> */}
-                            <button
-                                onClick={() => setShowDeleteModal(true)}
-                                disabled={isDeleting}
-                                className="md:px-6 px-3 md:py-2.5 py-1 border border-red-500 text-red-500 rounded-md font-poppins text-base hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                                {isDeleting ? 'Deleting...' : 'Delete Memorial'}
-                            </button>
-                        </div>
                     </div>
-                    <div className="max-w-4xl mx-auto text-center px-6">
+                    <div className="max-w-7xl mx-auto text-center px-6">
                         <p className="DMSerif md:text-[42px] text-2xl leading-tight text-[#ffffff] mb-2">
                             {memorialDetails?.personName || 'James William Thompson'}
                         </p>
                         <p className="font-poppins md:text-2xl text:2xl font-[500] text-[#ffffff] mb-2.5">
                             {memorialDetails?.personName}
                         </p>
-                        <p className="monteCarlo text-[22px] text-[#ffffff]">
-                            {memorialDetails?.personName}
-                        </p>
+
+                        <button
+                            onClick={() => setShowDeleteModal(true)}
+                            disabled={isDeleting}
+                            className="md:px-6 px-3 md:py-2.5 py-1 flex ml-auto items-center gap-1 w-[max-content] border border-[#FFFFFF] text-[#FFFFFF] rounded-[46px] font-poppins text-[14px] font-[500] hover:bg-[#FFFFFF]/10 transition-colors"
+                        >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                            {isDeleting ? 'Deleting...' : 'Delete Memorial'}
+                        </button>
                     </div>
                 </div>
 

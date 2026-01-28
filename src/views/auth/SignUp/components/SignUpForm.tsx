@@ -24,7 +24,10 @@ type SignUpFormSchema = {
 
 const validationSchema: ZodType<SignUpFormSchema> = z.object({
     email: z.string({ required_error: 'Please enter your email' }),
-    name: z.string({ required_error: 'Please enter your name' }),
+    name: z
+        .string({ required_error: 'Please enter your name' })
+        .min(3, 'Username must be at least 3 characters')
+        .regex(/^\S+$/, 'Username must not contain spaces'),
     password: z.string({ required_error: 'Password Required' }),
     // confirmPassword: z.string({
     //     required_error: 'Confirm Password Required',

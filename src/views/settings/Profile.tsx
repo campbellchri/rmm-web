@@ -438,7 +438,11 @@ console.log(profile?.photoURL, 'profilePic')
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="bg-[#FFB84C] text-[#222D38] font-poppins font-[500] text-[15px] px-5 py-3.5 rounded-[12px]"
+                        className="bg-[#C7A30D] text-black font-poppins text-base px-6 py-2 hover:bg-[#B8940C] transition-colors rounded-[1000px]"
+                        style={{
+                            background:
+                                'linear-gradient(96.23deg, #ECA024 5.01%, #F9C94F 50.03%, #EAA32A 95.05%)',
+                        }}
                     >
                         {isSaving ? 'Saving...' : 'Save'}
                     </button>
