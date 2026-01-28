@@ -706,6 +706,39 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
         handleSubmit(onSubmit)()
     }
 
+    const validateSquareImage = (
+    file: File,
+    minSize = 400
+): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image()
+        const url = URL.createObjectURL(file)
+
+        img.onload = () => {
+            const { width, height } = img
+            URL.revokeObjectURL(url)
+
+            if (width !== height) {
+                reject('Image must be square (1:1 ratio)')
+                return
+            }
+
+            if (width < minSize || height < minSize) {
+                reject(`Image must be at least ${minSize} x ${minSize}px`)
+                return
+            }
+
+            resolve()
+        }
+
+        img.onerror = () => {
+            URL.revokeObjectURL(url)
+            reject('Invalid image file')
+        }
+
+        img.src = url
+    })
+    }
 
     return (
         <>
@@ -728,8 +761,9 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                     </div>
 
                     <div className="flex flex-col items-center gap-5 mb-8">
-                        <div className="flex items-center gap-4 w-full">
-                            <div className="lg:w-31 lg:h-31 md:w-25 md:h-25 h-20 w-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                        <div className="flex items-center gap-8 w-full bg-[#2f3349] min-h-[180px] rounded-[14px] py-[20px] px-[30px]">
+                            <div className="w-[96px] h-[96px] md:w-[120px] md:h-[120px] lg:w-[140px] lg:h-[140px]
+                                rounded-[12px] overflow-hidden bg-[#E5E7EB] flex items-center justify-center">
                                 {profileImage ? (
                                     <img
                                         src={profileImage}
@@ -745,36 +779,60 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                                 )}
                             </div>
 
-                            <button
-                                type="button"
-                                disabled={uploadingProfile}
-                                onClick={() =>
-                                    document
-                                        .getElementById('profileUpload')
-                                        ?.click()
-                                }
-                                className="md:px-6 px-3 font-medium text-[21.26px] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-poppins border-[#FFB84C] disabled:opacity-50"
-                            >
-                                {uploadingProfile ? 'Uploading...' : 'Upload Profile'}
-                            </button>
+                            <div className='flex flex-col gap-4'>
+                                <p className='text-[#FFFFFF] text-[18px] font-[400] font-Arial'>Profile Photo</p>
+                                <p className='text-[#99A1AF] text-[14px] font-[400] font-Arial'>
+                                    Upload a high-quality photo of your loved one. This will be the main photo displayed on the memorial page.
+                                </p>
 
-                            <input
+                                <button
+                                    type="button"
+                                    disabled={uploadingProfile}
+                                    onClick={() =>
+                                        document
+                                            .getElementById('profileUpload')
+                                            ?.click()
+                                    }
+                                    className="md:px-[21px] py-[7px] px-3 font-medium text-[16px] font-[400] w-[max-content] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-Arial border-[#FFB84C] disabled:opacity-50"
+                                >
+                                    {uploadingProfile
+                                    ? 'Uploading...'
+                                    : profileImage
+                                        ? 'Change Photo'
+                                        : 'Upload Profile'
+                                }
+
+                                </button>
+
+                                <input
                                 id="profileUpload"
                                 type="file"
                                 accept="image/*"
                                 className="hidden"
-                                onChange={(e) => {
+                                onChange={async (e) => {
                                     const file = e.target.files?.[0]
-                                    if (file) {
+                                    if (!file) return
+
+                                    try {
+                                        await validateSquareImage(file, 400)
                                         setProfileFile(file)
                                         handleProfileUpload(file)
-                                        console.log(
-                                            'File selected:',
-                                            file.name,
+                                    } catch (err: any) {
+                                        toast.push(
+                                            <Notification type="danger" title="Invalid Image" duration={3000}>
+                                                {err}
+                                            </Notification>,
+                                            { placement: 'top-center' }
                                         )
+                                    } finally {
+                                        e.target.value = '' // reset input
                                     }
                                 }}
                             />
+
+                                <p className='text-[#6A7282] text-[12px] font-[400] font-Arial'>Recommended: Square image, at least 400 x 400px</p>
+                            </div>
+
                         </div>
 
                         <div className="w-full bg-[#2f3349] rounded-lg p-6 shadow">
