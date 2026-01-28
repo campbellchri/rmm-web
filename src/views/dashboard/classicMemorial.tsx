@@ -226,9 +226,6 @@ export default function Memorial() {
                                         )}
                                     </div>
                                 </div>
-                                <div className="monteCarlo text-lg sm:text-[22px] text-[#ffffff]">
-                                    A Life Well Lived
-                                </div>
                             </div>
                         </div>
 

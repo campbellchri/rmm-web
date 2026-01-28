@@ -45,7 +45,7 @@ const HomeNavbar = () => {
 
     return (
         <header className=" z-50 w-full">
-            <div className="mx-auto px-6 lg:px-25 py-[20px]">
+           <div className={`mx-auto px-6 lg:px-25 py-[20px]`}>
                 <div className="flex items-center justify-between h-24">
                     {/* Left Navigation - Desktop */}
                     <nav className="hidden lg:flex">

@@ -72,7 +72,7 @@ const FormItem = (props: FormItemProps) => {
     )
 
     const formLabelClass = classNames(
-        'form-label font-poppins font-[400] text-[16px] text-[#ffffff]',
+        'form-label font-Arial font-[400] text-[14px] text-[#D1D5DC]',
         label && getFormLabelLayoutClass(),
         labelClass,
     )

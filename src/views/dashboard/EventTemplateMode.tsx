@@ -386,7 +386,7 @@ export default function EventMode() {
 
                     <div className="flex flex-col gap-5">
                         <div className="flex flex-col items-center gap-5 mb-8">
-                            <div className="flex items-center gap-4">
+                            {/* <div className="flex items-center gap-4">
                                 <div className="lg:w-31 lg:h-31 md:w-25 md:h-25 h-20 w-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                                     {profileImage ? (
                                         <img
@@ -431,7 +431,7 @@ export default function EventMode() {
                                         }
                                     }}
                                 />
-                            </div>
+                            </div> */}
 
                             <div className="w-full bg-[#2f3349] rounded-lg p-6 shadow">
                                 <CommonInput

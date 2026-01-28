@@ -733,7 +733,7 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                     </div>
 
                     <div className="flex flex-col items-center gap-5 mb-8">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 w-full">
                             <div className="lg:w-31 lg:h-31 md:w-25 md:h-25 h-20 w-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                                 {profileImage ? (
                                     <img
@@ -783,9 +783,10 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                         </div>
 
                         <div className="w-full bg-[#2f3349] rounded-lg p-6 shadow">
-                            <div className="space-y-4">
+                            <div className="space-y-2">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <CommonInput
+                                        label='Full Name*'
                                         name="personName"
                                         control={control}
                                         placeholder="Full Name"
@@ -793,6 +794,7 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                                         errorMessage={errors.personName?.message}
                                     />
                                     <CommonSelect
+                                        label='Gender'
                                         name="personGender"
                                         control={control}
                                         options={genderOptions}
@@ -804,6 +806,7 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <CommonDatePicker
+                                        label='Date of Birth *'
                                         name="personBirthDate"
                                         control={control}
                                         placeholder="Date of Birth"
@@ -814,6 +817,7 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                                         }
                                     />
                                     <CommonDatePicker
+                                        label='Date of Death *'
                                         name="personDeathDate"
                                         control={control}
                                         placeholder="Date of Death"
@@ -829,6 +833,7 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                                 <CommonInput
                                     name="favQuote"
                                     control={control}
+                                    labelClassName="text-[#FFFFFF] text-[16px] font-[]"
                                     label="Write a Quote (Optional)"
                                     placeholder="Type here..."
                                     maxLength={150}

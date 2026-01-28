@@ -80,7 +80,7 @@ const Input = (props: InputProps) => {
 
     const inputDefaultClass = `
   input  
-  rounded-[12px]
+  rounded-[10px]
   text-sm
   outline-none
   font-normal   

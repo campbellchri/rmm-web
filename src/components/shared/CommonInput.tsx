@@ -59,7 +59,7 @@ const CommonInput = <TFieldValues extends FieldValues>(
                             ref={fieldRef as any}
                             value={propValue !== undefined ? propValue : field.value}
                             placeholder={rest.placeholder}
-                            className={className || `!bg-[#383C56] !text-white border border-[#454a64] ${floatingLabel ? 'pt-6 pb-2' : ''}`}
+                            className={className || `!bg-[#383C56] !text-white h-12 border border-[#454a64] ${floatingLabel ? 'pt-6 pb-2' : ''}`}
                             onFocus={(e) => {
                                 setIsFocused(true)
                                 rest.onFocus?.(e as any)
@@ -77,7 +77,7 @@ const CommonInput = <TFieldValues extends FieldValues>(
                             type={type}
                             value={propValue !== undefined ? propValue : field.value}
                             placeholder={rest.placeholder}
-                            className={className || `!bg-[#383C56] !text-white border border-[#454a64] ${floatingLabel ? 'pt-6 pb-2' : ''}`}
+                            className={className || `!bg-[#383C56] !text-white h-12 border border-[#454a64] ${floatingLabel ? 'pt-6 pb-2' : ''}`}
                             onFocus={(e) => {
                                 setIsFocused(true)
                                 rest.onFocus?.(e as any)

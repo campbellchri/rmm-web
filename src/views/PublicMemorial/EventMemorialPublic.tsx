@@ -2,6 +2,7 @@ import { useState, useRef } from "react"
 import { QRCodeCanvas } from "qrcode.react"
 import { Play, Copy, Facebook, Twitter, QrCode } from "lucide-react"
 import { Memorial } from "./types"
+import HomeNavbar from "../Home/HomeNavbar"
 
 interface EventMemorialProps {
   memorial: Memorial
@@ -37,31 +38,21 @@ export default function EventMemorialPublic({ memorial }: EventMemorialProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#1B1C2A] text-white">
-      <div className="py-16 relative">
-        {memorial.landingMode && (
-          <div className="absolute top-3 w-full px-6 flex justify-between items-center">
-            <div className="flex items-center gap-2">
+    <div className="min-h-screen bg-[url('/img/others/full_memorial_bg.png')] bg-cover bg-center w-full">
+      <HomeNavbar />
+          <div className="flex-shrink-0 flex items-center justify-center ">
               <img
-                src={memorial.landingMode.iconURL}
-                alt={memorial.landingMode.title}
-                className="w-8 h-8"
+                  src="/img/others/Link.png"
+                  alt="Remember Memorials Logo"
+                  className="h-32 sm:h-40 md:h-52 lg:h-70 w-auto mt-[-40px] sm:mt-[-60px] md:mt-[-75px] lg:mt-[-130px]"
               />
-              <span className="font-poppins">{memorial.landingMode.title}</span>
-            </div>
           </div>
-        )}
-
+      <div className="py-16 relative">
         <div className="max-w-4xl mx-auto text-center px-6">
-          <img
-            src={imageUrl}
-            alt={memorial.personName}
-            className="mx-auto w-48 h-48 rounded-full object-cover mb-4 border-4 border-[#C7A30D]"
-          />
-          <p className="DMSerif md:text-[42px] text-2xl leading-tight mb-2">
+          <p className="DMSerif md:text-[42px] font-[400] text-[#FFFFFF] text-2xl mb-2">
             {memorial.personName}
           </p>
-          {memorial.favQuote && <p className="monteCarlo text-[22px]">{memorial.favQuote}</p>}
+          {memorial?.favQuote && <p className="font-poppins text-[#FFFFFF] font-[500] text-[22px]">{memorial.favQuote}</p>}
         </div>
       </div>
 
@@ -97,7 +88,7 @@ export default function EventMemorialPublic({ memorial }: EventMemorialProps) {
 
             {memorial.eventStart && (
               <div className="text-center mt-8 space-y-2">
-                <p className="DMSerif md:text-[40px] text-2xl leading-tight">
+                <p className="DMSerif md:text-[40px] text-[#FFFFFF] text-2xl leading-tight">
                   Memorial Service{" "}
                   {new Date(memorial.eventStart).toLocaleDateString("en-US", {
                     month: "long",
@@ -105,7 +96,6 @@ export default function EventMemorialPublic({ memorial }: EventMemorialProps) {
                     year: "numeric",
                   })}
                 </p>
-                <p className="monteCarlo text-[22px]">A Life Well Lived</p>
               </div>
             )}
           </div>
@@ -125,11 +115,11 @@ export default function EventMemorialPublic({ memorial }: EventMemorialProps) {
         <div className="w-[200px] h-0.5 bg-gradient-to-r from-transparent via-[#B99F6B] to-transparent"></div>
       </div>
 
-      <section className="bg-[#2F3349] rounded-lg p-6 shadow-sm max-w-4xl mx-auto">
-        <p className="font-poppins text-lg mb-4">Share Memorial Page</p>
+      <section className="bg-[#2F3349] rounded-lg p-6 shadow-sm max-w-[76rem] mx-auto my-6">
+        <p className="font-poppins text-[#FFFFFF] text-lg mb-4">Share Memorial Page</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
-            <p className="font-poppins text-base">Share this memorial page with friends and family</p>
+            <p className="font-poppins text-[#FFFFFF] text-base">Share this memorial page with friends and family</p>
             <div className="flex gap-3">
               <button className="w-10 h-10 bg-[#2563EB] rounded-full flex items-center justify-center hover:bg-[#245cf7] transition-colors">
                 <Facebook className="w-5 h-5 text-white" />

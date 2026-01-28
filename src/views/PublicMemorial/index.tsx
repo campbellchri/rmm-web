@@ -43,6 +43,6 @@ export default function PublicMemorial() {
     case "video-only-mode":
       return <VideoOnlyMemorialPublic memorial={memorial} />
     default:
-      return <div className="text-white text-center mt-10">Unsupported memorial type</div>
+      return <div className="text-center mt-10">Unsupported memorial type</div>
   }
 }

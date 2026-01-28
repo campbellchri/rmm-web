@@ -116,7 +116,7 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6">
                         {/* <div className="bg-[#2f3349] rounded-lg shadow-[0_4px_18px_0_rgba(75,70,92,0.10)] p-6">
                             <div className="space-y-4">
                                 <p className="text-lg font-poppins text-[#ffffff]">
@@ -263,7 +263,7 @@ const Dashboard = () => {
                                 <p className="md:text-2xl text-lg DMSerif font-medium text-[#ffffff]">
                                     All Memories
                                 </p>
-                                <span className="text-sm font-medium text-[#1F2937]">
+                                <span className="text-[14px] font-[400] font-poppins text-[#FFFFFF]">
                                     {dashboardStats?.storageDetail?.usedGB || '0GB'} / {dashboardStats?.storageDetail?.limitGB || '5GB'}
                                 </span>
                             </div>

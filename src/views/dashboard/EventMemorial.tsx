@@ -236,9 +236,6 @@ export default function EventMemorial() {
                                 <p className="DMSerif md:text-[40px] text-2xl leading-tight text-[#ffffff]">
                                     Memorial Service {memorialDetails?.eventStart && new Date(memorialDetails.eventStart).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                                 </p>
-                                <p className="monteCarlo text-[22px] text-[#ffffff]">
-                                    A Life Well Lived
-                                </p>
                             </div>
                         </div>
                     </div>
