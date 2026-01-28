@@ -4,7 +4,7 @@ import { QRCodeCanvas } from 'qrcode.react'
 import { apiSetFeaturedMemorial, apiGetMemorialById, apiDeleteMemorial } from '@/services/axios/MemorialModeService'
 import { useMemorialStore } from '@/store/memorialStore'
 import { toast, Notification } from '@/components/ui'
-import { ArrowLeft, Copy, Facebook, Play, QrCode, Twitter, Trash2 } from 'lucide-react'
+import { ArrowLeft, Copy, Facebook, Play, QrCode, Twitter, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import VideoFrame from '../../../public//img/others/FRAME (11).png'
 import LogoFrame from '../../../public//img/others/FRAME (16).png'
@@ -16,6 +16,9 @@ export default function VideoMemorial() {
     const [memorialDetails, setMemorialDetails] = useState<any>(null)
     const [isDeleting, setIsDeleting] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
+    const [currentVideo, setCurrentVideo] = useState<any>(null)
+    const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
     const { memorials, fetchMemorials, activeMemorialId } = useMemorialStore()
     const memorialId = activeMemorialId
 
@@ -49,6 +52,40 @@ export default function VideoMemorial() {
 
     const handlePlayVideo = (videoId: string) => {
         setActiveVideo(videoId)
+    }
+
+    const handlePlayVideoInModal = (video: any, index: number) => {
+        setCurrentVideo(video)
+        setCurrentVideoIndex(index)
+        setIsVideoModalOpen(true)
+    }
+
+    const handlePlayMainVideoInModal = (video: any) => {
+        setCurrentVideo(video)
+        setCurrentVideoIndex(-1) // Use -1 to indicate main video (no navigation)
+        setIsVideoModalOpen(true)
+    }
+
+    const handleCloseVideoModal = () => {
+        setIsVideoModalOpen(false)
+        setCurrentVideo(null)
+        setCurrentVideoIndex(0)
+    }
+
+    const handlePreviousVideo = () => {
+        if (memorialDetails?.videos?.length > 0) {
+            const newIndex = currentVideoIndex > 0 ? currentVideoIndex - 1 : memorialDetails.videos.length - 1
+            setCurrentVideoIndex(newIndex)
+            setCurrentVideo(memorialDetails.videos[newIndex])
+        }
+    }
+
+    const handleNextVideo = () => {
+        if (memorialDetails?.videos?.length > 0) {
+            const newIndex = currentVideoIndex < memorialDetails.videos.length - 1 ? currentVideoIndex + 1 : 0
+            setCurrentVideoIndex(newIndex)
+            setCurrentVideo(memorialDetails.videos[newIndex])
+        }
     }
 
     const handleDownloadQRCode = () => {
@@ -267,35 +304,29 @@ export default function VideoMemorial() {
                             <div className="relative">
                                 <div className="border-2 border-[#C7A30D] bg-white/30 p-3.5 rounded-lg">
                                     <div className="relative md:w-full md:h-[452px] rounded-lg overflow-hidden bg-black">
-                                        {memorialDetails?.videos[0] ? (
-                                            <div className="relative w-full h-full">
+                                        {memorialDetails?.videos[0] && (
+                                            <div className="relative w-full h-full cursor-pointer" onClick={() => handlePlayMainVideoInModal(memorialDetails?.videos[0])}>
                                                 <video
                                                     key={`main-${activeVideo === 'main'}`}
                                                     src={memorialDetails?.videos[0].fileURL}
-                                                    controls={activeVideo === 'main'}
-                                                    autoPlay={activeVideo === 'main'}
-                                                    className="w-full h-full object-contain"
+                                                    controls={false}
+                                                    className="w-full h-full object-contain pointer-events-none"
                                                 />
-                                                {activeVideo !== 'main' && (
-                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                                        <button
-                                                            onClick={() => handlePlayVideo('main')}
-                                                            className="w-15 h-15 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
-                                                        >
-                                                            <Play
-                                                                className="w-8 h-8 text-white ml-1"
-                                                                fill="currentColor"
-                                                            />
-                                                        </button>
-                                                    </div>
-                                                )}
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            handlePlayMainVideoInModal(memorialDetails?.videos[0])
+                                                        }}
+                                                        className="w-15 h-15 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
+                                                    >
+                                                        <Play
+                                                            className="w-8 h-8 text-white ml-1"
+                                                            fill="currentColor"
+                                                        />
+                                                    </button>
+                                                </div>
                                             </div>
-                                        ) : (
-                                            <img
-                                                src={VideoFrame}
-                                                alt="Tribute Gallery Main Video Placeholder"
-                                                className="md:w-full md:h-full object-cover opacity-60"
-                                            />
                                         )}
                                     </div>
                                 </div>
@@ -316,7 +347,7 @@ export default function VideoMemorial() {
                 <div className="py-8">
                     <div className="max-w-7xl mx-auto px-6">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {memorialDetails?.videos.map((item: any) => (
+                            {memorialDetails?.videos.map((item: any, index: number) => (
                                 <div
                                     key={item.fileId}
                                     className="flex flex-col items-center space-y-4"
@@ -336,7 +367,7 @@ export default function VideoMemorial() {
                                                         {activeVideo !== item.fileId && (
                                                             <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                                                                 <button
-                                                                    onClick={() => handlePlayVideo(item.fileId)}
+                                                                    onClick={() => handlePlayVideoInModal(item, index)}
                                                                     className="w-10 h-10 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
                                                                 >
                                                                     <Play
@@ -468,6 +499,63 @@ export default function VideoMemorial() {
                         </div>
                     </div>
                 </section>
+
+                {/* Video Modal */}
+                {isVideoModalOpen && currentVideo && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                        <div className="relative w-full max-w-4xl mx-4">
+                            <button
+                                onClick={handleCloseVideoModal}
+                                className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors z-10"
+                            >
+                                <X className="w-8 h-8" />
+                            </button>
+                            
+                            {/* Video Navigation Arrows - Only show for gallery videos, not main video */}
+                            {currentVideoIndex >= 0 && memorialDetails?.videos?.length > 1 && (
+                                <>
+                                    <button
+                                        onClick={handlePreviousVideo}
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 text-white hover:text-gray-300 transition-colors z-10"
+                                    >
+                                        <ChevronLeft className="w-8 h-8" />
+                                    </button>
+                                    <button
+                                        onClick={handleNextVideo}
+                                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 text-white hover:text-gray-300 transition-colors z-10"
+                                    >
+                                        <ChevronRight className="w-8 h-8" />
+                                    </button>
+                                </>
+                            )}
+                            
+                            <div className="bg-black rounded-lg overflow-hidden">
+                                <video
+                                    src={currentVideo.fileURL}
+                                    controls
+                                    autoPlay
+                                    className="w-full h-auto max-h-[70vh]"
+                                    onClick={(e) => e.stopPropagation()}
+                                />
+                                <div className="p-4 bg-gray-900">
+                                    <h3 className="text-white font-poppins text-lg">
+                                        {currentVideo.videoTitle || `Video ${currentVideoIndex >= 0 ? currentVideoIndex + 1 : ''}`}
+                                    </h3>
+                                    {currentVideo.subtitle && (
+                                        <p className="text-gray-400 text-sm mt-1">
+                                            {currentVideo.subtitle}
+                                        </p>
+                                    )}
+                                    {currentVideoIndex >= 0 && memorialDetails?.videos?.length > 1 && (
+                                        <p className="text-gray-400 text-sm mt-1">
+                                            {currentVideoIndex + 1} of {memorialDetails.videos.length}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </React.Fragment>
     )

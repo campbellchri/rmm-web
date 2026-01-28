@@ -5,7 +5,7 @@ import CommonInput from '@/components/shared/CommonInput'
 import { apiSetFeaturedMemorial, apiGetMemorialById, apiDeleteMemorial } from '@/services/axios/MemorialModeService'
 import { useMemorialStore } from '@/store/memorialStore'
 import { toast, Notification } from '@/components/ui'
-import { Play, Facebook, Twitter, Copy, QrCode, ArrowLeft, Trash2 } from 'lucide-react'
+import { Play, Facebook, Twitter, Copy, QrCode, ArrowLeft, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import ConfirmModal from '@/components/shared/ConfirmModal'
 
@@ -17,6 +17,12 @@ export default function Memorial() {
     const navigate = useNavigate()
     const qrRef = useRef<HTMLCanvasElement>(null)
     const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
+    const [currentVideo, setCurrentVideo] = useState<any>(null)
+    const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
+    const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
+    const [currentPhoto, setCurrentPhoto] = useState<any>(null)
+    const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
     const [isDeleting, setIsDeleting] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
 
@@ -68,8 +74,60 @@ export default function Memorial() {
         }
     }
 
-    const handlePlayVideo = (videoId: string) => {
-        setActiveVideoId(videoId)
+    const handlePlayVideo = (video: any, index: number) => {
+        setCurrentVideo(video)
+        setCurrentVideoIndex(index)
+        setIsVideoModalOpen(true)
+    }
+
+    const handleCloseVideoModal = () => {
+        setIsVideoModalOpen(false)
+        setCurrentVideo(null)
+        setCurrentVideoIndex(0)
+    }
+
+    const handlePreviousVideo = () => {
+        if (memorialDetails?.videos?.length > 0) {
+            const newIndex = currentVideoIndex > 0 ? currentVideoIndex - 1 : memorialDetails.videos.length - 1
+            setCurrentVideoIndex(newIndex)
+            setCurrentVideo(memorialDetails.videos[newIndex])
+        }
+    }
+
+    const handleNextVideo = () => {
+        if (memorialDetails?.videos?.length > 0) {
+            const newIndex = currentVideoIndex < memorialDetails.videos.length - 1 ? currentVideoIndex + 1 : 0
+            setCurrentVideoIndex(newIndex)
+            setCurrentVideo(memorialDetails.videos[newIndex])
+        }
+    }
+
+    const handleViewPhoto = (photo: any, index: number) => {
+        setCurrentPhoto(photo)
+        setCurrentPhotoIndex(index)
+        setIsPhotoModalOpen(true)
+    }
+
+    const handleClosePhotoModal = () => {
+        setIsPhotoModalOpen(false)
+        setCurrentPhoto(null)
+        setCurrentPhotoIndex(0)
+    }
+
+    const handlePreviousPhoto = () => {
+        if (memorialDetails?.photos?.length > 0) {
+            const newIndex = currentPhotoIndex > 0 ? currentPhotoIndex - 1 : memorialDetails.photos.length - 1
+            setCurrentPhotoIndex(newIndex)
+            setCurrentPhoto(memorialDetails.photos[newIndex])
+        }
+    }
+
+    const handleNextPhoto = () => {
+        if (memorialDetails?.photos?.length > 0) {
+            const newIndex = currentPhotoIndex < memorialDetails.photos.length - 1 ? currentPhotoIndex + 1 : 0
+            setCurrentPhotoIndex(newIndex)
+            setCurrentPhoto(memorialDetails.photos[newIndex])
+        }
     }
 
     const handleDeleteMemorial = async () => {
@@ -294,49 +352,66 @@ export default function Memorial() {
                     </section>
 
                     <section className="space-y-6">
-                        <p className="DMSerif md:text-2xl text-lg text-[#ffffff]">
-                            Videos
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-                            {memorialDetails?.videos?.map((video: { id: Key | null | undefined; thumbnail: string | undefined; title: string | undefined; fileURL: string | undefined }) => (
-                                <div key={video.id} className="space-y-2">
-
-                                    <div className="relative group cursor-pointer rounded-lg overflow-hidden shadow-sm">
-                                        {activeVideoId === video.id ? (
-                                            <video
-                                                src={video.fileURL}
-                                                controls
-                                                autoPlay
-                                                className="w-full h-[140px] bg-black"
-                                            />
-                                        ) : (
-                                            <>
-                                                <img
-                                                    src={video.thumbnail}
-                                                    alt={video.title}
-                                                    className="w-full h-[140px] object-cover"
-                                                    onClick={() => handlePlayVideo(video.id as string)}
-                                                />
-                                                <div
-                                                    className="absolute inset-0 bg-black/30 flex items-center justify-center"
-                                                    onClick={() => handlePlayVideo(video.id as string)}
-                                                >
-                                                    <div className="w-12 h-12 bg-white/80 rounded-full flex items-center justify-center group-hover:bg-white transition-colors">
-                                                        <Play
-                                                            className="w-4 h-4 text-[#263859] ml-0.5"
-                                                            fill="currentColor"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-
-                                    <p className="font-poppins font-[400] md:text-base text-sm text-[#ffffff]">
-                                        {video.title}
-                                    </p>
+                        <div className="flex items-center justify-between">
+                            <p className="DMSerif md:text-2xl text-lg text-[#ffffff]">
+                                Videos
+                            </p>
+                            {memorialDetails?.videos?.length > 4 && (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => {
+                                            const container = document.getElementById('video-container')
+                                            if (container) {
+                                                container.scrollBy({ left: -200, behavior: 'smooth' })
+                                            }
+                                        }}
+                                        className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const container = document.getElementById('video-container')
+                                            if (container) {
+                                                container.scrollBy({ left: 200, behavior: 'smooth' })
+                                            }
+                                        }}
+                                        className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
                                 </div>
-                            ))}
+                            )}
+                        </div>
+                        <div className="relative">
+                            <div
+                                id="video-container"
+                                className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+                                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                            >
+                                {memorialDetails?.videos?.map((video: { id: Key | null | undefined; thumbnail: string | undefined; title: string | undefined; fileURL: string | undefined }, index: number) => (
+                                    <div key={video.id} className="flex-shrink-0 w-[200px] space-y-2">
+                                        <div className="relative group cursor-pointer rounded-lg overflow-hidden shadow-sm" onClick={() => handlePlayVideo(video, index)}>
+                                            <img
+                                                src={video.thumbnail}
+                                                alt={video.title}
+                                                className="w-full h-[140px] object-cover"
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <div className="w-12 h-12 bg-white/80 rounded-full flex items-center justify-center group-hover:bg-white transition-colors">
+                                                    <Play
+                                                        className="w-4 h-4 text-[#263859] ml-0.5"
+                                                        fill="currentColor"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p className="font-poppins font-[400] text-sm text-[#ffffff] line-clamp-2">
+                                            {video.title}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </section>
 
@@ -345,20 +420,55 @@ export default function Memorial() {
                             <p className="DMSerif md:text-2xl text-lg text-[#ffffff]">
                                 Photos
                             </p>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                            {memorialDetails?.photos?.map((album: { fileId: Key | null | undefined; image: string | undefined }) => (
-                                <div
-                                    key={album?.fileId}
-                                    className="cursor-pointer group"
-                                >
-                                    <img
-                                        src={album?.fileURL}
-                                        alt={`Photo Album ${album?.photoCaption}`}
-                                        className="w-full h-[180px] object-cover rounded-lg shadow-sm group-hover:shadow-md transition-shadow"
-                                    />
+                            {memorialDetails?.photos?.length > 6 && (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => {
+                                            const container = document.getElementById('photo-container')
+                                            if (container) {
+                                                container.scrollBy({ left: -200, behavior: 'smooth' })
+                                            }
+                                        }}
+                                        className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const container = document.getElementById('photo-container')
+                                            if (container) {
+                                                container.scrollBy({ left: 200, behavior: 'smooth' })
+                                            }
+                                        }}
+                                        className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
                                 </div>
-                            ))}
+                            )}
+                        </div>
+                        <div className="relative">
+                            <div
+                                id="photo-container"
+                                className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+                                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                            >
+                                {memorialDetails?.photos?.map((photo: { fileId: Key | null | undefined; fileURL: string | undefined; photoCaption: string | undefined }, index: number) => (
+                                    <div key={photo?.fileId} className="flex-shrink-0 w-[200px] space-y-2">
+                                        <div className="relative group cursor-pointer rounded-lg overflow-hidden shadow-sm" onClick={() => handleViewPhoto(photo, index)}>
+                                            <img
+                                                src={photo?.fileURL}
+                                                alt={`Photo ${photo?.photoCaption || index + 1}`}
+                                                className="w-full h-[180px] object-cover"
+                                            />
+                                        
+                                        </div>
+                                        <p className="font-poppins font-[400] text-sm text-[#ffffff] line-clamp-2">
+                                            {photo?.photoCaption || `Photo ${index + 1}`}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </section>
 
@@ -466,6 +576,109 @@ export default function Memorial() {
                     </section>
                 </div>
             </div>
+
+            {/* Video Modal */}
+            {isVideoModalOpen && currentVideo && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                    <div className="relative w-full max-w-4xl mx-4">
+                        <button
+                            onClick={handleCloseVideoModal}
+                            className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors z-10"
+                        >
+                            <X className="w-8 h-8" />
+                        </button>
+                        
+                        {/* Video Navigation Arrows */}
+                        {memorialDetails?.videos?.length > 1 && (
+                            <>
+                                <button
+                                    onClick={handlePreviousVideo}
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 text-white hover:text-gray-300 transition-colors z-10"
+                                >
+                                    <ChevronLeft className="w-8 h-8" />
+                                </button>
+                                <button
+                                    onClick={handleNextVideo}
+                                    className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 text-white hover:text-gray-300 transition-colors z-10"
+                                >
+                                    <ChevronRight className="w-8 h-8" />
+                                </button>
+                            </>
+                        )}
+                        
+                        <div className="bg-black rounded-lg overflow-hidden">
+                            <video
+                                src={currentVideo.fileURL}
+                                controls
+                                autoPlay
+                                className="w-full h-auto max-h-[70vh]"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="p-4 bg-gray-900">
+                                <h3 className="text-white font-poppins text-lg">
+                                    {currentVideo.title}
+                                </h3>
+                                {memorialDetails?.videos?.length > 1 && (
+                                    <p className="text-gray-400 text-sm mt-1">
+                                        {currentVideoIndex + 1} of {memorialDetails.videos.length}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Photo Modal */}
+            {isPhotoModalOpen && currentPhoto && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                    <div className="relative w-full max-w-4xl mx-4">
+                        <button
+                            onClick={handleClosePhotoModal}
+                            className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors z-10"
+                        >
+                            <X className="w-8 h-8" />
+                        </button>
+                        
+                        {/* Photo Navigation Arrows */}
+                        {memorialDetails?.photos?.length > 1 && (
+                            <>
+                                <button
+                                    onClick={handlePreviousPhoto}
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 text-white hover:text-gray-300 transition-colors z-10"
+                                >
+                                    <ChevronLeft className="w-8 h-8" />
+                                </button>
+                                <button
+                                    onClick={handleNextPhoto}
+                                    className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 text-white hover:text-gray-300 transition-colors z-10"
+                                >
+                                    <ChevronRight className="w-8 h-8" />
+                                </button>
+                            </>
+                        )}
+                        
+                        <div className="bg-black rounded-lg overflow-hidden">
+                            <img
+                                src={currentPhoto?.fileURL}
+                                alt={`Photo ${currentPhotoIndex + 1}`}
+                                className="w-full h-auto max-h-[70vh] object-contain"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="p-4 bg-gray-900">
+                                <h3 className="text-white font-poppins text-lg">
+                                    {currentPhoto?.photoCaption || `Photo ${currentPhotoIndex + 1}`}
+                                </h3>
+                                {memorialDetails?.photos?.length > 1 && (
+                                    <p className="text-gray-400 text-sm mt-1">
+                                        {currentPhotoIndex + 1} of {memorialDetails.photos.length}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     )
 }

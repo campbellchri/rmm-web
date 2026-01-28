@@ -3,7 +3,7 @@ import { QRCodeCanvas } from 'qrcode.react'
 import { apiSetFeaturedMemorial, apiGetMemorialById, apiDeleteMemorial } from '@/services/axios/MemorialModeService'
 import { useMemorialStore } from '@/store/memorialStore'
 import { toast, Notification } from '@/components/ui'
-import { ArrowLeft, Copy, Facebook, Play, QrCode, Twitter, Trash2 } from 'lucide-react'
+import { ArrowLeft, Copy, Facebook, Play, QrCode, Twitter, Trash2, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { MediaType } from '@/constants/memorial.constant'
 import ConfirmModal from '@/components/shared/ConfirmModal'
@@ -14,6 +14,8 @@ export default function EventMemorial() {
     const [memorialDetails, setMemorialDetails] = useState<any>(null)
     const [isDeleting, setIsDeleting] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
+    const [currentVideo, setCurrentVideo] = useState<any>(null)
 
     const { fetchMemorials, activeMemorialId } = useMemorialStore()
     const memorialId = activeMemorialId
@@ -53,6 +55,19 @@ export default function EventMemorial() {
 
     const handlePlayVideo = () => {
         setIsPlaying(true)
+    }
+
+    const handlePlayVideoInModal = () => {
+        const video = memorialDetails?.userMedia?.find((m: any) => m.type === MediaType.VIDEO)
+        if (video) {
+            setCurrentVideo(video)
+            setIsVideoModalOpen(true)
+        }
+    }
+
+    const handleCloseVideoModal = () => {
+        setIsVideoModalOpen(false)
+        setCurrentVideo(null)
     }
 
     const handleDownloadQRCode = () => {
@@ -206,36 +221,36 @@ export default function EventMemorial() {
                             <div className="relative">
                                 <div className="border-2 border-[#C7A30D] bg-transparent p-4 rounded-lg">
                                     <div className="relative md:w-full md:h-[585px] rounded-lg overflow-hidden bg-black flex items-center justify-center">
-                                        {videoUrl ? (
-                                            <video
-                                                src={videoUrl}
-                                                className="md:w-full md:h-full object-contain"
-                                                controls={isPlaying}
-                                                onPlay={() => setIsPlaying(true)}
-                                                onPause={() => setIsPlaying(false)}
-                                                onEnded={() => setIsPlaying(false)}
-                                                autoPlay={isPlaying}
-                                            />
-                                        ) : (
+                                        {videoUrl && (
+                                            <div className="relative w-full h-full cursor-pointer" onClick={handlePlayVideoInModal}>
+                                                <video
+                                                    src={videoUrl}
+                                                    className="md:w-full md:h-full object-contain pointer-events-none"
+                                                    controls={false}
+                                                />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            handlePlayVideoInModal()
+                                                        }}
+                                                        className="w-15 h-15 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
+                                                    >
+                                                        <Play
+                                                            className="w-8 h-8 text-white ml-1"
+                                                            fill="currentColor"
+                                                        />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {!videoUrl && (
                                             <img
                                                 src="https://api.builder.io/api/v1/image/assets/TEMP/04b24a281d67806b9ac0bcb3134cd859cf474329?width=2540"
                                                 alt="Memorial Service Video Placeholder"
                                                 className="md:w-full md:h-full object-cover"
                                             />
-                                        )}
-
-                                        {!isPlaying && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
-                                                <button
-                                                    onClick={handlePlayVideo}
-                                                    className="w-15 h-15 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg pointer-events-auto"
-                                                >
-                                                    <Play
-                                                        className="w-8 h-8 text-white ml-1"
-                                                        fill="currentColor"
-                                                    />
-                                                </button>
-                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -346,6 +361,40 @@ export default function EventMemorial() {
                         </div>
                     </div>
                 </section>
+
+                {/* Video Modal */}
+                {isVideoModalOpen && currentVideo && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                        <div className="relative w-full max-w-4xl mx-4">
+                            <button
+                                onClick={handleCloseVideoModal}
+                                className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors z-10"
+                            >
+                                <X className="w-8 h-8" />
+                            </button>
+                            
+                            <div className="bg-black rounded-lg overflow-hidden">
+                                <video
+                                    src={currentVideo.fileURL}
+                                    controls
+                                    autoPlay
+                                    className="w-full h-auto max-h-[70vh]"
+                                    onClick={(e) => e.stopPropagation()}
+                                />
+                                <div className="p-4 bg-gray-900">
+                                    <h3 className="text-white font-poppins text-lg">
+                                        Memorial Service Video
+                                    </h3>
+                                    {memorialDetails?.eventStart && (
+                                        <p className="text-gray-400 text-sm mt-1">
+                                            {new Date(memorialDetails.eventStart).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     )
