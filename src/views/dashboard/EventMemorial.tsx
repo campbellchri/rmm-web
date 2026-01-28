@@ -6,12 +6,15 @@ import { toast, Notification } from '@/components/ui'
 import { ArrowLeft, Copy, Facebook, Play, QrCode, Twitter, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { MediaType } from '@/constants/memorial.constant'
+import ConfirmModal from '@/components/shared/ConfirmModal'
 
 export default function EventMemorial() {
     const [isPlaying, setIsPlaying] = useState(false)
     const [copiedUrl, setCopiedUrl] = useState(false)
     const [memorialDetails, setMemorialDetails] = useState<any>(null)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+
     const { fetchMemorials, activeMemorialId } = useMemorialStore()
     const memorialId = activeMemorialId
     const navigate = useNavigate()
@@ -66,13 +69,8 @@ export default function EventMemorial() {
     }
 
     const handleDeleteMemorial = async () => {
-        const confirmed = window.confirm(
-            'Are you sure you want to delete this memorial? This action cannot be undone.'
-        )
-        if (!confirmed) return
-
         try {
-            setIsDeleting(true)
+            setShowDeleteModal(true)
             if (!memorialId) {
                 toast.push(
                     <Notification type="danger" title="Error" duration={2000}>
@@ -114,6 +112,17 @@ export default function EventMemorial() {
 
     return (
         <>
+        <ConfirmModal
+            open={showDeleteModal}
+            title="Delete Memorial"
+            description="Are you sure you want to delete this memorial? This action cannot be undone."
+            confirmText="Yes, Delete"
+            cancelText="Cancel"
+            loading={isDeleting}
+            onCancel={() => setShowDeleteModal(false)}
+            onConfirm={handleDeleteMemorial}
+            />
+
             <div className="min-h-screen">
                 <div className=" py-16 relative">
                     <div className="absolute top-3 w-full px-6 flex justify-between items-center">
@@ -169,7 +178,7 @@ export default function EventMemorial() {
                                 Set As Featured
                             </button>
                             <button
-                                onClick={handleDeleteMemorial}
+                                onClick={() => setShowDeleteModal(true)}
                                 disabled={isDeleting}
                                 className="md:px-6 px-3 md:py-2.5 py-1 border border-red-500 text-red-500 rounded-md font-poppins text-base hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                             >

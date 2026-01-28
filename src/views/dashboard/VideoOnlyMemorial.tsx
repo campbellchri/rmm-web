@@ -8,12 +8,14 @@ import { ArrowLeft, Copy, Facebook, Play, QrCode, Twitter, Trash2 } from 'lucide
 import { useNavigate } from 'react-router-dom'
 import VideoFrame from '../../../public//img/others/FRAME (11).png'
 import LogoFrame from '../../../public//img/others/FRAME (16).png'
+import ConfirmModal from '@/components/shared/ConfirmModal'
 
 export default function VideoMemorial() {
     const [activeVideo, setActiveVideo] = useState<string | null>(null)
     const [copiedUrl, setCopiedUrl] = useState(false)
     const [memorialDetails, setMemorialDetails] = useState<any>(null)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
     const { memorials, fetchMemorials, activeMemorialId } = useMemorialStore()
     const memorialId = activeMemorialId
 
@@ -63,13 +65,8 @@ export default function VideoMemorial() {
     }
 
     const handleDeleteMemorial = async () => {
-        const confirmed = window.confirm(
-            'Are you sure you want to delete this memorial? This action cannot be undone.'
-        )
-        if (!confirmed) return
-
         try {
-            setIsDeleting(true)
+           setShowDeleteModal(true)
             if (!memorialId) {
                 toast.push(
                     <Notification type="danger" title="Error" duration={2000}>
@@ -120,6 +117,16 @@ export default function VideoMemorial() {
 
     return (
         <React.Fragment>
+            <ConfirmModal
+                open={showDeleteModal}
+                title="Delete Memorial"
+                description="Are you sure you want to delete this memorial? This action cannot be undone."
+                confirmText="Yes, Delete"
+                cancelText="Cancel"
+                loading={isDeleting}
+                onCancel={() => setShowDeleteModal(false)}
+                onConfirm={handleDeleteMemorial}
+                />
             <div className="flex items-center justify-between gap-4 p-4">
                 <button
                     onClick={() => navigate('/dashboard')}
@@ -173,7 +180,7 @@ export default function VideoMemorial() {
                         Set As Featured
                     </button>
                     <button
-                        onClick={handleDeleteMemorial}
+                       onClick={() => setShowDeleteModal(true)}
                         disabled={isDeleting}
                         className="md:px-6 px-3 md:py-2.5 py-1 border border-red-500 text-red-500 rounded-md font-poppins text-base hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
@@ -227,7 +234,6 @@ export default function VideoMemorial() {
                                 </div>
                             </div>
 
-                            {/* Testimonial Quote */}
                             <div className="md:max-w-[500px] w-full">
                                 <div className="bg-white/80 md:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow-sm md:shadow-none">
                                     <p className="font-poppins text-base sm:text-[19px] text-[#ffffff] leading-relaxed mb-4 sm:mb-6 text-center md:text-left">

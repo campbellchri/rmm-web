@@ -7,6 +7,7 @@ import { useMemorialStore } from '@/store/memorialStore'
 import { toast, Notification } from '@/components/ui'
 import { Play, Facebook, Twitter, Copy, QrCode, ArrowLeft, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import ConfirmModal from '@/components/shared/ConfirmModal'
 
 export default function Memorial() {
     const [copiedUrl, setCopiedUrl] = useState(false)
@@ -17,6 +18,7 @@ export default function Memorial() {
     const qrRef = useRef<HTMLCanvasElement>(null)
     const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
 
 
     const { control, setValue } = useForm({
@@ -71,13 +73,9 @@ export default function Memorial() {
     }
 
     const handleDeleteMemorial = async () => {
-        const confirmed = window.confirm(
-            'Are you sure you want to delete this memorial? This action cannot be undone.'
-        )
-        if (!confirmed) return
 
         try {
-            setIsDeleting(true)
+           setIsDeleting(true)
             if (!memorialId) {
                 toast.push(
                     <Notification type="danger" title="Error" duration={2000}>
@@ -121,6 +119,16 @@ export default function Memorial() {
 
     return (
         <>
+        <ConfirmModal
+            open={showDeleteModal}
+            title="Delete Memorial"
+            description="Are you sure you want to delete this memorial? This action cannot be undone."
+            confirmText="Yes, Delete"
+            cancelText="Cancel"
+            loading={isDeleting}
+            onCancel={() => setShowDeleteModal(false)}
+            onConfirm={handleDeleteMemorial}
+            />
             <div className="flex items-center justify-between">
 
                 <div className="flex items-center  gap-4">
@@ -177,7 +185,7 @@ export default function Memorial() {
                         Set As Featured
                     </button>
                     <button
-                        onClick={handleDeleteMemorial}
+                       onClick={() => setShowDeleteModal(true)}
                         disabled={isDeleting}
                         className="md:px-6 px-3 md:py-2.5 py-1 border border-red-500 text-red-500 rounded-md font-poppins text-base hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
