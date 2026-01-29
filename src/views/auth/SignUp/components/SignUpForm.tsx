@@ -91,7 +91,7 @@ const SignUpForm = (props: SignUpFormProps) => {
                         render={({ field }) => (
                             <Input
                                 type="text"
-                                placeholder="User Name"
+                                placeholder="Username"
                                 autoComplete="off"
                                 className="!bg-[#383C56] !text-white"
                                 {...field}

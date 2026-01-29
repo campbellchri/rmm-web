@@ -9,7 +9,7 @@ import {
     CommonDatePicker,
 } from '@/components/shared'
 import { ChevronDown } from 'lucide-react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, useWatch } from 'react-hook-form'
 import {
     apiCreateMemorial,
     apiGetMemorialModeList,
@@ -50,8 +50,11 @@ const validationSchema = z.object({
     featuredVideoTitle: z
         .string()
         .min(1, { message: 'Video Title is required' }),
+    featuredVideoDescription: z.string().optional(),
     favSaying: z.string().optional(),
-    profilePicture: z.any().optional(),
+    profilePicture: z.any().refine((val) => !!val, { 
+        message: 'Profile Picture is required' 
+    }),
     featuredVideo: z
         .any()
         .refine((val) => !!val, { message: 'Featured Video is required' }),
@@ -120,6 +123,7 @@ export default function VideoOnlyMemorial() {
             personDeathDate: undefined,
             favQuote: '',
             featuredVideoTitle: '',
+            featuredVideoDescription: '',
             favSaying: '',
             galleryVideoTitle: '',
             profilePicture: undefined,
@@ -171,6 +175,7 @@ export default function VideoOnlyMemorial() {
                                 : undefined,
                             favQuote: memorialRes.favQuote || '',
                             featuredVideoTitle: featuredVideo?.videoTitle || '',
+                            
                             favSaying: featuredVideo?.videoDescription || '',
                             galleryVideoTitle:
                                 memorialRes.userMedia?.find(
@@ -304,6 +309,20 @@ export default function VideoOnlyMemorial() {
         }
         setUploadingProfile(false)
     }
+
+    const birthDateValue = useWatch({ control, name: 'personBirthDate' as const });
+    const today = new Date();
+    
+    const formatDateToInput = (date: Date | null | undefined): string | undefined => {
+      if (!date) return undefined;
+      return dayjs(date).format('YYYY-MM-DD');
+    };
+    
+    const parseDateInput = (dateStr: string | undefined): Date | undefined => {
+      if (!dateStr) return undefined;
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day); // Local timezone
+    };
 
     const handleFeaturedVideoUpload = async (files: (File | any)[]) => {
         if (files.length === 0) {
@@ -571,6 +590,20 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
   }
 }
     const onSubmit = async (data: any) => {
+        if (!profileData?.fileURL && !profileImage) {
+            toast.push(
+            <Notification
+                type="danger"
+                title="Validation Error"
+                duration={3000}
+            >
+                Please upload a profile picture.
+            </Notification>,
+            { placement: 'top-center' }
+            )
+            setIsSubmitting(false)
+            return
+        }
 
         try {
             setIsSubmitting(true)
@@ -664,8 +697,6 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                 userMedia: mediaList,
             }
 
-            console.log('Payload:', JSON.stringify(payload, null, 2))
-
             if (isEditMode && memorialId && existingMemorialData) {
                 const {
                     id,
@@ -751,6 +782,7 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
     }
 
     const handleSaveFinish = () => {
+         setIsSubmitting(true)
         handleSubmit(onSubmit)()
     }
 
@@ -830,7 +862,7 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                                     />
                                 )}
                             </div>
-                            <div className='flex flex-col gap-4'>
+                            {/* <div className='flex flex-col gap-4'>
                                  <p className='text-[#FFFFFF] text-[18px] font-[400] font-Arial'>Profile Photo</p>
                                 <p className='text-[#99A1AF] text-[14px] font-[400] font-Arial'>
                                     Upload a high-quality photo of your loved one. This will be the main photo displayed on the memorial page.
@@ -882,7 +914,62 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
 
                                 />
                                     <p className='text-[#6A7282] text-[12px] font-[400] font-Arial'>Recommended: Square image, at least 400 x 400px</p>
-                            </div>
+                                    {!profileImage && isSubmitting && (
+                                        <p className='text-[#e26253] text-[12px] font-[400] font-Arial mt-1'>
+                                            Profile picture is required
+                                        </p>
+                                    )}
+                            </div> */}
+                            <div className='flex flex-col gap-4'>
+                                <p className='text-[#FFFFFF] text-[18px] font-[400] font-Arial'>Profile Photo</p>
+                                <p className='text-[#99A1AF] text-[14px] font-[400] font-Arial'>
+                                    Upload a high-quality photo of your loved one. This will be the main photo displayed on the memorial page.
+                                </p>
+                                <button
+                                    type="button"
+                                    disabled={uploadingProfile}
+                                    onClick={() => document.getElementById('profileUpload')?.click()}
+                                    className="md:px-[21px] py-[7px] px-3 font-medium text-[16px] font-[400] w-[max-content] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-Arial border-[#FFB84C] disabled:opacity-50"
+                                >
+                                    {uploadingProfile ? 'Uploading...' : 'Upload Profile'}
+                                </button>
+                                <input
+                                    id="profileUpload"
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={async (e) => {
+                                    const file = e.target.files?.[0]
+                                    if (!file) return
+                                    try {
+                                        await validateSquareImage(file, 400)
+                                        handleProfileUpload(file)
+                                    } catch (error: any) {
+                                        toast.push(
+                                        <Notification
+                                            type="danger"
+                                            title="Invalid Image"
+                                            duration={3000}
+                                        >
+                                            {error}
+                                        </Notification>,
+                                        { placement: 'top-center' }
+                                        )
+                                        setValue('profilePicture', undefined)
+                                    } finally {
+                                        e.target.value = ''
+                                    }
+                                    }}
+                                />
+                                <p className='text-[#6A7282] text-[12px] font-[400] font-Arial'>Recommended: Square image, at least 400 x 400px</p>
+                                
+                                {/* Add this error message */}
+                                {!profileImage && isSubmitting && (
+                                    <p className='text-[#e26253] text-[12px] font-[400] font-Arial mt-1'>
+                                    Profile picture is required
+                                    </p>
+                                )}
+                                </div>
 
                         </div>
 
@@ -924,6 +1011,14 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                                         inputSuffix={
                                             <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
                                         }
+                                         maxDate={today}
+                                    rules={{
+                                        required: "Date of Birth is required",
+                                        validate: (value) => {
+                                        if (new Date(value) > today) return "Birth date cannot be in the future";
+                                        return true;
+                                        }
+                                    }}
                                     />
                                     <CommonDatePicker
                                         name="personDeathDate"
@@ -938,6 +1033,18 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                                         inputSuffix={
                                             <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
                                         }
+                                          minDate={birthDateValue ? parseDateInput(formatDateToInput(birthDateValue)) : undefined}
+                                    maxDate={today}
+                                    rules={{
+                                        required: "Date of Death is required",
+                                        validate: (value) => {
+                                        if (new Date(value) > today) return "Death date cannot be in the future";
+                                        if (birthDateValue && new Date(value) < new Date(birthDateValue)) {
+                                            return "Death date cannot be before birth date";
+                                        }
+                                        return true;
+                                        }
+                                    }}
                                     />
                                 </div>
                             </div>
@@ -998,17 +1105,31 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                                 {(errors.featuredVideo as any).message}
                             </p>
                         )}
-                        <div className="mt-4">
-                            <CommonInput
-                                name="featuredVideoTitle"
-                                control={control}
-                                label="Video Title"
-                                placeholder="Enter title here..."
-                                invalid={Boolean(errors.featuredVideoTitle)}
-                                errorMessage={
-                                    errors.featuredVideoTitle?.message
-                                }
-                            />
+                        <div className="mt-4 flex w-full gap-6">
+                            <div className="w-[50%]">
+                                <CommonInput
+                                    name="featuredVideoTitle"
+                                    control={control}
+                                    label="Video Title"
+                                    placeholder="Enter title here..."
+                                    invalid={Boolean(errors.featuredVideoTitle)}
+                                    errorMessage={
+                                        errors.featuredVideoTitle?.message
+                                    }
+                                />
+                            </div>
+                            <div className="w-[50%]">
+                                <CommonInput
+                                    name="featuredVideoDescription"
+                                    control={control}
+                                    label="Video Description"
+                                    placeholder="Enter description here..."
+                                    invalid={Boolean(errors.featuredVideoDescription)}
+                                    errorMessage={
+                                        errors.featuredVideoDescription?.message
+                                    }
+                                />
+                            </div>
                         </div>
                         {/* <div className="mt-4">
                             <CommonInput
@@ -1061,13 +1182,23 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                                     item.res?.uploadId || item.file?.uploadId,
                             }))}
                         />
-                        <div className="mt-4">
-                            <CommonInput
-                                name="galleryVideoTitle"
-                                control={control}
-                                label="Video Title"
-                                placeholder="Enter Video Title here ..."
-                            />
+                        <div className='w-full flex mt-4 gap-6'>
+                            <div className="w-[50%]">
+                                <CommonInput
+                                    name="galleryVideoTitle"
+                                    control={control}
+                                    label="Video Title"
+                                    placeholder="Enter Video Title here ..."
+                                />
+                            </div>
+                            <div className="w-[50%]">
+                                <CommonInput
+                                    name="galleryVideoDescription"
+                                    control={control}
+                                    label="Video Description"
+                                    placeholder="Enter Video Description here ..."
+                                />
+                            </div>
                         </div>
                     </FormSection>
 

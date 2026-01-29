@@ -151,22 +151,19 @@ export default function ClassicTemplateMode() {
         url: m.fileURL, 
     })
 
-   // ✅ AFTER useForm
-const birthDateValue = useWatch({ control, name: 'personBirthDate' as const });
-const today = new Date();
+    const birthDateValue = useWatch({ control, name: 'personBirthDate' as const });
+    const today = new Date();
 
-// Helper to format Date to YYYY-MM-DD string
-const formatDateToInput = (date: Date | null | undefined): string | undefined => {
-  if (!date) return undefined;
-  return dayjs(date).format('YYYY-MM-DD');
-};
+    const formatDateToInput = (date: Date | null | undefined): string | undefined => {
+    if (!date) return undefined;
+    return dayjs(date).format('YYYY-MM-DD');
+    };
 
-// Helper to create Date from YYYY-MM-DD string (for minDate/maxDate)
-const parseDateInput = (dateStr: string | undefined): Date | undefined => {
-  if (!dateStr) return undefined;
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day); // Local timezone
-};
+    const parseDateInput = (dateStr: string | undefined): Date | undefined => {
+    if (!dateStr) return undefined;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day); // Local timezone
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -956,6 +953,20 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
 
 
     const onSubmit = async (data: any) => {
+         if (!profileData?.fileURL && !profileImage) {
+            toast.push(
+            <Notification
+                type="danger"
+                title="Validation Error"
+                duration={3000}
+            >
+                Please upload a profile picture.
+            </Notification>,
+            { placement: 'top-center' }
+            )
+            setIsSubmitting(false)
+            return
+        }
         setIsSubmitting(true)
         try {
             const payload: any = {
@@ -1100,6 +1111,7 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
     }
 
     const handleSaveFinish = () => {
+        setIsSubmitting(true) 
         handleSubmit(onSubmit)()
     }
 
@@ -1294,6 +1306,11 @@ const validateGalleryPhotoAspectRatio = (file: File): Promise<void> => {
                             />
 
                                 <p className='text-[#6A7282] text-[12px] font-[400] font-Arial'>Recommended: Square image, at least 400 x 400px</p>
+                             {!profileImage && isSubmitting && (
+                                <p className='text-[#e26253] text-[12px] font-[400] font-Arial mt-1'>
+                                    Profile picture is required
+                                </p>
+                                )}
                             </div>
 
                         </div>
