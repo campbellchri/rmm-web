@@ -17,7 +17,7 @@ const Side = ({ children, ...rest }: SideProps) => {
         <div className="flex h-[100vh] p-6 bg-[#25293C] dark:bg-gray-800">
             {/* Left Section */}
             <div className="flex flex-col justify-start  md:justify-start 2xl:justify-center items-center flex-1 overflow-y-auto scrollbar-hide">
-                <div className="w-full xl:max-w-[450px] px-8 max-w-full">
+                <div className="w-full xl:max-w-[450px] px-8 max-w-full h-full place-content-center">
                     {children
                         ? cloneElement(children as React.ReactElement, {
                               ...rest,
