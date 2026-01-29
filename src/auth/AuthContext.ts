@@ -5,6 +5,10 @@ import type {
     AuthResult,
     User,
     OauthSignInCallbackPayload,
+    VerifyOtpRequest,
+    VerifyOtpResponse,
+    ResendOtpRequest,
+    ResendOtpResponse,
 } from '@/@types/auth'
 
 type Auth = {
@@ -16,6 +20,8 @@ type Auth = {
     oAuthSignIn: (
         callback: (payload: OauthSignInCallbackPayload) => void,
     ) => void
+    verifyOtp: (values: VerifyOtpRequest, email: string) => Promise<VerifyOtpResponse>
+    resendOtp: (values: ResendOtpRequest) => Promise<ResendOtpResponse>
 }
 
 const defaultFunctionPlaceHolder = async (): AuthResult => {
@@ -24,6 +30,11 @@ const defaultFunctionPlaceHolder = async (): AuthResult => {
         status: '',
         message: '',
     }
+}
+
+const defaultOtpPlaceholder = async <T,>(data: any): Promise<T> => {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    return {} as T
 }
 
 const defaultOAuthSignInPlaceHolder = (
@@ -42,6 +53,8 @@ const AuthContext = createContext<Auth>({
     signUp: async () => defaultFunctionPlaceHolder(),
     signOut: () => {},
     oAuthSignIn: defaultOAuthSignInPlaceHolder,
+    verifyOtp: defaultOtpPlaceholder,
+    resendOtp: defaultOtpPlaceholder,
 })
 
 export default AuthContext

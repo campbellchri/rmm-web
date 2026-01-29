@@ -2,16 +2,19 @@ import { useState } from 'react'
 import Button from '@/components/ui/Button'
 import { FormItem, Form } from '@/components/ui/Form'
 import OtpInput from '@/components/shared/OtpInput'
-import sleep from '@/utils/sleep'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import type { ZodType } from 'zod'
 import type { CommonProps } from '@/@types/common'
+import { useAuth } from '@/auth'
 
 interface OtpVerificationFormProps extends CommonProps {
+    userId: string
+    email: string
     setOtpVerified?: (message: string) => void
     setMessage?: (message: string) => void
+    onVerifySuccess?: () => void
 }
 
 type ForgotPasswordFormSchema = {
@@ -26,8 +29,9 @@ const validationSchema: ZodType<ForgotPasswordFormSchema> = z.object({
 
 const OtpVerificationForm = (props: OtpVerificationFormProps) => {
     const [isSubmitting, setSubmitting] = useState<boolean>(false)
+    const { verifyOtp } = useAuth()
 
-    const { className, setMessage, setOtpVerified } = props
+    const { className, setMessage, setOtpVerified, userId, email, onVerifySuccess } = props
 
     const {
         handleSubmit,
@@ -41,19 +45,19 @@ const OtpVerificationForm = (props: OtpVerificationFormProps) => {
         const { otp } = values
         setSubmitting(true)
         try {
-            /** simulate api call with sleep */
-            await sleep(1000)
-            setSubmitting(false)
+            await verifyOtp({
+                otpCode: parseInt(otp),
+                userId,
+            }, email)
             setOtpVerified?.('OTP verified!')
-        } catch (errors) {
+            onVerifySuccess?.()
+        } catch (error: any) {
             setMessage?.(
-                typeof errors === 'string' ? errors : 'Some error occured!',
+                error?.response?.data?.message || 'Failed to verify OTP. Please try again.',
             )
+        } finally {
             setSubmitting(false)
         }
-
-        console.log('otp', otp)
-        setSubmitting(false)
     }
 
     return (

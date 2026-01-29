@@ -14,13 +14,33 @@ export type SignInResponse = {
     user?: {  // Optional nested user object for backward compatibility
         userId: string
         userName: string
+        firstName: string
+        lastName: string
         authority: string[]
         avatar: string
         email: string
     }
 }
 
-export type SignUpResponse = SignInResponse
+export type SignUpResponse = {
+    userId: string
+    message?: string
+}
+
+export type VerifyOtpRequest = {
+    otpCode: number
+    userId: string
+}
+
+export type VerifyOtpResponse = SignInResponse
+
+export type ResendOtpRequest = {
+    email: string
+}
+
+export type ResendOtpResponse = {
+    message: string
+}
 
 export type SignUpCredential = {
     name: string
@@ -43,6 +63,7 @@ export type AuthRequestStatus = 'success' | 'failed' | ''
 export type AuthResult = Promise<{
     status: AuthRequestStatus
     message: string
+    userId?: string
 }>
 
 export type User = {

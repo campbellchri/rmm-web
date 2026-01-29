@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom'
 interface SignUpFormProps extends CommonProps {
     disableSubmit?: boolean
     setMessage?: (message: string) => void
+    onSignUpSuccess?: (userId: string, email: string) => void
 }
 
 type SignUpFormSchema = {
@@ -39,7 +40,7 @@ const validationSchema: ZodType<SignUpFormSchema> = z.object({
     }) */
 
 const SignUpForm = (props: SignUpFormProps) => {
-    const { disableSubmit = false, className, setMessage } = props
+    const { disableSubmit = false, className, setMessage, onSignUpSuccess } = props
     const [isSubmitting, setSubmitting] = useState<boolean>(false)
     const { signUp } = useAuth()
     const navigate = useNavigate()
@@ -62,8 +63,11 @@ const SignUpForm = (props: SignUpFormProps) => {
 
             if (result?.status === 'failed') {
                 setMessage?.(result.message)
+            } else if (result?.userId) {
+                // Success - call the success callback with userId and email
+                onSignUpSuccess?.(result.userId, email)
             } else {
-                navigate('/sign-in')
+                setMessage?.('Sign up failed. Please try again.')
             }
             setSubmitting(false)
         }

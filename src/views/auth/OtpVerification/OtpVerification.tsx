@@ -1,33 +1,45 @@
 import Alert from '@/components/ui/Alert'
 import OtpVerificationForm from './components/OtpVerificationForm'
-import sleep from '@/utils/sleep'
 import useTimeOutMessage from '@/utils/hooks/useTimeOutMessage'
+import { useAuth } from '@/auth'
+import type { CommonProps } from '@/@types/common'
 
-export const OtpVerificationBase = () => {
+interface OtpVerificationProps extends CommonProps {
+    userId: string
+    email: string
+    onVerifySuccess?: () => void
+}
+
+export const OtpVerificationBase = ({ userId, email, onVerifySuccess, className }: OtpVerificationProps) => {
     const [otpVerified, setOtpVerified] = useTimeOutMessage()
     const [otpResend, setOtpResend] = useTimeOutMessage()
     const [message, setMessage] = useTimeOutMessage()
+    const { resendOtp } = useAuth()
 
     const handleResendOtp = async () => {
         try {
-            /** simulate api call with sleep */
-            await sleep(500)
+            await resendOtp({ email })
             setOtpResend('We have sent you One Time Password.')
-        } catch (errors) {
+        } catch (errors: any) {
             setMessage?.(
-                typeof errors === 'string' ? errors : 'Some error occured!',
+                errors?.response?.data?.message || 'Some error occurred!',
             )
         }
     }
 
+    const handleVerifySuccess = () => {
+        setOtpVerified('OTP verified successfully!')
+        onVerifySuccess?.()
+    }
+
     return (
-        <div>
-            <div className="mb-8">
+        <div className={className}>
+            {/* <div className="mb-8">
                 <h3 className="mb-2">OTP Verification</h3>
                 <p className="font-semibold heading-text">
-                    We have sent you One Time Password to your email.
+                    We have sent you One Time Password to {email}.
                 </p>
-            </div>
+            </div> */}
             {message && (
                 <Alert showIcon className="mb-4" type="danger">
                     <span className="break-all">{message}</span>
@@ -44,24 +56,35 @@ export const OtpVerificationBase = () => {
                 </Alert>
             )}
             <OtpVerificationForm
+                userId={userId}
+                email={email}
                 setMessage={setMessage}
                 setOtpVerified={setOtpVerified}
+                onVerifySuccess={handleVerifySuccess}
             />
-            <div className="mt-4 text-center">
-                <span className="font-semibold">Din&apos;t receive OTP? </span>
-                <button
-                    className="heading-text font-bold underline"
-                    onClick={handleResendOtp}
-                >
-                    Resend OTP
-                </button>
+            <button
+                className="heading-text font-outfit font-[600] text-[#FFB84C] w-full my-2"
+                onClick={handleResendOtp}
+            >
+                Resend OTP
+            </button>
+            <div className="mt-4">
+                <p className='font-[outfit] text-[#FFFFFF] font-[400]'>
+                    Please check your inbox and enter the verification code above to reset your password.
+                </p>
+                <p className='font-[outfit] text-[#FFB84C] font-[600]'>
+                    Didn't receive the code?
+                </p>
+                <p className='font-[outfit] text-[#FFFFFF] font-[400]'>
+                    Check your spam folder or click "Resend Code" to request a new one.
+                </p>
             </div>
         </div>
     )
 }
 
-const OtpVerification = () => {
-    return <OtpVerificationBase />
+const OtpVerification = (props: OtpVerificationProps) => {
+    return <OtpVerificationBase {...props} />
 }
 
 export default OtpVerification

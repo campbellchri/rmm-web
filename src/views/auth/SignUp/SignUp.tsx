@@ -1,10 +1,12 @@
 import Logo from '@/components/template/Logo'
 import Alert from '@/components/ui/Alert'
 import SignUpForm from './components/SignUpForm'
+import OtpVerification from '../OtpVerification/OtpVerification'
 import ActionLink from '@/components/shared/ActionLink'
 import useTimeOutMessage from '@/utils/hooks/useTimeOutMessage'
 import { useThemeStore } from '@/store/themeStore'
 import OauthSignIn from '../SignIn/components/OauthSignIn'
+import { useState } from 'react'
 
 type SignUpProps = {
     disableSubmit?: boolean
@@ -16,7 +18,24 @@ export const SignUpBase = ({
     disableSubmit,
 }: SignUpProps) => {
     const [message, setMessage] = useTimeOutMessage()
+    const [showOtpVerification, setShowOtpVerification] = useState(false)
+    const [otpData, setOtpData] = useState({ userId: '', email: '' })
     const mode = useThemeStore((state) => state.mode)
+
+    const handleSignUpSuccess = (userId: string, email: string) => {
+        setOtpData({ userId, email })
+        setShowOtpVerification(true)
+    }
+
+    const handleOtpVerified = () => {
+        // OTP verification successful - redirect to dashboard
+        window.location.href = '/dashboard'
+    }
+
+    const handleBackToSignUp = () => {
+        setShowOtpVerification(false)
+        setOtpData({ userId: '', email: '' })
+    }
 
     return (
         <>
@@ -26,12 +45,18 @@ export const SignUpBase = ({
             </div> */}
 
             <div className="flex flex-col gap-2 sm:gap-4">
-                <h2 className="text-[clamp(1.125rem,1vw+1rem,1.5rem)] DMSerifPro leading-tight text-[#ffffff]">
-                    Welcome Back 👋
+                <h2 className="text-[clamp(1.125rem,1vw+1rem,1.5rem)] font-DMSerif font-[400] leading-tight text-[#ffffff]">
+                    {showOtpVerification ? 'Verify OTP' : 'Welcome Back 👋'}
                 </h2>
-                <p className="text-[clamp(0.875rem,0.6vw+0.75rem,1rem)] font-poppins leading-relaxed text-[#ffffff]">
-                    Today is a new day. It's your day. You shape it. Sign in to
-                    start managing your projects.
+                <p className='font-[400] text-[20px] text-[#ffffff] font-poppins'>
+                    Enter Verification Code
+                </p>
+
+                <p className="text-[clamp(0.875rem,0.6vw+0.75rem,1rem)] font-outfit text-[16px] leading-relaxed text-[#ffffff]">
+                    {showOtpVerification 
+                        ? `We've sent a verification code to ${otpData.email}`
+                        : 'Today is a new day. It\'s your day. You shape it. Sign in to start managing your projects.'
+                    }
                 </p>
             </div>
 
@@ -42,10 +67,19 @@ export const SignUpBase = ({
             )}
 
             <div className="mt-6 sm:mt-8">
-                <SignUpForm
-                    disableSubmit={disableSubmit}
-                    setMessage={setMessage}
-                />
+                {showOtpVerification ? (
+                    <OtpVerification
+                        userId={otpData.userId}
+                        email={otpData.email}
+                        onVerifySuccess={handleOtpVerified}
+                    />
+                ) : (
+                    <SignUpForm
+                        disableSubmit={disableSubmit}
+                        setMessage={setMessage}
+                        onSignUpSuccess={handleSignUpSuccess}
+                    />
+                )}
             </div>
 
             {/* OR Divider */}
@@ -65,14 +99,15 @@ export const SignUpBase = ({
 
             <div className="mt-6 text-center font-poppins font-[400] text-[16px]">
                 <span className="text-[#ffffff] dark:text-gray-300">
-                    Already have an account?
-                </span>
+                    {showOtpVerification ? 'Back to' : 'Already have an account?'}
+                </span> &nbsp;
                 <ActionLink
-                    to={signInUrl}
-                    className="font-bold font-poppins  text-[16px] text-[#C7A30D] hover:underline"
+                    to={showOtpVerification ? '#' : signInUrl}
+                    onClick={showOtpVerification ? handleBackToSignUp : undefined}
+                    className="font-[500] font-Inter text-[16px] text-[#ffffff]"
                     themeColor={false}
                 >
-                    Sign in
+                    {showOtpVerification ? 'Login' : 'Sign in'}
                 </ActionLink>
             </div>
         </>

@@ -58,6 +58,7 @@ module.exports = {
             jakarta: ['Jakarta', 'sans-serif'],
             PlusJakartaSans: ['Plus Jakarta Sans', 'sans-serif'],
             Arial: ['Arial', 'sans-serif'],
+            Inter: ['Inter', 'sans-serif'],
         },
 
         screens: {

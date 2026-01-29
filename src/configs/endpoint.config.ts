@@ -4,6 +4,8 @@ const endpointConfig = {
     signIn: 'auth/signIn',
     signOut: 'sign-out',
     signUp: 'auth/signUp',
+    verifyOtp: 'auth/verify-otp',
+    resendOtp: 'auth/resend-otp',
     forgotPassword: 'auth/forgot-password',
     resetPassword: 'auth/reset-password',
     profileUpdate: 'users/update/profile',

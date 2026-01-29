@@ -3,7 +3,7 @@ import AuthContext from './AuthContext'
 import appConfig from '@/configs/app.config'
 import { useSessionUser, useToken } from '@/store/authStore'
 import { useAvatarStore } from '@/store/avatarStore'
-import { apiSignIn, apiSignUp } from '@/services/AuthService'
+import { apiSignIn, apiSignUp, apiVerifyOtp, apiResendOtp } from '@/services/AuthService'
 import { REDIRECT_URL_KEY } from '@/constants/app.constant'
 import { useNavigate } from 'react-router-dom'
 import type {
@@ -13,6 +13,10 @@ import type {
     OauthSignInCallbackPayload,
     User,
     Token,
+    VerifyOtpRequest,
+    VerifyOtpResponse,
+    ResendOtpRequest,
+    ResendOtpResponse,
 } from '@/@types/auth'
 import type { ReactNode, Ref } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
@@ -143,6 +147,7 @@ function AuthProvider({ children }: AuthProviderProps) {
                 return {
                     status: 'success',
                     message: '',
+                    userId: resp.userId,
                 }
             }
             return {
@@ -171,6 +176,47 @@ function AuthProvider({ children }: AuthProviderProps) {
         })
     }
 
+    const verifyOtp = async (values: VerifyOtpRequest, email: string): Promise<VerifyOtpResponse> => {
+        try {
+            const resp = await apiVerifyOtp(values)
+            
+            console.log(resp, 'verify otp res')
+            if (resp) {
+                // Handle successful OTP verification - sign the user in
+                const accessToken = resp.accessToken || resp.token
+                const user: User = {
+                    userId: resp.userId,
+                    name: resp.firstName, 
+                    surName: '', 
+                    userName: resp.firstName, // Use only firstName as userName
+                    email: email, // Use email passed as separate parameter
+                    authority: resp.role || [],
+                    role: resp.role || [],
+                }
+
+                handleSignIn(
+                    { accessToken, refreshToken: resp.refreshToken },
+                    user,
+                )
+                redirect()
+                return resp
+            }
+            throw new Error('Failed to verify OTP')
+            // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+        } catch (errors: any) {
+            throw errors
+        }
+    }
+
+    const resendOtp = async (values: ResendOtpRequest): Promise<ResendOtpResponse> => {
+        try {
+            const resp = await apiResendOtp(values)
+            return resp
+        } catch (errors: any) {
+            throw errors
+        }
+    }
+
     return (
         <AuthContext.Provider
             value={{
@@ -180,6 +226,8 @@ function AuthProvider({ children }: AuthProviderProps) {
                 signUp,
                 signOut,
                 oAuthSignIn,
+                verifyOtp,
+                resendOtp,
             }}
         >
             {children}
