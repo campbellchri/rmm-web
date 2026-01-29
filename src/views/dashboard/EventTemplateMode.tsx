@@ -51,7 +51,25 @@ const validationSchema = z.object({
     videoTitle: z.string().trim().min(1, { message: 'Video Title is required' }),
     profilePicture: z.any().optional(),
     eventVideo: z.any().refine((val) => !!val, { message: 'Event Video is required' }),
-})
+}).refine(
+    (data) => {
+        if (!data.eventStartDate || !data.eventStartTime) return true;
+        
+        // Combine date + time in LOCAL timezone (matches UI components)
+        const combined = dayjs(data.eventStartDate)
+            .hour(dayjs(data.eventStartTime).hour())
+            .minute(dayjs(data.eventStartTime).minute())
+            .second(0)
+            .millisecond(0);
+        
+        // Strictly require future datetime
+        return combined.isAfter(dayjs());
+    },
+    {
+        message: "Event start time must be in the future",
+        path: ["eventStartTime"], // Shows error under time field
+    }
+);
 
 type FormSchema = z.infer<typeof validationSchema>
 
@@ -67,6 +85,7 @@ export default function EventMode() {
     const [uploadKey, setUploadKey] = useState(0) // Force re-render of Upload component
     const navigate = useNavigate()
     const { fetchMemorials, setActiveMemorialId } = useMemorialStore()
+    const [profileFile, setProfileFile] = useState<File | null>(null)
     const { addMedia, getMedia, clearMedia } = useMediaStore()
     const { user } = useAuth()
 
@@ -258,6 +277,40 @@ export default function EventMode() {
         setUploadingVideo(false)
     }
 
+        const validateSquareImage = (
+    file: File,
+    minSize = 400
+): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image()
+        const url = URL.createObjectURL(file)
+
+        img.onload = () => {
+            const { width, height } = img
+            URL.revokeObjectURL(url)
+
+            if (width !== height) {
+                reject('Image must be square (1:1 ratio)')
+                return
+            }
+
+            if (width < minSize || height < minSize) {
+                reject(`Image must be at least ${minSize} x ${minSize}px`)
+                return
+            }
+
+            resolve()
+        }
+
+        img.onerror = () => {
+            URL.revokeObjectURL(url)
+            reject('Invalid image file')
+        }
+
+        img.src = url
+    })
+    }
+
     const onSubmit = async (data: any) => {
         setIsSubmitting(true)
         try {
@@ -386,6 +439,84 @@ export default function EventMode() {
 
                     <div className="flex flex-col gap-5">
                         <div className="flex flex-col items-center gap-5 mb-8">
+                            <div className="flex items-center gap-8 w-full bg-[#2f3349] min-h-[180px] rounded-[14px] py-[20px] px-[30px]">
+                            <div className="w-[96px] h-[96px] md:w-[120px] md:h-[120px] lg:w-[140px] lg:h-[140px]
+                                rounded-[12px] overflow-hidden bg-[#E5E7EB] flex items-center justify-center">
+                                {profileImage ? (
+                                    <img
+                                        src={profileImage}
+                                        alt="Profile"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <img
+                                        src="https://api.builder.io/api/v1/image/assets/TEMP/83dc85ca9155608ff3d7e17a997653fd5f9ed739?width=248"
+                                        alt="Default avatar"
+                                        className="w-full h-full object-cover"
+                                    />
+                                )}
+                            </div>
+
+                            <div className='flex flex-col gap-4'>
+                                <p className='text-[#FFFFFF] text-[18px] font-[400] font-Arial'>Profile Photo</p>
+                                <p className='text-[#99A1AF] text-[14px] font-[400] font-Arial'>
+                                    Upload a high-quality photo of your loved one. This will be the main photo displayed on the memorial page.
+                                </p>
+
+                                <button
+                                    type="button"
+                                    disabled={uploadingProfile}
+                                    onClick={() =>
+                                        document
+                                            .getElementById('profileUpload')
+                                            ?.click()
+                                    }
+                                    className="md:px-[21px] py-[7px] px-3 font-medium text-[16px] font-[400] w-[max-content] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-Arial border-[#FFB84C] disabled:opacity-50"
+                                >
+                                    {uploadingProfile
+                                    ? 'Uploading...'
+                                    : profileImage
+                                        ? 'Change Photo'
+                                        : 'Upload Profile'
+                                }
+
+                                </button>
+
+                                <input
+                                id="profileUpload"
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0]
+                                    if (!file) return
+
+                                    try {
+                                        await validateSquareImage(file, 400)
+                                        setProfileFile(file)
+                                        handleProfileUpload(file)
+                                    } catch (err: any) {
+                                        toast.push(
+                                            <Notification type="danger" title="Invalid Image" duration={3000}>
+                                                {err}
+                                            </Notification>,
+                                            { placement: 'top-center' }
+                                        )
+                                    } finally {
+                                        e.target.value = '' // reset input
+                                    }
+                                }}
+                            />
+
+                                <p className='text-[#6A7282] text-[12px] font-[400] font-Arial'>Recommended: Square image, at least 400 x 400px</p>
+                                {!profileImage && isSubmitting && (
+                                <p className='text-[#e26253] text-[12px] font-[400] font-Arial mt-1'>
+                                    Profile picture is required
+                                </p>
+                                )}
+                            </div>
+
+                        </div>
                             {/* <div className="flex items-center gap-4">
                                 <div className="lg:w-31 lg:h-31 md:w-25 md:h-25 h-20 w-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                                     {profileImage ? (
@@ -487,32 +618,36 @@ export default function EventMode() {
                                                 placeholder="Select Date"
                                                 invalid={Boolean(errors.eventStartDate)}
                                                 errorMessage={errors.eventStartDate?.message}
+                                                minDate={dayjs().startOf('day').toDate()}
                                             />
                                         </div>
-
                                         <div className="relative flex-1">
-                                            <Controller
-                                                name="eventStartTime"
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <div>
-                                                        <TimeInput
-                                                            value={field.value}
-                                                            onChange={field.onChange}
-                                                            format="12"
-                                                            showSeconds={false}
-                                                            suffix={
-                                                                <Clock className="w-4 h-4 text-memorial-gray-500 pointer-events-none" />
-                                                            }
-                                                            className={`text-white bg-[#383C56] border-none ${errors.eventStartTime ? 'border-red-500' : ''}`}
-                                                        />
-                                                        {errors.eventStartTime && (
-                                                            <p className="text-[#e26253] text-sm mt-1">{(errors.eventStartTime as any).message}</p>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            />
-                                        </div>
+                                        <Controller
+                                            name="eventStartTime"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <div>
+                                                    <TimeInput
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        format="12"
+                                                        showSeconds={false}
+                                                        suffix={
+                                                            <Clock className="w-4 h-4 text-memorial-gray-500 pointer-events-none" />
+                                                        }
+                                                        className={`text-white bg-[#383C56] border-none ${
+                                                            errors.eventStartTime ? 'border-red-500' : ''
+                                                        }`}
+                                                    />
+                                                    {errors.eventStartTime?.message && (
+                                                        <p className="text-[#e26253] text-sm mt-1">
+                                                            {errors.eventStartTime.message}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        />
+                                    </div>
                                     </div>
                                 </div>
 
