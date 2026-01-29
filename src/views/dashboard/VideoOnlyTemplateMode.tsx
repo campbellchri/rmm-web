@@ -392,59 +392,147 @@ export default function VideoOnlyMemorial() {
         setUploadingFeatured(false)
     }
 
-    const handleGalleryVideosUpload = async (files: (File | any)[]) => {
-        // Detect removed existing videos
-        const removedItems = videoData.filter(
-            (item) =>
-                !files.some(
-                    (f) =>
-                        !(f instanceof File) &&
-                        (f.uploadId === item.res?.uploadId ||
-                            f.fileId === item.res?.fileId),
-                ),
-        )
+    // const handleGalleryVideosUpload = async (files: (File | any)[]) => {
+    //     // Detect removed existing videos
+    //     const removedItems = videoData.filter(
+    //         (item) =>
+    //             !files.some(
+    //                 (f) =>
+    //                     !(f instanceof File) &&
+    //                     (f.uploadId === item.res?.uploadId ||
+    //                         f.fileId === item.res?.fileId),
+    //             ),
+    //     )
 
-        // Delete removed videos
-        for (const removed of removedItems) {
-            console.log('Deleting removed video:', removed)
-            const uploadId = removed.res?.uploadId
-            const userId = removed.res?.userId
-            if (uploadId) {
-                try {
-                    await apiDeleteMedia(userId, uploadId)
-                } catch (error) {
-                    console.error('Failed to delete gallery video', error)
-                }
-            }
-        }
+    //     // Delete removed videos
+    //     for (const removed of removedItems) {
+    //         console.log('Deleting removed video:', removed)
+    //         const uploadId = removed.res?.uploadId
+    //         const userId = removed.res?.userId
+    //         if (uploadId) {
+    //             try {
+    //                 await apiDeleteMedia(userId, uploadId)
+    //             } catch (error) {
+    //                 console.error('Failed to delete gallery video', error)
+    //             }
+    //         }
+    //     }
 
-        // Keep existing ones
-        const existingEntries = videoData.filter((item) =>
-            files.some(
-                (f) =>
-                    !(f instanceof File) && f.uploadId === item.res?.uploadId,
-            ),
-        )
+    //     // Keep existing ones
+    //     const existingEntries = videoData.filter((item) =>
+    //         files.some(
+    //             (f) =>
+    //                 !(f instanceof File) && f.uploadId === item.res?.uploadId,
+    //         ),
+    //     )
 
-        // Upload new files
-        const newFiles = files.filter((f) => f instanceof File) as File[]
+    //     // Upload new files
+    //     const newFiles = files.filter((f) => f instanceof File) as File[]
 
-        if (newFiles.length > 0) {
-            setUploadingVideos(true)
-            const res = await uploadFiles(newFiles)
+    //     if (newFiles.length > 0) {
+    //         setUploadingVideos(true)
+    //         const res = await uploadFiles(newFiles)
 
-            const newData = newFiles.map((file, i) => ({
-                file,
-                res: res[i],
-                // No id field for new uploads
-            }))
+    //         const newData = newFiles.map((file, i) => ({
+    //             file,
+    //             res: res[i],
+    //             // No id field for new uploads
+    //         }))
 
-            setVideoData([...existingEntries, ...newData])
-            setUploadingVideos(false)
-        } else {
-            setVideoData(existingEntries)
-        }
+    //         setVideoData([...existingEntries, ...newData])
+    //         setUploadingVideos(false)
+    //     } else {
+    //         setVideoData(existingEntries)
+    //     }
+    // }
+const handleGalleryVideosUpload = async (files: (File | any)[]) => {
+  const MAX_GALLERY_VIDEOS = 3
+  
+  // 1️⃣ Separate existing & new files
+  const incomingExisting = files.filter(
+    f => !(f instanceof File) && f.uploadId
+  )
+  const incomingNewFiles = files.filter(
+    f => f instanceof File
+  ) as File[]
+
+  // 2️⃣ Keep existing videos user did NOT remove
+  const keptExisting = videoData.filter(v =>
+    incomingExisting.some(e => e.uploadId === v.res?.uploadId)
+  )
+
+  // 3️⃣ Detect removed videos
+  const removedItems = videoData.filter(v =>
+    !incomingExisting.some(e => e.uploadId === v.res?.uploadId)
+  )
+
+  // 4️⃣ Delete removed videos
+  for (const item of removedItems) {
+    if (item.res?.uploadId) {
+      try {
+        await apiDeleteMedia(item.res.userId, item.res.uploadId)
+      } catch (error) {
+        console.error('Failed to delete gallery video', error)
+      }
     }
+  }
+
+  // 5️⃣ Enforce max limit BEFORE upload
+  const remainingSlots = MAX_GALLERY_VIDEOS - keptExisting.length
+  if (incomingNewFiles.length > remainingSlots) {
+    toast.push(
+      <Notification type="danger" title="Upload limit exceeded" duration={3000}>
+        You can upload a maximum of 3 videos.
+      </Notification>,
+      { placement: 'top-center' }
+    )
+    // Update state with existing files only and force re-render
+    setVideoData(keptExisting)
+    setUploadKey(prev => prev + 1)
+    return
+  }
+
+  // 6️⃣ Upload only allowed files
+  let newlyUploaded: { file: File | any; res: any }[] = []
+  if (incomingNewFiles.length > 0) {
+    setUploadingVideos(true)
+    try {
+      const res = await uploadFiles(incomingNewFiles)
+      newlyUploaded = incomingNewFiles
+        .map((file, i) => {
+          if (!res[i]) return null
+          return {
+            file: {
+              name: res[i].originalFileName || file.name,
+              size: res[i].size || file.size,
+              type: res[i].mimeType || file.type,
+              fileURL: res[i].fileURL,
+              mimeType: res[i].mimeType || file.type,
+              fileId: res[i].fileId,
+              uploadId: res[i].uploadId,
+            },
+            res: res[i]
+          }
+        })
+        .filter(Boolean) as { file: any; res: any }[]
+    } catch (error) {
+      console.error('Error uploading videos:', error)
+      toast.push(
+        <Notification type="danger" title="Upload Failed" duration={3000}>
+          Failed to upload video(s). Please try again.
+        </Notification>,
+        { placement: 'top-center' }
+      )
+    } finally {
+      setUploadingVideos(false)
+    }
+  }
+
+  // 7️⃣ Merge & update state (ensure max 3)
+  const finalVideos = [...keptExisting, ...newlyUploaded].slice(0, MAX_GALLERY_VIDEOS)
+  setVideoData(finalVideos)
+}
+
 const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
     console.log(removedFiles, 'removedFiles')
   // Normalize to array
@@ -938,17 +1026,19 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                     <FormSection
                         title={
                             <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
-                                Upload Video (Optional)
+                                Upload Videos (Optional)
                             </span>
                         }
                         className="mb-8"
                     >
                         <Upload
-                            key={`gallery-${uploadKey}`}
+                            key={`gallery-${uploadKey}`} 
                             accept="video/*"
                             uploadLimit={3}
+                            multiple
                             onChange={handleGalleryVideosUpload}
                             onFileRemove={(updatedFiles) => handleGalleryVideosUpload(updatedFiles)}
+                            isPlusIconVisible={videoData.length > 0 ? true : false}
                             uploading={uploadingVideos}
                             defaultFiles={videoData.map((item) => ({
                                 name:
