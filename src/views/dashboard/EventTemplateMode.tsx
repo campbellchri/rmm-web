@@ -49,7 +49,15 @@ const validationSchema = z.object({
     }),
     eventDuration: z.string().min(1, { message: 'Duration is required' }),
     videoTitle: z.string().trim().min(1, { message: 'Video Title is required' }),
-    profilePicture: z.any().optional(),
+   profilePicture: z.string({
+    required_error: "Profile picture is required", // Triggers when value is undefined
+    invalid_type_error: "Profile picture is required" // Triggers when value isn't a string
+})
+.min(1, { message: "Profile picture is required" }) // Catches empty strings
+.refine(
+    (val) => val.startsWith('http') || val.startsWith('blob'),
+    { message: "Invalid image URL" }
+),
     eventVideo: z.any().refine((val) => !!val, { message: 'Event Video is required' }),
 }).refine(
     (data) => {
@@ -509,9 +517,9 @@ export default function EventMode() {
                             />
 
                                 <p className='text-[#6A7282] text-[12px] font-[400] font-Arial'>Recommended: Square image, at least 400 x 400px</p>
-                                {!profileImage && isSubmitting && (
-                                <p className='text-[#e26253] text-[12px] font-[400] font-Arial mt-1'>
-                                    Profile picture is required
+                               {errors.profilePicture && (
+                                <p className='text-[#e26253] text-[12px] font-Arial mt-1'>
+                                    {errors.profilePicture.message}
                                 </p>
                                 )}
                             </div>
