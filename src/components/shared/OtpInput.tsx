@@ -99,7 +99,7 @@ const OTPInput = ({
                         key={index}
                         ref={setRef(index)}
                         className={classNames(
-                            'text-center text-lg h-[58px] w-[58px]',
+                            'text-center text-lg h-[58px] w-[58px] font-[700] text-[#ffffff] bg-[#383c56]',
                             inputClass,
                         )}
                         type="text"

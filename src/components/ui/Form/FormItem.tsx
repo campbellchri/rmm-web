@@ -117,7 +117,7 @@ const FormItem = (props: FormItemProps) => {
                     <AnimatePresence mode="wait">
                         {invalid && (
                             <motion.div
-                                className="form-explain text-[#e26253]"
+                                className="form-explain text-[#e26253] mt-4"
                                 initial={initialStyle}
                                 animate={enterStyle}
                                 exit={exitStyle}

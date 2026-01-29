@@ -85,6 +85,7 @@ const OtpVerificationForm = (props: OtpVerificationFormProps) => {
                     loading={isSubmitting}
                     variant="solid"
                     type="submit"
+                    className='my-3'
                 >
                     {isSubmitting ? 'Verifying...' : 'Verify OTP'}
                 </Button>

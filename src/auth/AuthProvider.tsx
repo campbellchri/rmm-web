@@ -76,11 +76,8 @@ function AuthProvider({ children }: AuthProviderProps) {
     }
 
     const handleSignOut = () => {
-        // Remove token from localStorage
         removeToken()
 
-        // Reset user state to initial empty values
-        // But keep the avatar from the persistent store
         setUser({
             userId: '',
             avatar: avatar || '',
@@ -92,11 +89,8 @@ function AuthProvider({ children }: AuthProviderProps) {
             role: [],
         })
 
-        // Set session to signed out
         setSessionSignedIn(false)
 
-        // Clear sessionUser from localStorage (Zustand will handle this automatically)
-        // but we can force it by removing the item
         localStorage.removeItem('sessionUser')
     }
 
@@ -110,7 +104,7 @@ function AuthProvider({ children }: AuthProviderProps) {
                     userId: resp.userId,
                     name: resp.name,
                     surName: resp.surName,
-                    userName: `${resp.name} ${resp.surName}`,
+                    userName: `${resp.firstName} ${resp.lastName}`,
                     email: values.email, // Use email from login form
                     authority: resp.role || [],
                     role: resp.role || [],
@@ -180,15 +174,13 @@ function AuthProvider({ children }: AuthProviderProps) {
         try {
             const resp = await apiVerifyOtp(values)
             
-            console.log(resp, 'verify otp res')
             if (resp) {
-                // Handle successful OTP verification - sign the user in
                 const accessToken = resp.accessToken || resp.token
                 const user: User = {
                     userId: resp.userId,
                     name: resp.firstName, 
                     surName: '', 
-                    userName: resp.firstName, // Use only firstName as userName
+                    userName: `${resp.firstName} ${resp.lastName}`, 
                     email: email, // Use email passed as separate parameter
                     authority: resp.role || [],
                     role: resp.role || [],

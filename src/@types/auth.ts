@@ -9,6 +9,8 @@ export type SignInResponse = {
     surName: string
     refreshToken: string
     accessToken: string
+    firstName: string
+    lastName: string
     token: string  // Keep for backward compatibility
     role: string[]
     user?: {  // Optional nested user object for backward compatibility
