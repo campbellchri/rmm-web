@@ -70,7 +70,7 @@ function AuthProvider({ children }: AuthProviderProps) {
         if (user) {
             setUser({
                 ...user,
-                avatar: user.avatar || avatar || '',
+                // avatar: user.avatar || avatar || '',
             })
         }
     }
@@ -80,7 +80,7 @@ function AuthProvider({ children }: AuthProviderProps) {
 
         setUser({
             userId: '',
-            avatar: avatar || '',
+            // avatar: avatar || '',
             userName: '',
             name: '',
             surName: '',

@@ -15,8 +15,12 @@ import type { CommonProps } from '@/@types/common'
 const CollapsibleSide = ({ children }: CommonProps) => {
     const { larger, smaller } = useResponsive()
     const location = useLocation()
-    const { avatar, userName } = useSessionUser((state) => state.user)
+    // const { avatar, userName } = useSessionUser((state) => state.user)
+    const { avatar: rawAvatar, userName } = useSessionUser((state) => state.user)
+    const avatar = rawAvatar?.trim()
+    console.log(JSON.stringify(useSessionUser.getState().user.avatar))
 
+    console.log(avatar, 'avatar in dashboard')
     const avatarProps = {
         ...(avatar ? { src: avatar } : {}),
     }

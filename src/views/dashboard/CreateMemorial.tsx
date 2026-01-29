@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import ProgressBar from '@/components/ui/ProgressBar/ProgressBar'
 import { apiGetMemorialModeList } from '@/services/axios/MemorialModeService'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { useSessionUser } from '@/store/authStore'
 
 type LandingModeType = 'full-mode' | 'video-only-mode' | 'event-mode'
 

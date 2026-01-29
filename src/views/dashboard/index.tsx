@@ -8,11 +8,13 @@ import { SingleValue, StylesConfig } from 'react-select'
 import ProgressBar from '@/components/ui/ProgressBar/ProgressBar'
 import { apiGetDashboardDetail } from '@/services/axios/MemorialModeService'
 import dayjs from 'dayjs'
+import { useSessionUser } from '@/store/authStore'
 
 const Dashboard = () => {
     const navigate = useNavigate()
     const { memorials, setActiveMemorialId } = useMemorialStore()
     const [dashboardStats, setDashboardStats] = useState<any>(null)
+    const setUser = useSessionUser((state) => state.setUser)
 
     useEffect(() => {
         fetchDashboardStats()
@@ -21,6 +23,10 @@ const Dashboard = () => {
     const fetchDashboardStats = async () => {
         try {
             const res = await apiGetDashboardDetail()
+            console.log(res, '------')
+            setUser({ 
+            avatar: (res?.user?.photoURL || '').trim(),
+            })
             setDashboardStats(res)
         } catch (error) {
             console.error('Error fetching dashboard stats:', error)
