@@ -132,6 +132,7 @@ export default function VideoOnlyMemorial() {
         reset,
         setValue,
         clearErrors,
+        getValues,
         formState: { errors },
     } = useForm<FormSchema>({
         resolver: zodResolver(validationSchema),
@@ -725,7 +726,23 @@ export default function VideoOnlyMemorial() {
     }
     
     const handleSaveFinish = () => {
-         setIsSubmitting(true)
+         const { profilePicture } = getValues()
+          if (!profilePicture) {
+        toast.push(
+            <Notification
+                type="danger"
+                title="Profile Image Required"
+                duration={3000}
+            >
+                Please upload a profile image before saving.
+            </Notification>,
+            { placement: 'top-center' }
+        )
+        return
+    }
+
+
+        setIsSubmitting(true)
         handleSubmit(onSubmit, onError)()
     }
 

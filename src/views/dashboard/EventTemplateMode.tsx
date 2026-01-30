@@ -418,8 +418,19 @@ export default function EventMode() {
 
     const handleSaveFinish = () => {
         const values = getValues(); // import getValues from useForm
-        console.log('Form values:', values);
-        console.log('Form errors:', errors);
+         if (!values.profilePicture) {
+        toast.push(
+            <Notification
+                type="danger"
+                title="Profile Image Required"
+                duration={3000}
+            >
+                Please upload a profile image before saving.
+            </Notification>,
+            { placement: 'top-center' }
+        )
+        return
+    }
         handleSubmit(onSubmit)();
     }
 
