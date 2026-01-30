@@ -665,11 +665,8 @@ export default function VideoOnlyMemorial() {
                 delete updatePayload.lifeStoryImageURL
                 delete updatePayload.featuredPhotoId
                 delete updatePayload.featuredPhotoURL
+                delete updatePayload.inFeatured
 
-                console.log(
-                    'Update Payload:',
-                    JSON.stringify(updatePayload, null, 2),
-                )
 
                 await apiUpdateMemorial(memorialId, updatePayload)
                 toast.push(

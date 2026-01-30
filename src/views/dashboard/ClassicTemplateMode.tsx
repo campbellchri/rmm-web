@@ -799,6 +799,10 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                     ...restExistingData,
                     ...payloadForUpdate,
                 }
+
+                // Remove unwanted properties from updatePayload
+                delete updatePayload.inFeatured
+
                 await apiUpdateMemorial(memorialId, updatePayload)
                 toast.push(
                     <Notification
