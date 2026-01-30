@@ -58,7 +58,25 @@ const validationSchema = z.object({
     featuredVideo: z
         .any()
         .refine((val) => !!val, { message: 'Featured Video is required' }),
-    galleryVideoTitle: z.string().optional(),
+galleryVideos: z
+  .array(
+    z.object({
+      title: z.string().min(1, 'Title is required'),
+      description: z.string().min(1, 'Description is required'),
+    })
+  )
+  .optional()
+  .refine(
+    (videos) => {
+      if (!videos || videos.length === 0) return true
+      return videos.every(v => v.title && v.description)
+    },
+    {
+      message: 'Each uploaded video must have title and description',
+    }
+  ),
+
+
 })
 
 type FormSchema = z.infer<typeof validationSchema>
@@ -113,6 +131,7 @@ export default function VideoOnlyMemorial() {
         handleSubmit,
         reset,
         setValue,
+        clearErrors,
         formState: { errors },
     } = useForm<FormSchema>({
         resolver: zodResolver(validationSchema),
@@ -125,13 +144,11 @@ export default function VideoOnlyMemorial() {
             featuredVideoTitle: '',
             featuredVideoDescription: '',
             favSaying: '',
-            galleryVideoTitle: '',
+            galleryVideos: [],
             profilePicture: undefined,
             featuredVideo: undefined,
         },
     })
-
-    console.log(videoData, 'videoData')
 
     const genderOptions = [
         { value: Gender.MALE, label: 'Male' },
@@ -163,6 +180,12 @@ export default function VideoOnlyMemorial() {
                         const featuredVideo = memorialRes.userMedia?.find(
                             (m: any) => m.category === MediaCategory.FEATURED,
                         )
+                         const galleryVideos = memorialRes.userMedia
+                            ?.filter((m: any) => m.category === MediaCategory.GALLERY)
+                            .map((m: any) => ({
+                                title: m.videoTitle || '',
+                                description: m.videoDescription || '',  // ✅ Correct path
+                            })) || []
 
                         reset({
                             personName: memorialRes.personName || '',
@@ -175,13 +198,9 @@ export default function VideoOnlyMemorial() {
                                 : undefined,
                             favQuote: memorialRes.favQuote || '',
                             featuredVideoTitle: featuredVideo?.videoTitle || '',
-                            
+                            featuredVideoDescription: featuredVideo?.videoDescription || '',
                             favSaying: featuredVideo?.videoDescription || '',
-                            galleryVideoTitle:
-                                memorialRes.userMedia?.find(
-                                    (m: any) =>
-                                        m.category === MediaCategory.GALLERY,
-                                )?.videoTitle || '',
+                           galleryVideos,
                             profilePicture:
                                 memorialRes.personProfilePicture || undefined,
                             featuredVideo: featuredVideo?.fileURL || undefined,
@@ -234,6 +253,14 @@ export default function VideoOnlyMemorial() {
                                 }))
 
                             setVideoData(gallery)
+                            setValue(
+                            'galleryVideos',
+                            gallery.map((g: any) => ({
+                                title: g.file?.videoTitle || '',
+                                description: g.res?.videoDescription || '',
+                            }))
+                            )
+
                         }
                     }
                 }
@@ -404,6 +431,7 @@ export default function VideoOnlyMemorial() {
                 // id will be undefined for new uploads, which is correct
             })
             setValue('featuredVideo', res[0].fileURL)
+            clearErrors('featuredVideo') 
             if (res[0].uploadId) {
                 addMedia(`featured_${res[0].uploadId}`, res[0])
             }
@@ -411,184 +439,94 @@ export default function VideoOnlyMemorial() {
         setUploadingFeatured(false)
     }
 
-    // const handleGalleryVideosUpload = async (files: (File | any)[]) => {
-    //     // Detect removed existing videos
-    //     const removedItems = videoData.filter(
-    //         (item) =>
-    //             !files.some(
-    //                 (f) =>
-    //                     !(f instanceof File) &&
-    //                     (f.uploadId === item.res?.uploadId ||
-    //                         f.fileId === item.res?.fileId),
-    //             ),
-    //     )
-
-    //     // Delete removed videos
-    //     for (const removed of removedItems) {
-    //         console.log('Deleting removed video:', removed)
-    //         const uploadId = removed.res?.uploadId
-    //         const userId = removed.res?.userId
-    //         if (uploadId) {
-    //             try {
-    //                 await apiDeleteMedia(userId, uploadId)
-    //             } catch (error) {
-    //                 console.error('Failed to delete gallery video', error)
-    //             }
-    //         }
-    //     }
-
-    //     // Keep existing ones
-    //     const existingEntries = videoData.filter((item) =>
-    //         files.some(
-    //             (f) =>
-    //                 !(f instanceof File) && f.uploadId === item.res?.uploadId,
-    //         ),
-    //     )
-
-    //     // Upload new files
-    //     const newFiles = files.filter((f) => f instanceof File) as File[]
-
-    //     if (newFiles.length > 0) {
-    //         setUploadingVideos(true)
-    //         const res = await uploadFiles(newFiles)
-
-    //         const newData = newFiles.map((file, i) => ({
-    //             file,
-    //             res: res[i],
-    //             // No id field for new uploads
-    //         }))
-
-    //         setVideoData([...existingEntries, ...newData])
-    //         setUploadingVideos(false)
-    //     } else {
-    //         setVideoData(existingEntries)
-    //     }
-    // }
-const handleGalleryVideosUpload = async (files: (File | any)[]) => {
-  const MAX_GALLERY_VIDEOS = 3
-  
-  // 1️⃣ Separate existing & new files
-  const incomingExisting = files.filter(
-    f => !(f instanceof File) && f.uploadId
-  )
-  const incomingNewFiles = files.filter(
-    f => f instanceof File
-  ) as File[]
-
-  // 2️⃣ Keep existing videos user did NOT remove
-  const keptExisting = videoData.filter(v =>
-    incomingExisting.some(e => e.uploadId === v.res?.uploadId)
-  )
-
-  // 3️⃣ Detect removed videos
-  const removedItems = videoData.filter(v =>
-    !incomingExisting.some(e => e.uploadId === v.res?.uploadId)
-  )
-
-  // 4️⃣ Delete removed videos
-  for (const item of removedItems) {
-    if (item.res?.uploadId) {
-      try {
-        await apiDeleteMedia(item.res.userId, item.res.uploadId)
-      } catch (error) {
-        console.error('Failed to delete gallery video', error)
-      }
-    }
-  }
-
-  // 5️⃣ Enforce max limit BEFORE upload
-  const remainingSlots = MAX_GALLERY_VIDEOS - keptExisting.length
-  if (incomingNewFiles.length > remainingSlots) {
-    toast.push(
-      <Notification type="danger" title="Upload limit exceeded" duration={3000}>
-        You can upload a maximum of 3 videos.
-      </Notification>,
-      { placement: 'top-center' }
+    const handleGalleryVideosUpload = async (files: (File | any)[]) => {
+    const MAX_GALLERY_VIDEOS = 3
+    
+    // 1️⃣ Separate existing & new files
+    const incomingExisting = files.filter(
+        f => !(f instanceof File) && f.uploadId
     )
-    // Update state with existing files only and force re-render
-    setVideoData(keptExisting)
-    setUploadKey(prev => prev + 1)
-    return
-  }
+    const incomingNewFiles = files.filter(
+        f => f instanceof File
+    ) as File[]
 
-  // 6️⃣ Upload only allowed files
-  let newlyUploaded: { file: File | any; res: any }[] = []
-  if (incomingNewFiles.length > 0) {
-    setUploadingVideos(true)
-    try {
-      const res = await uploadFiles(incomingNewFiles)
-      newlyUploaded = incomingNewFiles
-        .map((file, i) => {
-          if (!res[i]) return null
-          return {
-            file: {
-              name: res[i].originalFileName || file.name,
-              size: res[i].size || file.size,
-              type: res[i].mimeType || file.type,
-              fileURL: res[i].fileURL,
-              mimeType: res[i].mimeType || file.type,
-              fileId: res[i].fileId,
-              uploadId: res[i].uploadId,
-            },
-            res: res[i]
-          }
-        })
-        .filter(Boolean) as { file: any; res: any }[]
-    } catch (error) {
-      console.error('Error uploading videos:', error)
-      toast.push(
-        <Notification type="danger" title="Upload Failed" duration={3000}>
-          Failed to upload video(s). Please try again.
+    // 2️⃣ Keep existing videos user did NOT remove
+    const keptExisting = videoData.filter(v =>
+        incomingExisting.some(e => e.uploadId === v.res?.uploadId)
+    )
+
+    // 3️⃣ Detect removed videos
+    const removedItems = videoData.filter(v =>
+        !incomingExisting.some(e => e.uploadId === v.res?.uploadId)
+    )
+
+    // 4️⃣ Delete removed videos
+    for (const item of removedItems) {
+        if (item.res?.uploadId) {
+        try {
+            await apiDeleteMedia(item.res.userId, item.res.uploadId)
+        } catch (error) {
+            console.error('Failed to delete gallery video', error)
+        }
+        }
+    }
+
+    // 5️⃣ Enforce max limit BEFORE upload
+    const remainingSlots = MAX_GALLERY_VIDEOS - keptExisting.length
+    if (incomingNewFiles.length > remainingSlots) {
+        toast.push(
+        <Notification type="danger" title="Upload limit exceeded" duration={3000}>
+            You can upload a maximum of 3 videos.
         </Notification>,
         { placement: 'top-center' }
-      )
-    } finally {
-      setUploadingVideos(false)
+        )
+        // Update state with existing files only and force re-render
+        setVideoData(keptExisting)
+        setUploadKey(prev => prev + 1)
+        return
     }
-  }
 
-  // 7️⃣ Merge & update state (ensure max 3)
-  const finalVideos = [...keptExisting, ...newlyUploaded].slice(0, MAX_GALLERY_VIDEOS)
-  setVideoData(finalVideos)
-}
-
-const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
-    console.log(removedFiles, 'removedFiles')
-  // Normalize to array
-  const filesToRemove = Array.isArray(removedFiles) ? removedFiles : [removedFiles]
-
-  for (const removedFile of filesToRemove) {
-    const itemToRemove = videoData.find(
-      (item) =>
-        (removedFile.uploadId && removedFile.uploadId === item.res?.uploadId) ||
-        (removedFile.fileId && removedFile.fileId === item.res?.fileId)
-    )
-    console.log(itemToRemove, 'itemToRemove')
-
-    if (itemToRemove?.res?.uploadId) {
-      try {
-        await apiDeleteMedia(itemToRemove.res.userId, itemToRemove.res.uploadId)
-        setVideoData((prev) =>
-          prev.filter((item) => item.res?.uploadId !== itemToRemove.res?.uploadId)
-        )
+    // 6️⃣ Upload only allowed files
+    let newlyUploaded: { file: File | any; res: any }[] = []
+    if (incomingNewFiles.length > 0) {
+        setUploadingVideos(true)
+        try {
+        const res = await uploadFiles(incomingNewFiles)
+        newlyUploaded = incomingNewFiles
+            .map((file, i) => {
+            if (!res[i]) return null
+            return {
+                file: {
+                name: res[i].originalFileName || file.name,
+                size: res[i].size || file.size,
+                type: res[i].mimeType || file.type,
+                fileURL: res[i].fileURL,
+                mimeType: res[i].mimeType || file.type,
+                fileId: res[i].fileId,
+                uploadId: res[i].uploadId,
+                },
+                res: res[i]
+            }
+            })
+            .filter(Boolean) as { file: any; res: any }[]
+        } catch (error) {
+        console.error('Error uploading videos:', error)
         toast.push(
-          <Notification type="success" title="Deleted" duration={2000}>
-            Video removed successfully.
-          </Notification>,
-          { placement: 'top-center' }
+            <Notification type="danger" title="Upload Failed" duration={3000}>
+            Failed to upload video(s). Please try again.
+            </Notification>,
+            { placement: 'top-center' }
         )
-      } catch (error) {
-        console.error('Failed to delete gallery video', error)
-        toast.push(
-          <Notification type="danger" title="Error" duration={3000}>
-            Failed to delete video.
-          </Notification>,
-          { placement: 'top-center' }
-        )
-      }
+        } finally {
+        setUploadingVideos(false)
+        }
     }
-  }
-}
+
+    // 7️⃣ Merge & update state (ensure max 3)
+    const finalVideos = [...keptExisting, ...newlyUploaded].slice(0, MAX_GALLERY_VIDEOS)
+    setVideoData(finalVideos)
+    }
+
     const onSubmit = async (data: any) => {
         if (!profileData?.fileURL && !profileImage) {
             toast.push(
@@ -622,7 +560,8 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                               category: MediaCategory.FEATURED,
                               videoTitle:
                                   data.featuredVideoTitle || 'Featured Video',
-                              videoDescription: data.favSaying || '',
+                            //   videoDescription: data.favSaying || '',
+                            videoDescription: data.featuredVideoDescription || '',
                               isMainVideo: true,
                               isActive: true,
                               sortOrder: 0,
@@ -644,9 +583,8 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                             fileId: item.res?.fileId || item.file?.fileId,
                             type: MediaType.VIDEO,
                             category: MediaCategory.GALLERY,
-                            videoTitle:
-                                data.galleryVideoTitle || 'Gallery Video',
-                            videoDescription: '',
+                            videoTitle: data.galleryVideos?.[index]?.title || 'Gallery Video',
+                            videoDescription: data.galleryVideos?.[index]?.description || '',
                             isMainVideo: false,
                             isActive: true,
                             sortOrder: (featuredData ? 1 : 0) + index,
@@ -781,10 +719,16 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
         }
     }
 
+
+    const onError = (errors: any) => {
+        setIsSubmitting(false)
+    }
+    
     const handleSaveFinish = () => {
          setIsSubmitting(true)
-        handleSubmit(onSubmit)()
+        handleSubmit(onSubmit, onError)()
     }
+
 
     const handlePreview = () => {
         console.log('Preview clicked')
@@ -823,6 +767,20 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
         img.src = url
     })
     }
+// useEffect(() => {
+//   if (videoData.length === 0) return;
+
+//   const updated = videoData.map((item) => ({
+//     title: item.file?.videoTitle || '',
+//     description: item.res?.videoDescription || '',
+//   }));
+
+//   setValue('galleryVideos', updated);
+// }, [videoData, setValue]);
+
+
+
+
 
     return (
         <>
@@ -862,64 +820,7 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                                     />
                                 )}
                             </div>
-                            {/* <div className='flex flex-col gap-4'>
-                                 <p className='text-[#FFFFFF] text-[18px] font-[400] font-Arial'>Profile Photo</p>
-                                <p className='text-[#99A1AF] text-[14px] font-[400] font-Arial'>
-                                    Upload a high-quality photo of your loved one. This will be the main photo displayed on the memorial page.
-                                </p>
-
-                                <button
-                                    type="button"
-                                    disabled={uploadingProfile}
-                                    onClick={() =>
-                                        document
-                                            .getElementById('profileUpload')
-                                            ?.click()
-                                    }
-                                    className="md:px-[21px] py-[7px] px-3 font-medium text-[16px] font-[400] w-[max-content] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-Arial border-[#FFB84C] disabled:opacity-50"
-                                >
-                                    {uploadingProfile
-                                        ? 'Uploading...'
-                                        : 'Upload Profile'}
-                                </button>
-
-                                <input
-                                    id="profileUpload"
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                   onChange={async (e) => {
-                                    const file = e.target.files?.[0]
-                                    if (!file) return
-
-                                    try {
-                                        await validateSquareImage(file, 400)
-                                        handleProfileUpload(file)
-                                    } catch (error: any) {
-                                        toast.push(
-                                            <Notification
-                                                type="danger"
-                                                title="Invalid Image"
-                                                duration={3000}
-                                            >
-                                                {error}
-                                            </Notification>,
-                                            { placement: 'top-center' }
-                                        )
-                                    } finally {
-                                        // allow re-selecting same file again
-                                        e.target.value = ''
-                                    }
-                                }}
-
-                                />
-                                    <p className='text-[#6A7282] text-[12px] font-[400] font-Arial'>Recommended: Square image, at least 400 x 400px</p>
-                                    {!profileImage && isSubmitting && (
-                                        <p className='text-[#e26253] text-[12px] font-[400] font-Arial mt-1'>
-                                            Profile picture is required
-                                        </p>
-                                    )}
-                            </div> */}
+                            
                             <div className='flex flex-col gap-4'>
                                 <p className='text-[#FFFFFF] text-[18px] font-[400] font-Arial'>Profile Photo</p>
                                 <p className='text-[#99A1AF] text-[14px] font-[400] font-Arial'>
@@ -931,7 +832,12 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                                     onClick={() => document.getElementById('profileUpload')?.click()}
                                     className="md:px-[21px] py-[7px] px-3 font-medium text-[16px] font-[400] w-[max-content] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-Arial border-[#FFB84C] disabled:opacity-50"
                                 >
-                                    {uploadingProfile ? 'Uploading...' : 'Upload Profile'}
+                                    {uploadingProfile
+                                    ? 'Uploading...'
+                                    : profileImage
+                                        ? 'Change Photo'
+                                        : 'Upload Profile'
+                                }
                                 </button>
                                 <input
                                     id="profileUpload"
@@ -1131,23 +1037,14 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                                 />
                             </div>
                         </div>
-                        {/* <div className="mt-4">
-                            <CommonInput
-                                name="favSaying"
-                                control={control}
-                                label="Favorite Sayings (Optional)"
-                                placeholder="Enter sayings here..."
-                                invalid={Boolean(errors.favSaying)}
-                                errorMessage={errors.favSaying?.message}
-                            />
-                        </div> */}
+                        
                     </FormSection>
 
                     {/* Upload Video */}
                     <FormSection
                         title={
                             <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
-                                Upload Videos (Optional)
+                                Upload Videos
                             </span>
                         }
                         className="mb-8"
@@ -1182,24 +1079,32 @@ const handleGalleryVideoRemove = async (removedFiles: any | any[]) => {
                                     item.res?.uploadId || item.file?.uploadId,
                             }))}
                         />
-                        <div className='w-full flex mt-4 gap-6'>
-                            <div className="w-[50%]">
+                        {videoData.map((_, index) => (
+                            <div key={index} className="w-full flex mt-4 gap-6">
+                                <div className="w-[50%]">
                                 <CommonInput
-                                    name="galleryVideoTitle"
+                                    name={`galleryVideos.${index}.title`}
                                     control={control}
-                                    label="Video Title"
-                                    placeholder="Enter Video Title here ..."
+                                    label={`Video ${index + 1} Title`}
+                                    placeholder="Enter Video Title..."
+                                    invalid={Boolean(errors.galleryVideos?.[index]?.title)}
+                                    errorMessage={errors.galleryVideos?.[index]?.title?.message}
                                 />
-                            </div>
-                            <div className="w-[50%]">
+                                </div>
+
+                                <div className="w-[50%]">
                                 <CommonInput
-                                    name="galleryVideoDescription"
+                                    name={`galleryVideos.${index}.description`}
                                     control={control}
-                                    label="Video Description"
-                                    placeholder="Enter Video Description here ..."
+                                    label={`Video ${index + 1} Description`}
+                                    placeholder="Enter Video Description..."
+                                    invalid={Boolean(errors.galleryVideos?.[index]?.description)}
+                                    errorMessage={errors.galleryVideos?.[index]?.description?.message}
                                 />
+                                </div>
                             </div>
-                        </div>
+                            ))}
+
                     </FormSection>
 
                     {/* Footer Actions */}
