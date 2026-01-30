@@ -665,7 +665,7 @@ export default function VideoOnlyMemorial() {
                 delete updatePayload.lifeStoryImageURL
                 delete updatePayload.featuredPhotoId
                 delete updatePayload.featuredPhotoURL
-                delete updatePayload.isFeatured
+                delete updatePayload.isFeature
 
 
                 await apiUpdateMemorial(memorialId, updatePayload)
