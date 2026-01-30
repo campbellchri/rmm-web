@@ -50,7 +50,7 @@ const ForgotPasswordForm = (props: ForgotPasswordFormProps) => {
             }
         } catch (errors) {
             setMessage?.(
-                typeof errors === 'string' ? errors : 'Some error occured!',
+                typeof errors === 'string' ? errors : '',
             )
             setSubmitting(false)
         }
