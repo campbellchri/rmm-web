@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { useForm } from 'react-hook-form'
 import CommonInput from '@/components/shared/CommonInput'
@@ -6,6 +6,7 @@ import { Play, Facebook, Twitter, Copy, QrCode } from 'lucide-react'
 import Header from '@/components/template/Header'
 import HomeNavbar from '../Home/HomeNavbar'
 import dayjs from 'dayjs'
+import { generateThumbnail } from '@/utils'
 
 export default function FullMemorialPublic({ memorial }: { memorial: any }) {
     const [copiedUrl, setCopiedUrl] = useState(false)
@@ -14,6 +15,7 @@ export default function FullMemorialPublic({ memorial }: { memorial: any }) {
     })
     const qrRef = useRef<HTMLCanvasElement>(null)
     const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
+    const [videoThumbnails, setVideoThumbnails] = useState<{ [key: string]: string }>({})
 
 
     const handleCopyUrl = () => {
@@ -43,6 +45,19 @@ export default function FullMemorialPublic({ memorial }: { memorial: any }) {
     }
 
     const LogoLink = '/img/others/Link.png'
+
+        useEffect(() => {
+        memorial?.videos?.forEach(async (video) => {
+            if (!video.thumbnail && video.fileURL) {
+            try {
+                const thumb = await generateThumbnail(video.fileURL)
+                setVideoThumbnails(prev => ({ ...prev, [video.id]: thumb }))
+            } catch (err) {
+                console.error('Thumbnail generation failed', err)
+            }
+            }
+        })
+        }, [memorial])   
 
     return (
         <>
@@ -135,8 +150,8 @@ export default function FullMemorialPublic({ memorial }: { memorial: any }) {
                                             ) : (
                                                 <>
                                                     <img
-                                                        src={video.thumbnail}
-                                                        alt={video.title}
+                                                       src={video.thumbnail || videoThumbnails[video.id]}
+                                                        alt={video.videoTitle}
                                                         className="w-full h-[140px] object-cover"
                                                         onClick={() => handlePlayVideo(video.id)}
                                                     />
@@ -155,7 +170,7 @@ export default function FullMemorialPublic({ memorial }: { memorial: any }) {
                                             )}
                                         </div>
                                         <p className="font-poppins text-sm md:text-base text-[#ffffff]">
-                                            {video.title}
+                                            {video.videoTitle}
                                         </p>
                                     </div>
                                 ))}

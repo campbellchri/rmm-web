@@ -1109,10 +1109,13 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
             setIsSubmitting(false)
         }
     }
+    const onError = (errors: any) => {
+        setIsSubmitting(false)
+    }
 
     const handleSaveFinish = () => {
         setIsSubmitting(true) 
-        handleSubmit(onSubmit)()
+        handleSubmit(onSubmit, onError)()
     }
 
     const validateSquareImage = (

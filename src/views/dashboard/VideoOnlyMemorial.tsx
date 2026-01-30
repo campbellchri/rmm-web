@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import VideoFrame from '../../../public//img/others/FRAME (11).png'
 import LogoFrame from '../../../public//img/others/FRAME (16).png'
 import ConfirmModal from '@/components/shared/ConfirmModal'
+import { generateThumbnail } from '@/utils'
 
 export default function VideoMemorial() {
     const [activeVideo, setActiveVideo] = useState<string | null>(null)
@@ -20,6 +21,8 @@ export default function VideoMemorial() {
     const [currentVideo, setCurrentVideo] = useState<any>(null)
     const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
     const { memorials, fetchMemorials, activeMemorialId } = useMemorialStore()
+    const [videoThumbnails, setVideoThumbnails] = useState<{ [key: string]: string }>({})
+    const videoRef = useRef<HTMLVideoElement>(null);
     const memorialId = activeMemorialId
 
     const navigate = useNavigate()
@@ -150,6 +153,37 @@ export default function VideoMemorial() {
     const galleryVideos = memorialDetails?.userMedia?.filter(
         (m: any) => m.category === 'gallery' && m.type === 'video'
     ) || []
+
+        useEffect(() => {
+        memorialDetails?.videos?.forEach(async (video) => {
+            if (!video.thumbnail && video.fileURL) {
+            try {
+                const thumb = await generateThumbnail(video.fileURL)
+                setVideoThumbnails(prev => ({ ...prev, [video.id]: thumb }))
+            } catch (err) {
+                console.error('Thumbnail generation failed', err)
+            }
+            }
+        })
+        }, [memorialDetails])
+
+useEffect(() => {
+    if (isVideoModalOpen && videoRef.current && currentVideo) {
+        const videoElement = videoRef.current;
+        
+        // Reset video to start
+        videoElement.currentTime = 0;
+        
+        // Try to play the video (browsers often require user interaction)
+        const playPromise = videoElement.play();
+        
+        if (playPromise !== undefined) {
+            playPromise
+                .then(() => console.log('Video started playing'))
+                .catch(err => console.warn('Auto-play was prevented:', err));
+        }
+    }
+}, [isVideoModalOpen, currentVideo]);
 
 
     return (
@@ -309,7 +343,7 @@ export default function VideoMemorial() {
                                                             key={`main-${activeVideo === 'main'}`}
                                                             src={memorialDetails?.videos[0].fileURL}
                                                             controls={false}
-                                                            className="w-full h-full object-contain pointer-events-none"
+                                                            // className="w-full h-full object-contain pointer-events-none"
                                                         />
                                                         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                                                             <button
@@ -355,13 +389,40 @@ export default function VideoMemorial() {
                                                 <div className="border-2 border-[#C7A30D] bg-white/30 p-3.5 rounded-lg">
                                                     <div className="relative w-80 h-60 rounded-lg overflow-hidden bg-black">
                                                         {item.fileURL ? (
+                                                            // <div className="relative w-full h-full">
+                                                            //     <video
+                                                            //         key={`${item.fileId}-${activeVideo === item.fileId}`}
+                                                            //         src={item.fileURL}
+                                                            //         controls={activeVideo === item.fileId}
+                                                            //         autoPlay={activeVideo === item.fileId}
+                                                            //         className="w-full h-full object-contain"
+                                                            //     />
+                                                            //     {activeVideo !== item.fileId && (
+                                                            //         <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                                            //             <button
+                                                            //                 onClick={() => handlePlayVideoInModal(item, index)}
+                                                            //                 className="w-10 h-10 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
+                                                            //             >
+                                                            //                 <Play
+                                                            //                     className="w-5 h-5 text-white ml-0.5"
+                                                            //                     fill="currentColor"
+                                                            //                 />
+                                                            //             </button>
+                                                            //         </div>
+                                                            //     )}
+                                                            // </div>
                                                             <div className="relative w-full h-full">
+                                                                <img
+                                                                    src={item.thumbnail || videoThumbnails[item.id] || LogoFrame}
+                                                                    alt={item.videoTitle}
+                                                                    className={`w-full h-full object-cover ${activeVideo === item.fileId ? 'hidden' : ''}`}
+                                                                />
                                                                 <video
                                                                     key={`${item.fileId}-${activeVideo === item.fileId}`}
                                                                     src={item.fileURL}
                                                                     controls={activeVideo === item.fileId}
                                                                     autoPlay={activeVideo === item.fileId}
-                                                                    className="w-full h-full object-contain"
+                                                                    className={`w-full h-full object-contain ${activeVideo === item.fileId ? '' : 'hidden'}`}
                                                                 />
                                                                 {activeVideo !== item.fileId && (
                                                                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
@@ -369,14 +430,12 @@ export default function VideoMemorial() {
                                                                             onClick={() => handlePlayVideoInModal(item, index)}
                                                                             className="w-10 h-10 bg-[#C7A30D] rounded-full flex items-center justify-center hover:bg-[#B8940C] transition-colors shadow-lg"
                                                                         >
-                                                                            <Play
-                                                                                className="w-5 h-5 text-white ml-0.5"
-                                                                                fill="currentColor"
-                                                                            />
+                                                                            <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
                                                                         </button>
                                                                     </div>
                                                                 )}
                                                             </div>
+
                                                         ) : (
                                                             <img
                                                                 src={LogoFrame}
@@ -500,7 +559,7 @@ export default function VideoMemorial() {
                         </section>
 
                         {/* Video Modal */}
-                        {isVideoModalOpen && currentVideo && (
+                        {/* {isVideoModalOpen && currentVideo && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
                                 <div className="relative w-full max-w-4xl mx-4">
                                     <button
@@ -510,7 +569,6 @@ export default function VideoMemorial() {
                                         <X className="w-8 h-8" />
                                     </button>
                                     
-                                    {/* Video Navigation Arrows - Only show for gallery videos, not main video */}
                                     {currentVideoIndex >= 0 && memorialDetails?.videos?.length > 1 && (
                                         <>
                                             <button
@@ -530,6 +588,7 @@ export default function VideoMemorial() {
                                     
                                     <div className="bg-black rounded-lg overflow-hidden">
                                         <video
+                                        key={currentVideo.fileId + '-' + Date.now()}
                                             src={currentVideo.fileURL}
                                             controls
                                             autoPlay
@@ -554,7 +613,60 @@ export default function VideoMemorial() {
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        )} */}
+{isVideoModalOpen && currentVideo && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div className="relative w-full max-w-4xl mx-4">
+      <button onClick={handleCloseVideoModal} className="absolute -top-12 right-0 text-white hover:text-gray-300 z-10">
+        <X className="w-8 h-8" />
+      </button>
+
+      {currentVideoIndex >= 0 && memorialDetails?.videos?.length > 1 && (
+        <>
+          <button
+            onClick={handlePreviousVideo}
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 text-white hover:text-gray-300 z-10"
+          >
+            <ChevronLeft className="w-8 h-8" />
+          </button>
+          <button
+            onClick={handleNextVideo}
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 text-white hover:text-gray-300 z-10"
+          >
+            <ChevronRight className="w-8 h-8" />
+          </button>
+        </>
+      )}
+
+      <div className="bg-black rounded-lg overflow-hidden">
+        <video
+          ref={videoRef}
+          key={`modal-${currentVideo.fileId || 'main'}-${Date.now()}`}
+          src={currentVideo.fileURL}
+          controls
+          autoPlay
+          muted
+          playsInline
+          className="w-full h-auto max-h-[70vh]"
+        />
+        <div className="p-4 bg-gray-900">
+          <h3 className="text-white font-poppins text-lg">
+            {currentVideo.videoTitle || 'Video'}
+          </h3>
+          {currentVideo.subtitle && (
+            <p className="text-gray-400 text-sm mt-1">{currentVideo.subtitle}</p>
+          )}
+          {currentVideoIndex >= 0 && memorialDetails?.videos?.length > 1 && (
+            <p className="text-gray-400 text-sm mt-1">
+              {currentVideoIndex + 1} of {memorialDetails.videos.length}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
                     </div>
                 </div>
         </React.Fragment>

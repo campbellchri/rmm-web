@@ -8,6 +8,7 @@ import { toast, Notification } from '@/components/ui'
 import { Play, Facebook, Twitter, Copy, QrCode, ArrowLeft, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import ConfirmModal from '@/components/shared/ConfirmModal'
+import { generateThumbnail } from '@/utils'
 
 export default function Memorial() {
     const [copiedUrl, setCopiedUrl] = useState(false)
@@ -25,6 +26,7 @@ export default function Memorial() {
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
     const [isDeleting, setIsDeleting] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [videoThumbnails, setVideoThumbnails] = useState<{ [key: string]: string }>({})
 
 
     const { control, setValue } = useForm({
@@ -173,7 +175,22 @@ export default function Memorial() {
         }
     }
 
-const LogoLink = '/img/others/Link.png'
+    const LogoLink = '/img/others/Link.png'
+
+
+    useEffect(() => {
+    memorialDetails?.videos?.forEach(async (video) => {
+        if (!video.thumbnail && video.fileURL) {
+        try {
+            const thumb = await generateThumbnail(video.fileURL)
+            setVideoThumbnails(prev => ({ ...prev, [video.id]: thumb }))
+        } catch (err) {
+            console.error('Thumbnail generation failed', err)
+        }
+        }
+    })
+    }, [memorialDetails])
+
 
     return (
         <>
@@ -398,8 +415,8 @@ const LogoLink = '/img/others/Link.png'
                                         <div key={video.id} className="flex-shrink-0 w-[200px] space-y-2">
                                             <div className="relative group cursor-pointer rounded-lg overflow-hidden shadow-sm" onClick={() => handlePlayVideo(video, index)}>
                                                 <img
-                                                    src={video.thumbnail}
-                                                    alt={video.title}
+                                                    src={video.thumbnail || videoThumbnails[video.id]}
+                                                    alt={video.videoTitle}
                                                     className="w-full h-[140px] object-cover"
                                                 />
                                                 <div className="absolute inset-0 flex items-center justify-center">
@@ -412,7 +429,7 @@ const LogoLink = '/img/others/Link.png'
                                                 </div>
                                             </div>
                                             <p className="font-poppins font-[400] text-sm text-[#ffffff] line-clamp-2">
-                                                {video.title}
+                                                {video.videoTitle}
                                             </p>
                                         </div>
                                     ))}
@@ -469,7 +486,7 @@ const LogoLink = '/img/others/Link.png'
                                             
                                             </div>
                                             <p className="font-poppins font-[400] text-sm text-[#ffffff] line-clamp-2">
-                                                {photo?.photoCaption || `Photo ${index + 1}`}
+                                                {photo?.photoCaption}
                                             </p>
                                         </div>
                                     ))}
