@@ -26,6 +26,7 @@ import { useMemorialStore } from '@/store/memorialStore'
 import { useMediaStore } from '@/store/mediaStore'
 import useAuth from '@/auth/useAuth'
 import SingleImageUpload from '@/components/ui/SingleImageUpload/SingleImageUpload'
+import { validateFeaturedImage, validateGalleryPhotoAspectRatio } from '@/utils'
 
 const FormSection = ({
     title,
@@ -70,17 +71,17 @@ const validationSchema = z.object({
     featuredPhoto: z.any().refine((val) => {
         return typeof val === 'string' || (val && (val.fileURL || val.url))
     }, { message: 'Featured Photo is required' }),
-     videoUploaded: z
+    videoUploaded: z
         .array(z.any())
-        .refine((val) => val && val.length > 0 && val.some(v => v && (v.fileURL || v.uploadId)), 
+        .refine((val) => val && val.length > 0 && val.some(v => v && (v.fileURL || v.uploadId)),
             { message: 'At least one video is required' })
-        .refine((val) => !val || val.length <= 6, 
+        .refine((val) => !val || val.length <= 6,
             { message: 'You can upload up to 6 videos only' }),
-      photoUploaded: z
+    photoUploaded: z
         .array(z.any())
-        .refine((val) => val && val.length > 0 && val.some(p => p && (p.fileURL || p.uploadId)), 
+        .refine((val) => val && val.length > 0 && val.some(p => p && (p.fileURL || p.uploadId)),
             { message: 'At least one photo is required' })
-        .refine((val) => !val || val.length <= 6, 
+        .refine((val) => !val || val.length <= 6,
             { message: 'You can upload up to 6 photos only' }),
     lifeStoryImage: z.any().refine((val) => !!val, { message: 'Life Story Image is required' }),
 })
@@ -157,122 +158,22 @@ export default function ClassicTemplateMode() {
         status: 'done',
         percent: 100,
         type: m.type || MediaType.VIDEO,
-        url: m.fileURL, 
+        url: m.fileURL,
     })
 
     const birthDateValue = useWatch({ control, name: 'personBirthDate' as const });
     const today = new Date();
 
     const formatDateToInput = (date: Date | null | undefined): string | undefined => {
-    if (!date) return undefined;
-    return dayjs(date).format('YYYY-MM-DD');
+        if (!date) return undefined;
+        return dayjs(date).format('YYYY-MM-DD');
     };
 
     const parseDateInput = (dateStr: string | undefined): Date | undefined => {
-    if (!dateStr) return undefined;
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(year, month - 1, day); // Local timezone
+        if (!dateStr) return undefined;
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day); // Local timezone
     };
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const templatesRes: any = await apiGetMemorialTemplateList()
-                const classicTemplate = templatesRes.find(
-                    (t: any) => t.landingMode?.landingModeType === 'full-mode',
-                )
-
-                if (classicTemplate) {
-                    setTemplateId(classicTemplate.id)
-                    // Use the landingModeId directly from the template object
-                    setLandingModeId(classicTemplate.landingModeId)
-                }
-
-                if (isEditMode && memorialId) {
-                    const memorialRes: any = await apiGetMemorialById(
-                        memorialId,
-                    )
-                    if (memorialRes) {
-                        setExistingMemorialData(memorialRes)
-                        reset({
-                            personName: memorialRes.personName || '',
-                            personGender: memorialRes.personGender || '',
-                            personBirthDate: memorialRes.personBirthDate
-                                ? new Date(memorialRes.personBirthDate)
-                                : undefined,
-                            personDeathDate: memorialRes.personDeathDate
-                                ? new Date(memorialRes.personDeathDate)
-                                : undefined,
-                            favQuote: memorialRes.favQuote || '',
-                            featuredPhotoFavoriteSaying: memorialRes.featuredPhotoFavoriteSaying || '',
-                            favoriteSaying:
-                                memorialRes.favoriteSayings?.[0]?.content || '',
-                            quoteBy:
-                                memorialRes.favoriteSayings?.[0]?.authorName ||
-                                '',
-                            videoTitle:
-                                memorialRes.userMedia?.find(
-                                    (m: any) => m.type === MediaType.VIDEO,
-                                )?.videoTitle || '',
-                            lifeStoryText: memorialRes.lifeStoryText || '',
-                            featuredPhoto: memorialRes.featuredPhotoURL || undefined,
-                            videoUploaded: memorialRes.userMedia?.filter((m: any) => m.type === MediaType.VIDEO && m.category === MediaCategory.GALLERY) || [],
-                            photoUploaded: memorialRes.userMedia?.filter((m: any) => m.type === MediaType.PHOTO && m.category === MediaCategory.GALLERY) || [],
-                            lifeStoryImage: memorialRes.lifeStoryImageURL || undefined,
-                        })
-
-                        if (memorialRes.personProfilePicture) {
-                            setProfileImage(memorialRes.personProfilePicture)
-                        }
-
-                        // Populate existing media
-                        if (memorialRes.featuredPhotoURL) {
-                            setFeaturedData({
-                                fileURL: memorialRes.featuredPhotoURL,
-                                fileId: memorialRes.featuredPhotoId,
-
-                            })
-                        }
-
-                        if (memorialRes.lifeStoryImageURL) {
-                            setLifeStoryData({
-                                fileURL: memorialRes.lifeStoryImageURL,
-                                fileId: memorialRes.lifeStoryImageId,
-                            })
-                        }
-
-                        if (memorialRes.userMedia) {
-                            const photos = memorialRes.userMedia
-                                .filter(m => m.type === MediaType.PHOTO)
-                                .map(m => ({
-                                    file: mapMediaToUploadFile(m),
-                                    res: m,
-                                }))
-
-                            const videos = memorialRes.userMedia
-                                .filter(m => m.type === MediaType.VIDEO)
-                                .map(m => ({
-                                    file: mapMediaToUploadFile(m),
-                                    res: m,
-                                }))
-
-                            setPhotosData(photos)
-                            setVideoData(videos)
-
-                            setValue('photoUploaded', photos.map(p => p.res))
-                            setValue('videoUploaded', videos.map(v => v.res))
-                        }
-
-
-
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error)
-            }
-        }
-        fetchData()
-    }, [isEditMode, memorialId, reset])
 
     const genderOptions = [
         { value: Gender.MALE, label: 'Male' },
@@ -397,8 +298,7 @@ export default function ClassicTemplateMode() {
             await trigger('featuredPhoto')
             return
         }
-        
-        // ✅ ADD VALIDATION HERE
+
         try {
             await validateFeaturedImage(file, 1200, 800)
         } catch (err: any) {
@@ -477,213 +377,205 @@ export default function ClassicTemplateMode() {
     }
 
 
-const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
-  const incomingExisting = files.filter(
-    f => !(f instanceof File) && f.uploadId
-  )
-  const incomingNewFiles = files.filter(
-    f => f instanceof File
-  ) as File[]
+    const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
+        const incomingExisting = files.filter(
+            f => !(f instanceof File) && f.uploadId
+        )
+        const incomingNewFiles = files.filter(
+            f => f instanceof File
+        ) as File[]
 
-  const keptExisting = photosData.filter(p =>
-    incomingExisting.some(e => e.uploadId === p.res?.uploadId)
-  )
+        const keptExisting = photosData.filter(p =>
+            incomingExisting.some(e => e.uploadId === p.res?.uploadId)
+        )
 
-  const removedItems = photosData.filter(p =>
-    !incomingExisting.some(e => e.uploadId === p.res?.uploadId)
-  )
+        const removedItems = photosData.filter(p =>
+            !incomingExisting.some(e => e.uploadId === p.res?.uploadId)
+        )
 
-  for (const item of removedItems) {
-    if (item.res?.uploadId) {
-      try {
-        if (isEditMode) {
-          await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
-        } else {
-          await apiDeleteGCPFile(item.res.uploadId)
-        }
-      } catch (err) {
-        console.error('Error deleting photo:', err)
-      }
-    }
-  }
-
-  const validationResults = await Promise.allSettled(
-    incomingNewFiles.map(file => validateGalleryPhotoAspectRatio(file))
-  )
-  
-  const invalidFiles: string[] = []
-  const validFiles: File[] = []
-  
-  validationResults.forEach((result, index) => {
-    if (result.status === 'rejected') {
-      invalidFiles.push(incomingNewFiles[index].name)
-    } else {
-      validFiles.push(incomingNewFiles[index])
-    }
-  })
-
-  if (invalidFiles.length > 0) {
-    toast.push(
-      <Notification type="danger" title="Invalid Photo Aspect Ratio" duration={4000}>
-        The following photo(s) must have a 3:2 or 16:9 aspect ratio: {invalidFiles.join(', ')}
-      </Notification>,
-      { placement: 'top-center' }
-    )
-  }
-
-  const remainingSlots = MAX_GALLERY_MEDIA - keptExisting.length
-  const allowedNewFiles = validFiles.slice(0, remainingSlots)
-  
-  if (allowedNewFiles.length < validFiles.length) {
-    toast.push(
-      <Notification type="danger" title="Upload limit exceeded" duration={3000}>
-        You can upload a maximum of 6 photos.
-      </Notification>,
-      { placement: 'top-center' }
-    )
-  }
-
-  let newlyUploaded: { file: File; res: any }[] = []
-  if (allowedNewFiles.length > 0) {
-    setUploadingPhotos(true)
-    const res = await uploadFiles(allowedNewFiles)
-    newlyUploaded = allowedNewFiles
-      .map((file, i) => res[i] ? { file, res: res[i] } : null)
-      .filter(Boolean) as { file: File; res: any }[]
-    setUploadingPhotos(false)
-  }
-
-  const finalPhotos = [...keptExisting, ...newlyUploaded]
-  setPhotosData(finalPhotos)
-  setValue('photoUploaded', finalPhotos.map(p => p.res))
-  await trigger('photoUploaded')
-  
-  setUploadKey(prev => prev + 1)
-}
-
-
-const handleGalleryVideosUpload = async (files: (File | any)[]) => {
-    console.log('📹 Video upload handler called with', files.length, 'files')
-    
-    const incomingExisting = files.filter(
-        f => !(f instanceof File) && f.uploadId
-    )
-
-    const incomingNewFiles = files.filter(
-        f => f instanceof File
-    ) as File[]
-
-    console.log('Existing:', incomingExisting.length, 'New:', incomingNewFiles.length)
-
-    const keptExisting = videoData.filter(v =>
-        incomingExisting.some(e => e.uploadId === v.res?.uploadId)
-    )
-
-    const removedItems = videoData.filter(v =>
-        !incomingExisting.some(e => e.uploadId === v.res?.uploadId)
-    )
-
-    for (const item of removedItems) {
-        if (item.res?.uploadId) {
-            try {
-                if (isEditMode) {
-                    await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
-                } else {
-                    await apiDeleteGCPFile(item.res.uploadId)
+        for (const item of removedItems) {
+            if (item.res?.uploadId) {
+                try {
+                    if (isEditMode) {
+                        await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
+                    } else {
+                        await apiDeleteGCPFile(item.res.uploadId)
+                    }
+                } catch (err) {
+                    console.error('Error deleting photo:', err)
                 }
-                console.log('✅ Deleted video:', item.res.uploadId)
-            } catch (err) {
-                console.error('❌ Error deleting video:', err)
             }
         }
-    }
 
-    const remainingSlots = MAX_GALLERY_MEDIA - keptExisting.length
-
-    if (incomingNewFiles.length > remainingSlots) {
-        console.warn('⚠️ Upload limit exceeded')
-        
-        toast.push(
-            <Notification type="danger" title="Upload limit exceeded" duration={3000}>
-                You can upload a maximum of 6 videos.
-            </Notification>,
-            { placement: 'top-center' }
+        const validationResults = await Promise.allSettled(
+            incomingNewFiles.map(file => validateGalleryPhotoAspectRatio(file))
         )
-        
-        setVideoData(keptExisting)
-        setValue('videoUploaded', keptExisting.map(v => v.res))
-        await trigger('videoUploaded')
-        
-        setUploadKey(prev => prev + 1)
-        return
-    }
 
-    const allowedNewFiles = incomingNewFiles.slice(0, remainingSlots)
+        const invalidFiles: string[] = []
+        const validFiles: File[] = []
 
-    let newlyUploaded: { file: File; res: any }[] = []
+        validationResults.forEach((result, index) => {
+            if (result.status === 'rejected') {
+                invalidFiles.push(incomingNewFiles[index].name)
+            } else {
+                validFiles.push(incomingNewFiles[index])
+            }
+        })
 
-    if (allowedNewFiles.length > 0) {
-        console.log('⬆️ Uploading', allowedNewFiles.length, 'videos...')
-        setUploadingVideos(true)
-        
-        try {
-            const res = await uploadFiles(allowedNewFiles)
-
-            newlyUploaded = allowedNewFiles
-                .map((file, i) => {
-                    if (!res[i]) return null
-                    
-                    return {
-                        file: {
-                            originalFileName: res[i].originalFileName || file.name,
-                            size: res[i].size || file.size,
-                            mimeType: res[i].mimeType || file.type,
-                            fileURL: res[i].fileURL,
-                            uploadId: res[i].uploadId,
-                            fileId: res[i].fileId,
-                            status: 'done',
-                            percent: 100,
-                            url: res[i].fileURL, // For Upload preview
-                        },
-                        res: res[i]
-                    }
-                })
-                .filter(Boolean) as { file: any; res: any }[]
-            
-            console.log('✅ Upload successful:', newlyUploaded.length, 'videos')
-        } catch (error) {
-            console.error('❌ Error uploading videos:', error)
+        if (invalidFiles.length > 0) {
             toast.push(
-                <Notification type="danger" title="Upload Failed" duration={3000}>
-                    Failed to upload video(s). Please try again.
+                <Notification type="danger" title="Invalid Photo Aspect Ratio" duration={4000}>
+                    The following photo(s) must have a 3:2 or 16:9 aspect ratio: {invalidFiles.join(', ')}
                 </Notification>,
                 { placement: 'top-center' }
             )
-        } finally {
-            setUploadingVideos(false)
         }
+
+        const remainingSlots = MAX_GALLERY_MEDIA - keptExisting.length
+        const allowedNewFiles = validFiles.slice(0, remainingSlots)
+
+        if (allowedNewFiles.length < validFiles.length) {
+            toast.push(
+                <Notification type="danger" title="Upload limit exceeded" duration={3000}>
+                    You can upload a maximum of 6 photos.
+                </Notification>,
+                { placement: 'top-center' }
+            )
+        }
+
+        let newlyUploaded: { file: File; res: any }[] = []
+        if (allowedNewFiles.length > 0) {
+            setUploadingPhotos(true)
+            const res = await uploadFiles(allowedNewFiles)
+            newlyUploaded = allowedNewFiles
+                .map((file, i) => res[i] ? { file, res: res[i] } : null)
+                .filter(Boolean) as { file: File; res: any }[]
+            setUploadingPhotos(false)
+        }
+
+        const finalPhotos = [...keptExisting, ...newlyUploaded]
+        setPhotosData(finalPhotos)
+        setValue('photoUploaded', finalPhotos.map(p => p.res))
+        await trigger('photoUploaded')
+
+        setUploadKey(prev => prev + 1)
     }
 
-    // 8️⃣ Merge & update state
-    const finalVideos = [...keptExisting, ...newlyUploaded].slice(0, MAX_GALLERY_MEDIA)
-    
-    setVideoData(finalVideos)
-    setValue('videoUploaded', finalVideos.map(v => v.res))
-    await trigger('videoUploaded')
-}
+
+    const handleGalleryVideosUpload = async (files: (File | any)[]) => {
+
+        const incomingExisting = files.filter(
+            f => !(f instanceof File) && f.uploadId
+        )
+
+        const incomingNewFiles = files.filter(
+            f => f instanceof File
+        ) as File[]
+
+        const keptExisting = videoData.filter(v =>
+            incomingExisting.some(e => e.uploadId === v.res?.uploadId)
+        )
+
+        const removedItems = videoData.filter(v =>
+            !incomingExisting.some(e => e.uploadId === v.res?.uploadId)
+        )
+
+        for (const item of removedItems) {
+            if (item.res?.uploadId) {
+                try {
+                    if (isEditMode) {
+                        await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
+                    } else {
+                        await apiDeleteGCPFile(item.res.uploadId)
+                    }
+                } catch (err) {
+                    console.error('❌ Error deleting video:', err)
+                }
+            }
+        }
+
+        const remainingSlots = MAX_GALLERY_MEDIA - keptExisting.length
+
+        if (incomingNewFiles.length > remainingSlots) {
+
+            toast.push(
+                <Notification type="danger" title="Upload limit exceeded" duration={3000}>
+                    You can upload a maximum of 6 videos.
+                </Notification>,
+                { placement: 'top-center' }
+            )
+
+            setVideoData(keptExisting)
+            setValue('videoUploaded', keptExisting.map(v => v.res))
+            await trigger('videoUploaded')
+
+            setUploadKey(prev => prev + 1)
+            return
+        }
+
+        const allowedNewFiles = incomingNewFiles.slice(0, remainingSlots)
+
+        let newlyUploaded: { file: File; res: any }[] = []
+
+        if (allowedNewFiles.length > 0) {
+            setUploadingVideos(true)
+
+            try {
+                const res = await uploadFiles(allowedNewFiles)
+
+                newlyUploaded = allowedNewFiles
+                    .map((file, i) => {
+                        if (!res[i]) return null
+
+                        return {
+                            file: {
+                                originalFileName: res[i].originalFileName || file.name,
+                                size: res[i].size || file.size,
+                                mimeType: res[i].mimeType || file.type,
+                                fileURL: res[i].fileURL,
+                                uploadId: res[i].uploadId,
+                                fileId: res[i].fileId,
+                                status: 'done',
+                                percent: 100,
+                                url: res[i].fileURL, // For Upload preview
+                            },
+                            res: res[i]
+                        }
+                    })
+                    .filter(Boolean) as { file: any; res: any }[]
+
+            } catch (error) {
+                toast.push(
+                    <Notification type="danger" title="Upload Failed" duration={3000}>
+                        Failed to upload video(s). Please try again.
+                    </Notification>,
+                    { placement: 'top-center' }
+                )
+            } finally {
+                setUploadingVideos(false)
+            }
+        }
+
+        // 8️⃣ Merge & update state
+        const finalVideos = [...keptExisting, ...newlyUploaded].slice(0, MAX_GALLERY_MEDIA)
+
+        setVideoData(finalVideos)
+        setValue('videoUploaded', finalVideos.map(v => v.res))
+        await trigger('videoUploaded')
+    }
 
 
     const onSubmit = async (data: any) => {
-         if (!profileData?.fileURL && !profileImage) {
+        if (!profileData?.fileURL && !profileImage) {
             toast.push(
-            <Notification
-                type="danger"
-                title="Validation Error"
-                duration={3000}
-            >
-                Please upload a profile picture.
-            </Notification>,
-            { placement: 'top-center' }
+                <Notification
+                    type="danger"
+                    title="Validation Error"
+                    duration={3000}
+                >
+                    Please upload a profile picture.
+                </Notification>,
+                { placement: 'top-center' }
             )
             setIsSubmitting(false)
             return
@@ -818,10 +710,9 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
             }
 
             await fetchMemorials(true)
-            clearMedia() 
+            clearMedia()
             navigate('/dashboard/memorial')
         } catch (error: any) {
-            console.error('Error saving memorial:', error)
             const errorMsg = error.response?.data?.message || error.message || 'Failed to save memorial.'
             toast.push(
                 <Notification type="danger" title="Error" duration={5000}>
@@ -838,112 +729,146 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
     }
 
     const handleSaveFinish = async () => {
-        setIsSubmitting(true) 
-         const isValid = await trigger() // This will re-validate all fields
-    
-            if (!isValid) {
-                setIsSubmitting(false)
-                return
-            }
+        setIsSubmitting(true)
+        const isValid = await trigger() // This will re-validate all fields
+
+        if (!isValid) {
+            setIsSubmitting(false)
+            return
+        }
         handleSubmit(onSubmit, onError)()
     }
 
     const validateSquareImage = (
-    file: File,
-    minSize = 400
-): Promise<void> => {
-    return new Promise((resolve, reject) => {
-        const img = new Image()
-        const url = URL.createObjectURL(file)
-
-        img.onload = () => {
-            const { width, height } = img
-            URL.revokeObjectURL(url)
-
-            if (width !== height) {
-                reject('Image must be square (1:1 ratio)')
-                return
-            }
-
-            if (width < minSize || height < minSize) {
-                reject(`Image must be at least ${minSize} x ${minSize}px`)
-                return
-            }
-
-            resolve()
-        }
-
-        img.onerror = () => {
-            URL.revokeObjectURL(url)
-            reject('Invalid image file')
-        }
-
-        img.src = url
-    })
-    }
-        const validateFeaturedImage = (
         file: File,
-        requiredWidth = 1200,
-        requiredHeight = 800
-        ): Promise<void> => {
-            return new Promise((resolve, reject) => {
-                const img = new Image()
-                const url = URL.createObjectURL(file)
+        minSize = 400
+    ): Promise<void> => {
+        return new Promise((resolve, reject) => {
+            const img = new Image()
+            const url = URL.createObjectURL(file)
 
-                img.onload = () => {
-                    const { width, height } = img
-                    URL.revokeObjectURL(url)
+            img.onload = () => {
+                const { width, height } = img
+                URL.revokeObjectURL(url)
 
-                    if (width !== requiredWidth || height !== requiredHeight) {
-                        reject(
-                            `Featured photo must be exactly ${requiredWidth} x ${requiredHeight}px`
-                        )
-                        return
-                    }
-
-                    resolve()
+                if (width !== height) {
+                    reject('Image must be square (1:1 ratio)')
+                    return
                 }
 
-                img.onerror = () => {
-                    URL.revokeObjectURL(url)
-                    reject('Invalid image file')
+                if (width < minSize || height < minSize) {
+                    reject(`Image must be at least ${minSize} x ${minSize}px`)
+                    return
                 }
 
-                img.src = url
-            })
-        }
-    // Add this validation function after your existing validation functions
-const validateGalleryPhotoAspectRatio = (file: File): Promise<void> => {
-    return new Promise((resolve, reject) => {
-        const img = new Image()
-        const url = URL.createObjectURL(file)
-
-        img.onload = () => {
-            const { width, height } = img
-            URL.revokeObjectURL(url)
-
-            const aspectRatio = width / height
-            
-            const is3by2 = Math.abs(aspectRatio - 1.5) < 0.01
-            
-            const is16by9 = Math.abs(aspectRatio - (16/9)) < 0.01
-
-            if (!is3by2 && !is16by9) {
-                reject('Photo must have an aspect ratio of 3:2 or 16:9')
-                return
+                resolve()
             }
 
-            resolve()
-        }
+            img.onerror = () => {
+                URL.revokeObjectURL(url)
+                reject('Invalid image file')
+            }
 
-        img.onerror = () => {
-            URL.revokeObjectURL(url)
-            reject('Invalid image file')
-        }
+            img.src = url
+        })
+    }
 
-        img.src = url
-    })
-}    
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const templatesRes: any = await apiGetMemorialTemplateList()
+                const classicTemplate = templatesRes.find(
+                    (t: any) => t.landingMode?.landingModeType === 'full-mode',
+                )
+
+                if (classicTemplate) {
+                    setTemplateId(classicTemplate.id)
+                    // Use the landingModeId directly from the template object
+                    setLandingModeId(classicTemplate.landingModeId)
+                }
+
+                if (isEditMode && memorialId) {
+                    const memorialRes: any = await apiGetMemorialById(
+                        memorialId,
+                    )
+                    if (memorialRes) {
+                        setExistingMemorialData(memorialRes)
+                        reset({
+                            personName: memorialRes.personName || '',
+                            personGender: memorialRes.personGender || '',
+                            personBirthDate: memorialRes.personBirthDate
+                                ? new Date(memorialRes.personBirthDate)
+                                : undefined,
+                            personDeathDate: memorialRes.personDeathDate
+                                ? new Date(memorialRes.personDeathDate)
+                                : undefined,
+                            favQuote: memorialRes.favQuote || '',
+                            featuredPhotoFavoriteSaying: memorialRes.featuredPhotoFavoriteSaying || '',
+                            favoriteSaying:
+                                memorialRes.favoriteSayings?.[0]?.content || '',
+                            quoteBy:
+                                memorialRes.favoriteSayings?.[0]?.authorName ||
+                                '',
+                            videoTitle:
+                                memorialRes.userMedia?.find(
+                                    (m: any) => m.type === MediaType.VIDEO,
+                                )?.videoTitle || '',
+                            lifeStoryText: memorialRes.lifeStoryText || '',
+                            featuredPhoto: memorialRes.featuredPhotoURL || undefined,
+                            videoUploaded: memorialRes.userMedia?.filter((m: any) => m.type === MediaType.VIDEO && m.category === MediaCategory.GALLERY) || [],
+                            photoUploaded: memorialRes.userMedia?.filter((m: any) => m.type === MediaType.PHOTO && m.category === MediaCategory.GALLERY) || [],
+                            lifeStoryImage: memorialRes.lifeStoryImageURL || undefined,
+                        })
+
+                        if (memorialRes.personProfilePicture) {
+                            setProfileImage(memorialRes.personProfilePicture)
+                        }
+
+                        // Populate existing media
+                        if (memorialRes.featuredPhotoURL) {
+                            setFeaturedData({
+                                fileURL: memorialRes.featuredPhotoURL,
+                                fileId: memorialRes.featuredPhotoId,
+
+                            })
+                        }
+
+                        if (memorialRes.lifeStoryImageURL) {
+                            setLifeStoryData({
+                                fileURL: memorialRes.lifeStoryImageURL,
+                                fileId: memorialRes.lifeStoryImageId,
+                            })
+                        }
+
+                        if (memorialRes.userMedia) {
+                            const photos = memorialRes.userMedia
+                                .filter(m => m.type === MediaType.PHOTO)
+                                .map(m => ({
+                                    file: mapMediaToUploadFile(m),
+                                    res: m,
+                                }))
+
+                            const videos = memorialRes.userMedia
+                                .filter(m => m.type === MediaType.VIDEO)
+                                .map(m => ({
+                                    file: mapMediaToUploadFile(m),
+                                    res: m,
+                                }))
+
+                            setPhotosData(photos)
+                            setVideoData(videos)
+
+                            setValue('photoUploaded', photos.map(p => p.res))
+                            setValue('videoUploaded', videos.map(v => v.res))
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error)
+            }
+        }
+        fetchData()
+    }, [isEditMode, memorialId, reset])
 
     return (
         <>
@@ -1001,45 +926,45 @@ const validateGalleryPhotoAspectRatio = (file: File): Promise<void> => {
                                     className="md:px-[21px] py-[7px] px-3 font-medium text-[16px] font-[400] w-[max-content] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-Arial border-[#FFB84C] disabled:opacity-50"
                                 >
                                     {uploadingProfile
-                                    ? 'Uploading...'
-                                    : profileImage
-                                        ? 'Change Photo'
-                                        : 'Upload Profile'
-                                }
+                                        ? 'Uploading...'
+                                        : profileImage
+                                            ? 'Change Photo'
+                                            : 'Upload Profile'
+                                    }
 
                                 </button>
 
                                 <input
-                                id="profileUpload"
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={async (e) => {
-                                    const file = e.target.files?.[0]
-                                    if (!file) return
+                                    id="profileUpload"
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0]
+                                        if (!file) return
 
-                                    try {
-                                        await validateSquareImage(file, 400)
-                                        setProfileFile(file)
-                                        handleProfileUpload(file)
-                                    } catch (err: any) {
-                                        toast.push(
-                                            <Notification type="danger" title="Invalid Image" duration={3000}>
-                                                {err}
-                                            </Notification>,
-                                            { placement: 'top-center' }
-                                        )
-                                    } finally {
-                                        e.target.value = '' // reset input
-                                    }
-                                }}
-                            />
+                                        try {
+                                            await validateSquareImage(file, 400)
+                                            setProfileFile(file)
+                                            handleProfileUpload(file)
+                                        } catch (err: any) {
+                                            toast.push(
+                                                <Notification type="danger" title="Invalid Image" duration={3000}>
+                                                    {err}
+                                                </Notification>,
+                                                { placement: 'top-center' }
+                                            )
+                                        } finally {
+                                            e.target.value = '' // reset input
+                                        }
+                                    }}
+                                />
 
                                 <p className='text-[#6A7282] text-[12px] font-[400] font-Arial'>Recommended: Square image, at least 400 x 400px</p>
-                             {!profileImage && isSubmitting && (
-                                <p className='text-[#e26253] text-[12px] font-[400] font-Arial mt-1'>
-                                    Profile picture is required
-                                </p>
+                                {!profileImage && isSubmitting && (
+                                    <p className='text-[#e26253] text-[12px] font-[400] font-Arial mt-1'>
+                                        Profile picture is required
+                                    </p>
                                 )}
                             </div>
 
@@ -1068,43 +993,43 @@ const validateGalleryPhotoAspectRatio = (file: File): Promise<void> => {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                   <CommonDatePicker
-                                    label='Date of Birth *'
-                                    name="personBirthDate"
-                                    control={control}
-                                    placeholder="Date of Birth"
-                                    invalid={Boolean(errors.personBirthDate)}
-                                    errorMessage={errors.personBirthDate?.message}
-                                    inputSuffix={<ChevronDown className="w-4 h-4 text-[#A1A1AA]" />}
-                                    maxDate={today}
-                                    rules={{
-                                        required: "Date of Birth is required",
-                                        validate: (value) => {
-                                        if (new Date(value) > today) return "Birth date cannot be in the future";
-                                        return true;
-                                        }
-                                    }}
+                                    <CommonDatePicker
+                                        label='Date of Birth *'
+                                        name="personBirthDate"
+                                        control={control}
+                                        placeholder="Date of Birth"
+                                        invalid={Boolean(errors.personBirthDate)}
+                                        errorMessage={errors.personBirthDate?.message}
+                                        inputSuffix={<ChevronDown className="w-4 h-4 text-[#A1A1AA]" />}
+                                        maxDate={today}
+                                        rules={{
+                                            required: "Date of Birth is required",
+                                            validate: (value) => {
+                                                if (new Date(value) > today) return "Birth date cannot be in the future";
+                                                return true;
+                                            }
+                                        }}
                                     />
                                     <CommonDatePicker
-                                    label='Date of Death *'
-                                    name="personDeathDate"
-                                    control={control}
-                                    placeholder="Date of Death"
-                                    invalid={Boolean(errors.personDeathDate)}
-                                    errorMessage={errors.personDeathDate?.message}
-                                    inputSuffix={<ChevronDown className="w-4 h-4 text-[#A1A1AA]" />}
-                                    minDate={birthDateValue ? parseDateInput(formatDateToInput(birthDateValue)) : undefined}
-                                    maxDate={today}
-                                    rules={{
-                                        required: "Date of Death is required",
-                                        validate: (value) => {
-                                        if (new Date(value) > today) return "Death date cannot be in the future";
-                                        if (birthDateValue && new Date(value) < new Date(birthDateValue)) {
-                                            return "Death date cannot be before birth date";
-                                        }
-                                        return true;
-                                        }
-                                    }}
+                                        label='Date of Death *'
+                                        name="personDeathDate"
+                                        control={control}
+                                        placeholder="Date of Death"
+                                        invalid={Boolean(errors.personDeathDate)}
+                                        errorMessage={errors.personDeathDate?.message}
+                                        inputSuffix={<ChevronDown className="w-4 h-4 text-[#A1A1AA]" />}
+                                        minDate={birthDateValue ? parseDateInput(formatDateToInput(birthDateValue)) : undefined}
+                                        maxDate={today}
+                                        rules={{
+                                            required: "Date of Death is required",
+                                            validate: (value) => {
+                                                if (new Date(value) > today) return "Death date cannot be in the future";
+                                                if (birthDateValue && new Date(value) < new Date(birthDateValue)) {
+                                                    return "Death date cannot be before birth date";
+                                                }
+                                                return true;
+                                            }
+                                        }}
                                     />
                                 </div>
                             </div>
@@ -1131,7 +1056,6 @@ const validateGalleryPhotoAspectRatio = (file: File): Promise<void> => {
                         }
                         className="mb-8"
                     >
-                      
                         <SingleImageUpload
                             key={featuredUploadKey}
                             accept="image/*"
@@ -1149,11 +1073,10 @@ const validateGalleryPhotoAspectRatio = (file: File): Promise<void> => {
                             uploading={uploadingFeatured}
                             defaultFile={featuredData}
                         />
-
                         {errors.featuredPhoto && (
                             <p className="text-[#e26253] text-sm mt-2">{(errors.featuredPhoto as any).message}</p>
                         )}
-                         <div className="my-4">
+                        <div className="my-4">
                             <CommonInput
                                 name="featuredPhotoFavoriteSaying"
                                 control={control}
@@ -1162,67 +1085,65 @@ const validateGalleryPhotoAspectRatio = (file: File): Promise<void> => {
                             />
                         </div>
                     </FormSection>
-                        <div className='flex gap-4'>
-                            <FormSection
-                                title={
-                                    <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
-                                        Memorial Video Gallery
-                                    </span>
-                                }
-                                className="mb-8 w-[50%]"
-                            >
+                    <div className='flex gap-4'>
+                        <FormSection
+                            title={
+                                <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
+                                    Memorial Video Gallery
+                                </span>
+                            }
+                            className="mb-8 w-[50%]"
+                        >
+                            <Upload
+                                key={isEditMode ? memorialId : 'create-videos' + uploadKey}
+                                accept="video/*"
+                                uploadLimit={6}
+                                multiple
+                                onChange={handleGalleryVideosUpload}
+                                onFileRemove={handleGalleryVideosUpload}
+                                uploading={uploadingVideos}
+                                defaultFiles={videoData.map(v => v.file)}
+                                isPlusIconVisible={videoData.length > 0 ? true : false}
+                            />
 
-                                <Upload
-                                   key={isEditMode ? memorialId : 'create-videos' + uploadKey} 
-                                    accept="video/*"
-                                    uploadLimit={6}
-                                    multiple
-                                    onChange={handleGalleryVideosUpload}
-                                    onFileRemove={handleGalleryVideosUpload}
-                                    uploading={uploadingVideos}
-                                    defaultFiles={videoData.map(v => v.file)}
-                                    isPlusIconVisible={videoData.length > 0 ? true : false}
+                            {errors.videoUploaded && (
+                                <p className="text-[#e26253] text-sm mt-2">{(errors.videoUploaded as any).message}</p>
+                            )}
+                            <div className="mt-4">
+                                <CommonInput
+                                    name="videoTitle"
+                                    control={control}
+                                    label="Video Title"
+                                    placeholder="Enter Video Title"
+                                    invalid={Boolean(errors.videoTitle)}
+                                    errorMessage={errors.videoTitle?.message}
                                 />
+                            </div>
+                        </FormSection>
+                        <FormSection
+                            title={
+                                <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
+                                    Photo Gallery
+                                </span>
+                            }
+                            className="mb-8 w-[50%]"
+                        >
+                            <Upload
+                                key={isEditMode ? memorialId : 'create-photos' + uploadKey}
+                                accept="image/*"
+                                multiple
+                                onChange={handleGalleryPhotosUpload}
+                                uploading={uploadingPhotos}
+                                defaultFiles={photosData.map(p => p.file)}
+                                isPlusIconVisible={photosData.length > 0 ? true : false}
+                                uploadLimit={6}
+                            />
 
-                                {errors.videoUploaded && (
-                                    <p className="text-[#e26253] text-sm mt-2">{(errors.videoUploaded as any).message}</p>
-                                )}
-                                <div className="mt-4">
-                                    <CommonInput
-                                        name="videoTitle"
-                                        control={control}
-                                        label="Video Title"
-                                        placeholder="Enter Video Title"
-                                        invalid={Boolean(errors.videoTitle)}
-                                        errorMessage={errors.videoTitle?.message}
-                                    />
-                                </div>
-                            </FormSection>
-                            <FormSection
-                                title={
-                                    <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
-                                        Photo Gallery
-                                    </span>
-                                }
-                                className="mb-8 w-[50%]"
-                            >
-                                
-                                <Upload
-                                    key={isEditMode ? memorialId : 'create-photos' + uploadKey}
-                                    accept="image/*"
-                                    multiple
-                                    onChange={handleGalleryPhotosUpload}
-                                    uploading={uploadingPhotos}
-                                    defaultFiles={photosData.map(p => p.file)}
-                                    isPlusIconVisible={photosData.length > 0 ? true : false}
-                                    uploadLimit={6}
-                                />
-
-                                {errors.photoUploaded && (
-                                    <p className="text-[#e26253] text-sm mt-2">{(errors.photoUploaded as any).message}</p>
-                                )}
-                            </FormSection>
-                        </div>
+                            {errors.photoUploaded && (
+                                <p className="text-[#e26253] text-sm mt-2">{(errors.photoUploaded as any).message}</p>
+                            )}
+                        </FormSection>
+                    </div>
 
                     <FormSection
                         title={
@@ -1260,7 +1181,7 @@ const validateGalleryPhotoAspectRatio = (file: File): Promise<void> => {
                     >
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div>
-                            
+
                                 <SingleImageUpload
                                     accept="image/*"
                                     onChange={(file) => {

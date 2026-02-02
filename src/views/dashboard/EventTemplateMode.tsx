@@ -204,10 +204,6 @@ export default function EventMode() {
     const handleVideoUpload = async (files: (File | any)[]) => {
         if (files.length === 0) {
             if (videoData?.uploadId) {
-                console.log('Attempting to delete video from GCP storage:', {
-                    uploadId: videoData.uploadId,
-                    fileId: videoData.fileId
-                })
                 try {
                     await apiDeleteGCPFile(videoData.uploadId)
                     toast.push(
@@ -250,10 +246,6 @@ export default function EventMode() {
         }
 
         if (videoData?.uploadId) {
-            console.log('Attempting to delete old video from GCP storage before upload:', {
-                uploadId: videoData.uploadId,
-                fileId: videoData.fileId
-            })
             try {
                 await apiDeleteGCPFile(videoData.uploadId)
             } catch (error: any) {
@@ -388,8 +380,6 @@ export default function EventMode() {
             }
 
             const response = await apiCreateMemorial(payload)
-            console.log('API Response:', response)
-
             toast.push(
                 <Notification type="success" title="Success" duration={2000}>
                     Event memorial created successfully!
@@ -432,10 +422,6 @@ export default function EventMode() {
         return
     }
         handleSubmit(onSubmit)();
-    }
-
-    const handlePreview = () => {
-        console.log('Preview clicked')
     }
 
     return (
@@ -536,52 +522,6 @@ export default function EventMode() {
                             </div>
 
                         </div>
-                            {/* <div className="flex items-center gap-4">
-                                <div className="lg:w-31 lg:h-31 md:w-25 md:h-25 h-20 w-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                                    {profileImage ? (
-                                        <img
-                                            src={profileImage}
-                                            alt="Profile"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <img
-                                            src="https://api.builder.io/api/v1/image/assets/TEMP/83dc85ca9155608ff3d7e17a997653fd5f9ed739?width=248"
-                                            alt="Default avatar"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    )}
-                                </div>
-
-                                <button
-                                    type="button"
-                                    disabled={uploadingProfile}
-                                    onClick={() =>
-                                        document
-                                            .getElementById('profileUpload')
-                                            ?.click()
-                                    }
-                                    className="md:px-6 px-3 font-medium text-[21.26px] leading-[24.8px] tracking-normal text-center py-2.5 border text-[#FFB84C] rounded-[26px] font-poppins border-[#FFB84C] disabled:opacity-50"
-                                >
-                                    {uploadingProfile
-                                        ? 'Uploading...'
-                                        : 'Upload Profile'}
-                                </button>
-
-                                <input
-                                    id="profileUpload"
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0]
-                                        if (file) {
-                                            handleProfileUpload(file)
-                                            e.target.value = ''
-                                        }
-                                    }}
-                                />
-                            </div> */}
 
                             <div className="w-full bg-[#2f3349] rounded-lg p-6 shadow">
                                 <CommonInput
@@ -726,7 +666,6 @@ export default function EventMode() {
 
                         <div className="px-6 py-6 flex justify-between items-center rounded-lg shadow-sm">
                             <button
-                                onClick={handlePreview}
                                 className="px-6 font-[500] md:text-base text-sm py-2.5 border text-[#4EB1C9] border-[#4EB1C9] rounded-[76px] font-poppins"
                             >
                                 Preview

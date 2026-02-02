@@ -27,3 +27,67 @@ export const generateThumbnail = async (videoURL: string): Promise<string> => {
     })
   })
 }
+
+export const validateGalleryPhotoAspectRatio = (file: File): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image()
+        const url = URL.createObjectURL(file)
+
+        img.onload = () => {
+            const { width, height } = img
+            URL.revokeObjectURL(url)
+
+            const aspectRatio = width / height
+            
+            const is3by2 = Math.abs(aspectRatio - 1.5) < 0.01
+            
+            const is16by9 = Math.abs(aspectRatio - (16/9)) < 0.01
+
+            if (!is3by2 && !is16by9) {
+                reject('Photo must have an aspect ratio of 3:2 or 16:9')
+                return
+            }
+
+            resolve()
+        }
+
+        img.onerror = () => {
+            URL.revokeObjectURL(url)
+            reject('Invalid image file')
+        }
+
+        img.src = url
+    })
+}  
+
+export const validateFeaturedImage = (
+file: File,
+requiredWidth = 1200,
+requiredHeight = 800
+): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image()
+        const url = URL.createObjectURL(file)
+
+        img.onload = () => {
+            const { width, height } = img
+            URL.revokeObjectURL(url)
+
+            if (width !== requiredWidth || height !== requiredHeight) {
+                reject(
+                    `Featured photo must be exactly ${requiredWidth} x ${requiredHeight}px`
+                )
+                return
+            }
+
+            resolve()
+        }
+
+        img.onerror = () => {
+            URL.revokeObjectURL(url)
+            reject('Invalid image file')
+        }
+
+        img.src = url
+    })
+}

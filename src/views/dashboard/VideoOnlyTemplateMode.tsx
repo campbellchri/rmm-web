@@ -125,7 +125,6 @@ export default function VideoOnlyMemorial() {
     const [isEditMode, setIsEditMode] = useState(mode === 'edit')
     const [existingMemorialData, setExistingMemorialData] = useState<any>(null)
     const [deletedItem, setDeletedItem] = useState<any>(null)
-    console.log(user);
     const {
         control,
         handleSubmit,
@@ -355,10 +354,6 @@ export default function VideoOnlyMemorial() {
     const handleFeaturedVideoUpload = async (files: (File | any)[]) => {
         if (files.length === 0) {
             if (featuredData?.uploadId) {
-                console.log('Attempting to delete featured video:', {
-                    uploadId: featuredData.uploadId,
-                    fileId: featuredData.fileId,
-                })
                 try {
                     await apiDeleteMedia(user?.userId ?? '', featuredData.uploadId)
                     if (featuredData.uploadId) {
@@ -382,7 +377,6 @@ export default function VideoOnlyMemorial() {
                         { placement: 'top-center' },
                     )
                 } catch (error: any) {
-                    console.error('Error deleting featured video:', error)
                     toast.push(
                         <Notification
                             type="danger"
@@ -505,7 +499,6 @@ export default function VideoOnlyMemorial() {
             })
             .filter(Boolean) as { file: any; res: any }[]
         } catch (error) {
-        console.error('Error uploading videos:', error)
         toast.push(
             <Notification type="danger" title="Upload Failed" duration={3000}>
             Failed to upload video(s). Please try again.
@@ -694,7 +687,6 @@ export default function VideoOnlyMemorial() {
             clearMedia()
             navigate('/dashboard/video-memorial')
         } catch (error: any) {
-            console.error('Error saving memorial:', error)
             const errorMsg =
                 error.response?.data?.message ||
                 error.message ||
@@ -734,11 +726,6 @@ export default function VideoOnlyMemorial() {
 
         setIsSubmitting(true)
         handleSubmit(onSubmit, onError)()
-    }
-
-
-    const handlePreview = () => {
-        console.log('Preview clicked')
     }
 
       const validateSquareImage = (
@@ -961,7 +948,6 @@ export default function VideoOnlyMemorial() {
                         </div>
                     </div>
 
-                    {/* Featured Video */}
                     <FormSection
                         title={
                             <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
@@ -1033,7 +1019,6 @@ export default function VideoOnlyMemorial() {
                         
                     </FormSection>
 
-                    {/* Upload Video */}
                     <FormSection
                         title={
                             <span className="font-poppins font-[500] md:text-[18px] text-base text-[#ffffff]">
@@ -1100,10 +1085,8 @@ export default function VideoOnlyMemorial() {
 
                     </FormSection>
 
-                    {/* Footer Actions */}
                     <div className="bg-[#2f3349] px-6 py-6 flex justify-between items-center rounded-lg shadow-sm">
                         <button
-                            onClick={handlePreview}
                             className="px-6 font-[500] text-base py-2.5 border text-[#4EB1C9]  rounded-[76px] font-poppins  hover:bg-blue-50 transition-colors"
                         >
                             Preview
