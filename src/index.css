@@ -84,3 +84,16 @@ input:-webkit-autofill:active {
   height: 3rem !important;
   border-radius: 10px !important;
 }
+
+@keyframes shimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}

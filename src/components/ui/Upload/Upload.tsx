@@ -152,14 +152,14 @@ const previewFiles = isPlusIconVisible
                         <ImageIcon className="w-8 h-8 text-yellow-500" />
                     </div>
                     <p className="text-white text-sm">
-                        Drag & drop files here or{' '}
+                        Drag & drop files here <br /> <span className='text-[#99A1AF]'>or</span> <br />
                         <span className="text-yellow-600 font-medium text-sm">
                             Browse files
                         </span>
                     </p>
-                    <p className="text-sm text-white mt-1">
+                    {/* <p className="text-sm text-white mt-1">
                         Recommended size: 1200 x 800px
-                    </p>
+                    </p> */}
                 </div>
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full h-[160px]">

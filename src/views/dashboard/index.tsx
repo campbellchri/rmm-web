@@ -10,10 +10,27 @@ import { apiGetDashboardDetail } from '@/services/axios/MemorialModeService'
 import dayjs from 'dayjs'
 import { useSessionUser } from '@/store/authStore'
 
+const ShimmerSkeleton = () => (
+    <div className="space-y-3">
+        <div className="rounded-lg overflow-hidden">
+            <div className="w-full h-65 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 animate-shimmer bg-[length:200%_100%] bg-[position:-100%_0]"></div>
+        </div>
+        <div className="space-y-2">
+            <div className="flex items-center justify-center gap-1">
+                <div className="h-3 w-8 bg-gray-600 rounded animate-pulse"></div>
+                <div className="h-3 w-1 bg-gray-600 rounded animate-pulse"></div>
+                <div className="h-3 w-8 bg-gray-600 rounded animate-pulse"></div>
+            </div>
+            <div className="h-4 w-3/4 mx-auto bg-gray-600 rounded animate-pulse"></div>
+        </div>
+    </div>
+)
+
 const Dashboard = () => {
     const navigate = useNavigate()
     const { memorials, setActiveMemorialId } = useMemorialStore()
     const [dashboardStats, setDashboardStats] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
     const setUser = useSessionUser((state) => state.setUser)
 
     useEffect(() => {
@@ -22,6 +39,7 @@ const Dashboard = () => {
 
     const fetchDashboardStats = async () => {
         try {
+            setIsLoading(true)
             const res = await apiGetDashboardDetail()
             console.log(res, '------')
             setUser({ 
@@ -30,6 +48,8 @@ const Dashboard = () => {
             setDashboardStats(res)
         } catch (error) {
             console.error('Error fetching dashboard stats:', error)
+        } finally {
+            setIsLoading(false)
         }
     }
     type Option = { value: string; label: string }
@@ -275,7 +295,14 @@ const Dashboard = () => {
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
-                                {(dashboardStats?.memorials || memorials)?.map((memorial: any, index: number) => (
+                                {isLoading ? (
+                                    Array.from({ length: 6 }).map((_, index) => (
+                                        <div key={`shimmer-${index}`} className="group cursor-pointer">
+                                            <ShimmerSkeleton />
+                                        </div>
+                                    ))
+                                ) : (
+                                    (dashboardStats?.memorials || memorials)?.map((memorial: any, index: number) => (
                                     <div
                                         key={index}
                                         className="group cursor-pointer"
@@ -339,7 +366,7 @@ const Dashboard = () => {
                                             </div>
                                         </div>
                                     </div>
-                                ))}
+                                )))}
                             </div>
                         </div>
                     </div>
