@@ -377,192 +377,403 @@ export default function ClassicTemplateMode() {
     }
 
 
+    // const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
+    //     const incomingExisting = files.filter(
+    //         f => !(f instanceof File) && f.uploadId
+    //     )
+    //     const incomingNewFiles = files.filter(
+    //         f => f instanceof File
+    //     ) as File[]
+
+    //     const keptExisting = photosData.filter(p =>
+    //         incomingExisting.some(e => e.uploadId === p.res?.uploadId)
+    //     )
+
+    //     const removedItems = photosData.filter(p =>
+    //         !incomingExisting.some(e => e.uploadId === p.res?.uploadId)
+    //     )
+
+    //     for (const item of removedItems) {
+    //         if (item.res?.uploadId) {
+    //             try {
+    //                 if (isEditMode) {
+    //                     await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
+    //                 } else {
+    //                     await apiDeleteGCPFile(item.res.uploadId)
+    //                 }
+    //             } catch (err) {
+    //                 console.error('Error deleting photo:', err)
+    //             }
+    //         }
+    //     }
+
+    //     const validationResults = await Promise.allSettled(
+    //         incomingNewFiles.map(file => validateGalleryPhotoAspectRatio(file))
+    //     )
+
+    //     const invalidFiles: string[] = []
+    //     const validFiles: File[] = []
+
+    //     validationResults.forEach((result, index) => {
+    //         if (result.status === 'rejected') {
+    //             invalidFiles.push(incomingNewFiles[index].name)
+    //         } else {
+    //             validFiles.push(incomingNewFiles[index])
+    //         }
+    //     })
+
+    //     if (invalidFiles.length > 0) {
+    //         toast.push(
+    //             <Notification type="danger" title="Invalid Photo Aspect Ratio" duration={4000}>
+    //                 The following photo(s) must have a 3:2 or 16:9 aspect ratio: {invalidFiles.join(', ')}
+    //             </Notification>,
+    //             { placement: 'top-center' }
+    //         )
+    //     }
+
+    //     const remainingSlots = MAX_GALLERY_MEDIA - keptExisting.length
+    //     const allowedNewFiles = validFiles.slice(0, remainingSlots)
+
+    //     if (allowedNewFiles.length < validFiles.length) {
+    //         toast.push(
+    //             <Notification type="danger" title="Upload limit exceeded" duration={3000}>
+    //                 You can upload a maximum of 6 photos.
+    //             </Notification>,
+    //             { placement: 'top-center' }
+    //         )
+    //     }
+
+    //     let newlyUploaded: { file: File; res: any }[] = []
+    //     if (allowedNewFiles.length > 0) {
+    //         setUploadingPhotos(true)
+    //         const res = await uploadFiles(allowedNewFiles)
+    //         newlyUploaded = allowedNewFiles
+    //             .map((file, i) => res[i] ? { file, res: res[i] } : null)
+    //             .filter(Boolean) as { file: File; res: any }[]
+    //         setUploadingPhotos(false)
+    //     }
+
+    //     const finalPhotos = [...keptExisting, ...newlyUploaded]
+    //     setPhotosData(finalPhotos)
+    //     setValue('photoUploaded', finalPhotos.map(p => p.res))
+    //     await trigger('photoUploaded')
+
+    //     setUploadKey(prev => prev + 1)
+    // }
+
+
+    // const handleGalleryVideosUpload = async (files: (File | any)[]) => {
+
+    //     const incomingExisting = files.filter(
+    //         f => !(f instanceof File) && f.uploadId
+    //     )
+
+    //     const incomingNewFiles = files.filter(
+    //         f => f instanceof File
+    //     ) as File[]
+
+    //     const keptExisting = videoData.filter(v =>
+    //         incomingExisting.some(e => e.uploadId === v.res?.uploadId)
+    //     )
+
+    //     const removedItems = videoData.filter(v =>
+    //         !incomingExisting.some(e => e.uploadId === v.res?.uploadId)
+    //     )
+
+    //     for (const item of removedItems) {
+    //         if (item.res?.uploadId) {
+    //             try {
+    //                 if (isEditMode) {
+    //                     await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
+    //                 } else {
+    //                     await apiDeleteGCPFile(item.res.uploadId)
+    //                 }
+    //             } catch (err) {
+    //                 console.error('❌ Error deleting video:', err)
+    //             }
+    //         }
+    //     }
+
+    //     const remainingSlots = MAX_GALLERY_MEDIA - keptExisting.length
+
+    //     if (incomingNewFiles.length > remainingSlots) {
+
+    //         toast.push(
+    //             <Notification type="danger" title="Upload limit exceeded" duration={3000}>
+    //                 You can upload a maximum of 6 videos.
+    //             </Notification>,
+    //             { placement: 'top-center' }
+    //         )
+
+    //         setUploadKey(prev => prev + 1)
+    //         return
+    //     }
+
+    //     const allowedNewFiles = incomingNewFiles.slice(0, remainingSlots)
+
+    //     let newlyUploaded: { file: File; res: any }[] = []
+
+    //     if (allowedNewFiles.length > 0) {
+    //         setUploadingVideos(true)
+
+    //         try {
+    //             const res = await uploadFiles(allowedNewFiles)
+
+    //             newlyUploaded = allowedNewFiles
+    //                 .map((file, i) => {
+    //                     if (!res[i]) return null
+
+    //                     return {
+    //                         file: {
+    //                             originalFileName: res[i].originalFileName || file.name,
+    //                             size: res[i].size || file.size,
+    //                             mimeType: res[i].mimeType || file.type,
+    //                             fileURL: res[i].fileURL,
+    //                             uploadId: res[i].uploadId,
+    //                             fileId: res[i].fileId,
+    //                             status: 'done',
+    //                             percent: 100,
+    //                             url: res[i].fileURL, // For Upload preview
+    //                         },
+    //                         res: res[i]
+    //                     }
+    //                 })
+    //                 .filter(Boolean) as { file: any; res: any }[]
+
+    //         } catch (error) {
+    //             toast.push(
+    //                 <Notification type="danger" title="Upload Failed" duration={3000}>
+    //                     Failed to upload video(s). Please try again.
+    //                 </Notification>,
+    //                 { placement: 'top-center' }
+    //             )
+    //         } finally {
+    //             setUploadingVideos(false)
+    //         }
+    //     }
+
+    //     // 8️⃣ Merge & update state
+    //     const finalVideos = [...keptExisting, ...newlyUploaded].slice(0, MAX_GALLERY_MEDIA)
+
+    //     setVideoData(finalVideos)
+    //     setValue('videoUploaded', finalVideos.map(v => v.res))
+    //     await trigger('videoUploaded')
+    // }
     const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
-        const incomingExisting = files.filter(
-            f => !(f instanceof File) && f.uploadId
-        )
-        const incomingNewFiles = files.filter(
-            f => f instanceof File
-        ) as File[]
+    const incomingExisting = files.filter(
+        f => !(f instanceof File) && f.uploadId
+    )
+    const incomingNewFiles = files.filter(
+        f => f instanceof File
+    ) as File[]
 
-        const keptExisting = photosData.filter(p =>
-            incomingExisting.some(e => e.uploadId === p.res?.uploadId)
-        )
+    const keptExisting = photosData.filter(p =>
+        incomingExisting.some(e => e.uploadId === p.res?.uploadId)
+    )
 
-        const removedItems = photosData.filter(p =>
-            !incomingExisting.some(e => e.uploadId === p.res?.uploadId)
-        )
+    const remainingSlots = MAX_GALLERY_MEDIA - keptExisting.length
 
-        for (const item of removedItems) {
-            if (item.res?.uploadId) {
-                try {
-                    if (isEditMode) {
-                        await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
-                    } else {
-                        await apiDeleteGCPFile(item.res.uploadId)
-                    }
-                } catch (err) {
-                    console.error('Error deleting photo:', err)
+    // ✅ Check limit FIRST before doing any deletions or validations
+    if (incomingNewFiles.length > remainingSlots) {
+        toast.push(
+            <Notification type="danger" title="Upload limit exceeded" duration={3000}>
+                You can upload a maximum of 6 photos.
+            </Notification>,
+            { placement: 'top-center' }
+        )
+        setUploadKey(prev => prev + 1)
+        return // Exit early - don't delete anything
+    }
+
+    // ✅ Validate aspect ratios
+    const validationResults = await Promise.allSettled(
+        incomingNewFiles.map(file => validateGalleryPhotoAspectRatio(file))
+    )
+
+    const invalidFiles: string[] = []
+    const validFiles: File[] = []
+
+    validationResults.forEach((result, index) => {
+        if (result.status === 'rejected') {
+            invalidFiles.push(incomingNewFiles[index].name)
+        } else {
+            validFiles.push(incomingNewFiles[index])
+        }
+    })
+
+    if (invalidFiles.length > 0) {
+        toast.push(
+            <Notification type="danger" title="Invalid Photo Aspect Ratio" duration={4000}>
+                The following photo(s) must have a 3:2 or 16:9 aspect ratio: {invalidFiles.join(', ')}
+            </Notification>,
+            { placement: 'top-center' }
+        )
+        setUploadKey(prev => prev + 1)
+        return // Exit early if any photos are invalid
+    }
+
+    // ✅ Only delete if validations pass
+    const removedItems = photosData.filter(p =>
+        !incomingExisting.some(e => e.uploadId === p.res?.uploadId)
+    )
+
+    for (const item of removedItems) {
+        if (item.res?.uploadId) {
+            try {
+                if (isEditMode) {
+                    await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
+                } else {
+                    await apiDeleteGCPFile(item.res.uploadId)
                 }
+            } catch (err) {
+                console.error('Error deleting photo:', err)
             }
         }
+    }
 
-        const validationResults = await Promise.allSettled(
-            incomingNewFiles.map(file => validateGalleryPhotoAspectRatio(file))
-        )
-
-        const invalidFiles: string[] = []
-        const validFiles: File[] = []
-
-        validationResults.forEach((result, index) => {
-            if (result.status === 'rejected') {
-                invalidFiles.push(incomingNewFiles[index].name)
-            } else {
-                validFiles.push(incomingNewFiles[index])
-            }
-        })
-
-        if (invalidFiles.length > 0) {
-            toast.push(
-                <Notification type="danger" title="Invalid Photo Aspect Ratio" duration={4000}>
-                    The following photo(s) must have a 3:2 or 16:9 aspect ratio: {invalidFiles.join(', ')}
-                </Notification>,
-                { placement: 'top-center' }
-            )
-        }
-
-        const remainingSlots = MAX_GALLERY_MEDIA - keptExisting.length
-        const allowedNewFiles = validFiles.slice(0, remainingSlots)
-
-        if (allowedNewFiles.length < validFiles.length) {
-            toast.push(
-                <Notification type="danger" title="Upload limit exceeded" duration={3000}>
-                    You can upload a maximum of 6 photos.
-                </Notification>,
-                { placement: 'top-center' }
-            )
-        }
-
-        let newlyUploaded: { file: File; res: any }[] = []
-        if (allowedNewFiles.length > 0) {
-            setUploadingPhotos(true)
-            const res = await uploadFiles(allowedNewFiles)
-            newlyUploaded = allowedNewFiles
+    // ✅ Upload valid files (all should be within limit now)
+    let newlyUploaded: { file: File; res: any }[] = []
+    if (validFiles.length > 0) {
+        setUploadingPhotos(true)
+        try {
+            const res = await uploadFiles(validFiles)
+            newlyUploaded = validFiles
                 .map((file, i) => res[i] ? { file, res: res[i] } : null)
                 .filter(Boolean) as { file: File; res: any }[]
-            setUploadingPhotos(false)
-        }
-
-        const finalPhotos = [...keptExisting, ...newlyUploaded]
-        setPhotosData(finalPhotos)
-        setValue('photoUploaded', finalPhotos.map(p => p.res))
-        await trigger('photoUploaded')
-
-        setUploadKey(prev => prev + 1)
-    }
-
-
-    const handleGalleryVideosUpload = async (files: (File | any)[]) => {
-
-        const incomingExisting = files.filter(
-            f => !(f instanceof File) && f.uploadId
-        )
-
-        const incomingNewFiles = files.filter(
-            f => f instanceof File
-        ) as File[]
-
-        const keptExisting = videoData.filter(v =>
-            incomingExisting.some(e => e.uploadId === v.res?.uploadId)
-        )
-
-        const removedItems = videoData.filter(v =>
-            !incomingExisting.some(e => e.uploadId === v.res?.uploadId)
-        )
-
-        for (const item of removedItems) {
-            if (item.res?.uploadId) {
-                try {
-                    if (isEditMode) {
-                        await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
-                    } else {
-                        await apiDeleteGCPFile(item.res.uploadId)
-                    }
-                } catch (err) {
-                    console.error('❌ Error deleting video:', err)
-                }
-            }
-        }
-
-        const remainingSlots = MAX_GALLERY_MEDIA - keptExisting.length
-
-        if (incomingNewFiles.length > remainingSlots) {
-
+        } catch (error) {
+            console.error('Error uploading photos:', error)
             toast.push(
-                <Notification type="danger" title="Upload limit exceeded" duration={3000}>
-                    You can upload a maximum of 6 videos.
+                <Notification type="danger" title="Upload Failed" duration={3000}>
+                    Failed to upload photo(s). Please try again.
                 </Notification>,
                 { placement: 'top-center' }
             )
-
-            setVideoData(keptExisting)
-            setValue('videoUploaded', keptExisting.map(v => v.res))
-            await trigger('videoUploaded')
-
-            setUploadKey(prev => prev + 1)
-            return
+        } finally {
+            setUploadingPhotos(false)
         }
+    }
 
-        const allowedNewFiles = incomingNewFiles.slice(0, remainingSlots)
+    const finalPhotos = [...keptExisting, ...newlyUploaded].slice(0, MAX_GALLERY_MEDIA)
+    setPhotosData(finalPhotos)
+    setValue('photoUploaded', finalPhotos.map(p => p.res))
+    await trigger('photoUploaded')
+}
+    const handleGalleryVideosUpload = async (files: (File | any)[]) => {
+    console.log('📥 Incoming files:', files)
 
-        let newlyUploaded: { file: File; res: any }[] = []
+    const incomingExisting = files.filter(
+        f => !(f instanceof File) && f.uploadId
+    )
 
-        if (allowedNewFiles.length > 0) {
-            setUploadingVideos(true)
+    const incomingNewFiles = files.filter(
+        f => f instanceof File
+    ) as File[]
 
+    console.log('📁 Existing files:', incomingExisting)
+    console.log('🆕 New files to upload:', incomingNewFiles)
+
+    const keptExisting = videoData.filter(v =>
+        incomingExisting.some(e => e.uploadId === v.res?.uploadId)
+    )
+
+    const removedItems = videoData.filter(v =>
+        !incomingExisting.some(e => e.uploadId === v.res?.uploadId)
+    )
+
+    console.log('✅ Kept existing:', keptExisting)
+    console.log('🗑️ Removed items:', removedItems)
+
+    // Delete removed items from server
+    for (const item of removedItems) {
+        if (item.res?.uploadId) {
             try {
-                const res = await uploadFiles(allowedNewFiles)
-
-                newlyUploaded = allowedNewFiles
-                    .map((file, i) => {
-                        if (!res[i]) return null
-
-                        return {
-                            file: {
-                                originalFileName: res[i].originalFileName || file.name,
-                                size: res[i].size || file.size,
-                                mimeType: res[i].mimeType || file.type,
-                                fileURL: res[i].fileURL,
-                                uploadId: res[i].uploadId,
-                                fileId: res[i].fileId,
-                                status: 'done',
-                                percent: 100,
-                                url: res[i].fileURL, // For Upload preview
-                            },
-                            res: res[i]
-                        }
-                    })
-                    .filter(Boolean) as { file: any; res: any }[]
-
-            } catch (error) {
-                toast.push(
-                    <Notification type="danger" title="Upload Failed" duration={3000}>
-                        Failed to upload video(s). Please try again.
-                    </Notification>,
-                    { placement: 'top-center' }
-                )
-            } finally {
-                setUploadingVideos(false)
+                if (isEditMode) {
+                    await apiDeleteMedia(user?.userId ?? '', item.res.uploadId)
+                } else {
+                    await apiDeleteGCPFile(item.res.uploadId)
+                }
+            } catch (err) {
+                console.error('❌ Error deleting video:', err)
             }
         }
-
-        // 8️⃣ Merge & update state
-        const finalVideos = [...keptExisting, ...newlyUploaded].slice(0, MAX_GALLERY_MEDIA)
-
-        setVideoData(finalVideos)
-        setValue('videoUploaded', finalVideos.map(v => v.res))
-        await trigger('videoUploaded')
     }
+
+    const remainingSlots = MAX_GALLERY_MEDIA - keptExisting.length
+    console.log('🎯 Remaining slots:', remainingSlots)
+
+    // Check if trying to upload more than allowed
+    if (incomingNewFiles.length > remainingSlots) {
+        console.log('⚠️ Upload limit exceeded!')
+        toast.push(
+            <Notification type="danger" title="Upload limit exceeded" duration={3000}>
+                You can upload a maximum of 6 videos.
+            </Notification>,
+            { placement: 'top-center' }
+        )
+
+        setUploadKey(prev => prev + 1)
+        return
+    }
+
+    const allowedNewFiles = incomingNewFiles.slice(0, remainingSlots)
+    console.log('✅ Allowed new files to upload:', allowedNewFiles)
+
+    let newlyUploaded: { file: File; res: any }[] = []
+
+    if (allowedNewFiles.length > 0) {
+        console.log('🚀 Starting upload...')
+        setUploadingVideos(true)
+
+        try {
+            const res = await uploadFiles(allowedNewFiles)
+            console.log('✅ Upload response:', res)
+
+            newlyUploaded = allowedNewFiles
+                .map((file, i) => {
+                    if (!res[i]) return null
+
+                    return {
+                        file: {
+                            originalFileName: res[i].originalFileName || file.name,
+                            size: res[i].size || file.size,
+                            mimeType: res[i].mimeType || file.type,
+                            fileURL: res[i].fileURL,
+                            uploadId: res[i].uploadId,
+                            fileId: res[i].fileId,
+                            status: 'done',
+                            percent: 100,
+                            url: res[i].fileURL,
+                        },
+                        res: res[i]
+                    }
+                })
+                .filter(Boolean) as { file: any; res: any }[]
+
+            console.log('✅ Newly uploaded:', newlyUploaded)
+
+        } catch (error) {
+            console.error('❌ Upload error:', error)
+            toast.push(
+                <Notification type="danger" title="Upload Failed" duration={3000}>
+                    Failed to upload video(s). Please try again.
+                </Notification>,
+                { placement: 'top-center' }
+            )
+        } finally {
+            setUploadingVideos(false)
+        }
+    } else {
+        console.log('⚠️ No files to upload (allowedNewFiles is empty)')
+    }
+
+    // Merge & update state (ensure max 6)
+    const finalVideos = [...keptExisting, ...newlyUploaded].slice(0, MAX_GALLERY_MEDIA)
+    console.log('📦 Final videos:', finalVideos)
+
+    setVideoData(finalVideos)
+    setValue('videoUploaded', finalVideos.map(v => v.res))
+    await trigger('videoUploaded')
+}
 
 
     const onSubmit = async (data: any) => {

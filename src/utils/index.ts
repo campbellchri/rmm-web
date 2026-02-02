@@ -38,10 +38,10 @@ export const validateGalleryPhotoAspectRatio = (file: File): Promise<void> => {
             URL.revokeObjectURL(url)
 
             const aspectRatio = width / height
+            const tolerance = 0.1
             
-            const is3by2 = Math.abs(aspectRatio - 1.5) < 0.01
-            
-            const is16by9 = Math.abs(aspectRatio - (16/9)) < 0.01
+            const is3by2 = Math.abs(aspectRatio - 1.5) < tolerance
+            const is16by9 = Math.abs(aspectRatio - (16/9)) < tolerance
 
             if (!is3by2 && !is16by9) {
                 reject('Photo must have an aspect ratio of 3:2 or 16:9')

@@ -42,12 +42,15 @@ const Upload = ({
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [files, setFiles] = useState<(File | any)[]>([])
 
+//     useEffect(() => {
+//     // Only sync defaultFiles when Upload has no local files yet
+//     if (defaultFiles?.length && files.length === 0) {
+//         setFiles(defaultFiles)
+//     }
+// }, [defaultFiles])
     useEffect(() => {
-    // Only sync defaultFiles when Upload has no local files yet
-    if (defaultFiles?.length && files.length === 0) {
         setFiles(defaultFiles)
-    }
-}, [defaultFiles])
+    }, [defaultFiles])
 
 
 

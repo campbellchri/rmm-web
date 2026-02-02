@@ -9,10 +9,9 @@ import {
     CommonDatePicker,
 } from '@/components/shared'
 import { ChevronDown } from 'lucide-react'
-import { useForm, Controller, useWatch } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import {
     apiCreateMemorial,
-    apiGetMemorialModeList,
     apiGetMemorialTemplateList,
     apiGetMemorialById,
     apiUpdateMemorial,
@@ -23,7 +22,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import {
     apiUploadMedia,
     apiDeleteMedia,
-    apiDeleteGCPFile,
 } from '@/services/MediaService'
 import {
     MediaCategory,
