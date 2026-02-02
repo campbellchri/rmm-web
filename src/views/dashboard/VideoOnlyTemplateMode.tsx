@@ -443,7 +443,6 @@ export default function VideoOnlyMemorial() {
     const handleGalleryVideosUpload = async (files: (File | any)[]) => {
     const MAX_GALLERY_VIDEOS = 3
     
-    // 1️⃣ Separate existing & new files
     const incomingExisting = files.filter(
         f => !(f instanceof File) && f.uploadId
     )
@@ -451,17 +450,14 @@ export default function VideoOnlyMemorial() {
         f => f instanceof File
     ) as File[]
 
-    // 2️⃣ Keep existing videos user did NOT remove
     const keptExisting = videoData.filter(v =>
         incomingExisting.some(e => e.uploadId === v.res?.uploadId)
     )
 
-    // 3️⃣ Detect removed videos
     const removedItems = videoData.filter(v =>
         !incomingExisting.some(e => e.uploadId === v.res?.uploadId)
     )
 
-    // 4️⃣ Delete removed videos
     for (const item of removedItems) {
         if (item.res?.uploadId) {
         try {
@@ -472,7 +468,6 @@ export default function VideoOnlyMemorial() {
         }
     }
 
-    // 5️⃣ Enforce max limit BEFORE upload
     const remainingSlots = MAX_GALLERY_VIDEOS - keptExisting.length
     if (incomingNewFiles.length > remainingSlots) {
         toast.push(
@@ -481,8 +476,7 @@ export default function VideoOnlyMemorial() {
         </Notification>,
         { placement: 'top-center' }
         )
-        // Update state with existing files only and force re-render
-        setVideoData(keptExisting)
+        // setVideoData(keptExisting)
         setUploadKey(prev => prev + 1)
         return
     }
@@ -523,7 +517,6 @@ export default function VideoOnlyMemorial() {
         }
     }
 
-    // 7️⃣ Merge & update state (ensure max 3)
     const finalVideos = [...keptExisting, ...newlyUploaded].slice(0, MAX_GALLERY_VIDEOS)
     setVideoData(finalVideos)
     }
@@ -781,20 +774,6 @@ export default function VideoOnlyMemorial() {
         img.src = url
     })
     }
-// useEffect(() => {
-//   if (videoData.length === 0) return;
-
-//   const updated = videoData.map((item) => ({
-//     title: item.file?.videoTitle || '',
-//     description: item.res?.videoDescription || '',
-//   }));
-
-//   setValue('galleryVideos', updated);
-// }, [videoData, setValue]);
-
-
-
-
 
     return (
         <>

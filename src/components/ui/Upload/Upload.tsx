@@ -162,7 +162,7 @@ const previewFiles = isPlusIconVisible
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full h-[100px]">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full h-[160px]">
                     {previewFiles.map((file, index) => {
                         const isExisting = !(file instanceof File)
                         const fileURL = isExisting ? file.fileURL : URL.createObjectURL(file)

@@ -478,7 +478,6 @@ export default function ClassicTemplateMode() {
 
 
 const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
-  // 1️⃣ Separate existing & new files
   const incomingExisting = files.filter(
     f => !(f instanceof File) && f.uploadId
   )
@@ -486,17 +485,14 @@ const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
     f => f instanceof File
   ) as File[]
 
-  // 2️⃣ Keep existing photos user did NOT remove
   const keptExisting = photosData.filter(p =>
     incomingExisting.some(e => e.uploadId === p.res?.uploadId)
   )
 
-  // 3️⃣ Detect removed photos
   const removedItems = photosData.filter(p =>
     !incomingExisting.some(e => e.uploadId === p.res?.uploadId)
   )
 
-  // 4️⃣ Delete removed photos
   for (const item of removedItems) {
     if (item.res?.uploadId) {
       try {
@@ -511,7 +507,6 @@ const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
     }
   }
 
-  // 5️⃣ VALIDATE aspect ratios for new files FIRST
   const validationResults = await Promise.allSettled(
     incomingNewFiles.map(file => validateGalleryPhotoAspectRatio(file))
   )
@@ -527,7 +522,6 @@ const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
     }
   })
 
-  // 6️⃣ If there are invalid files, show error and update state with ONLY valid files
   if (invalidFiles.length > 0) {
     toast.push(
       <Notification type="danger" title="Invalid Photo Aspect Ratio" duration={4000}>
@@ -537,7 +531,6 @@ const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
     )
   }
 
-  // 7️⃣ Enforce max limit AFTER validation (using only valid files)
   const remainingSlots = MAX_GALLERY_MEDIA - keptExisting.length
   const allowedNewFiles = validFiles.slice(0, remainingSlots)
   
@@ -550,7 +543,6 @@ const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
     )
   }
 
-  // 8️⃣ Upload only valid files
   let newlyUploaded: { file: File; res: any }[] = []
   if (allowedNewFiles.length > 0) {
     setUploadingPhotos(true)
@@ -561,7 +553,6 @@ const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
     setUploadingPhotos(false)
   }
 
-  // 9️⃣ Merge & update state with ONLY valid files
   const finalPhotos = [...keptExisting, ...newlyUploaded]
   setPhotosData(finalPhotos)
   setValue('photoUploaded', finalPhotos.map(p => p.res))
@@ -574,7 +565,6 @@ const handleGalleryPhotosUpload = async (files: (File | any)[]) => {
 const handleGalleryVideosUpload = async (files: (File | any)[]) => {
     console.log('📹 Video upload handler called with', files.length, 'files')
     
-    // 1️⃣ Separate existing & new files
     const incomingExisting = files.filter(
         f => !(f instanceof File) && f.uploadId
     )
@@ -585,17 +575,14 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
 
     console.log('Existing:', incomingExisting.length, 'New:', incomingNewFiles.length)
 
-    // 2️⃣ Keep existing videos user did NOT remove
     const keptExisting = videoData.filter(v =>
         incomingExisting.some(e => e.uploadId === v.res?.uploadId)
     )
 
-    // 3️⃣ Detect removed videos
     const removedItems = videoData.filter(v =>
         !incomingExisting.some(e => e.uploadId === v.res?.uploadId)
     )
 
-    // 4️⃣ Delete removed videos
     for (const item of removedItems) {
         if (item.res?.uploadId) {
             try {
@@ -611,7 +598,6 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
         }
     }
 
-    // 5️⃣ Enforce max limit BEFORE upload
     const remainingSlots = MAX_GALLERY_MEDIA - keptExisting.length
 
     if (incomingNewFiles.length > remainingSlots) {
@@ -792,7 +778,6 @@ const handleGalleryVideosUpload = async (files: (File | any)[]) => {
                     ...restExistingData
                 } = existingMemorialData
 
-                // Also exclude favoriteSayings from the new payload for edit mode
                 const { favoriteSayings: _, ...payloadForUpdate } = payload
 
                 const updatePayload = {
@@ -937,13 +922,10 @@ const validateGalleryPhotoAspectRatio = (file: File): Promise<void> => {
             const { width, height } = img
             URL.revokeObjectURL(url)
 
-            // Calculate aspect ratio
             const aspectRatio = width / height
             
-            // Check for 3:2 ratio (1.5) with small tolerance
             const is3by2 = Math.abs(aspectRatio - 1.5) < 0.01
             
-            // Check for 16:9 ratio (1.777...) with small tolerance
             const is16by9 = Math.abs(aspectRatio - (16/9)) < 0.01
 
             if (!is3by2 && !is16by9) {
